@@ -88,3 +88,47 @@ terraform show
 - API tokens and state files are excluded from Git via `.gitignore`
 - Never commit `terraform.tfvars` or `.terraform/` directory
 - Use sensitive variables for passwords and tokens
+
+## Backup Strategy
+
+### Backup Jobs Configured
+
+| Resource | VMID | Schedule | Storage | Retention Policy |
+|-----------|------|----------|---------|------------------|
+| Home Assistant | 100 | Daily 21:00 | local (dir) | Last 3-5 backups |
+| docker | 101 | Daily 22:00 | local-zfs (ZFS) | **Daily + Last of each month** |
+| tailscale | 102 | Daily 22:30 | local-zfs (ZFS) | **Daily + Last of each month** |
+| adguard | 103 | Daily 23:00 | local-zfs (ZFS) | **Daily + Last of each month** |
+
+### Special Retention Policy
+
+The cleanup script (`/usr/local/bin/cleanup-backups.sh`) implements a **custom retention policy**:
+
+- **Current month:** Keep ALL daily backups
+- **Previous months:** Keep ONLY the LAST backup (highest date) of each month
+- **Purpose:** Maintain daily granularity for recent backups, but save space for older ones
+
+### Cleanup Script
+
+- **Location:** `/usr/local/bin/cleanup-backups.sh`
+- **Scheduled:** Daily at 1:00 AM via cron
+- **Log file:** `/var/log/backup-cleanup.log`
+- **What it does:**
+  1. Finds all `vzdump-*.vma.*` files in `/var/lib/vz/dump` and `/var/lib/vz/snapshot`
+  2. Groups by year-month (from filename)
+  3. Current month: Keep all
+  4. Previous months: Delete all except the last backup (highest date)
+
+### Manual Execution
+
+```bash
+# Run cleanup manually
+ssh root@192.168.1.134 "/usr/local/bin/cleanup-backups.sh"
+
+# Check log
+ssh root@192.168.1.134 "cat /var/log/backup-cleanup.log"
+```
+
+### Restore Procedures
+
+See [RECOVERY.md](./RECOVERY.md) for detailed restore instructions.

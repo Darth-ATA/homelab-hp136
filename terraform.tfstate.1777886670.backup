@@ -1,0 +1,439 @@
+{
+  "version": 4,
+  "terraform_version": "1.5.7",
+  "serial": 19,
+  "lineage": "48b8fd29-1968-f5ec-6d2d-3914d81e7894",
+  "outputs": {
+    "node_info": {
+      "value": [
+        "prxhp136"
+      ],
+      "type": [
+        "list",
+        "string"
+      ]
+    }
+  },
+  "resources": [
+    {
+      "mode": "data",
+      "type": "proxmox_virtual_environment_nodes",
+      "name": "available",
+      "provider": "provider[\"registry.terraform.io/bpg/proxmox\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "cpu_count": [
+              4
+            ],
+            "cpu_utilization": [
+              0.01
+            ],
+            "id": "nodes",
+            "memory_available": [
+              16501522432
+            ],
+            "memory_used": [
+              8031834112
+            ],
+            "names": [
+              "prxhp136"
+            ],
+            "online": [
+              true
+            ],
+            "ssl_fingerprints": [
+              "60:6D:CA:46:AF:A3:D1:C4:55:2B:B4:AC:A7:C4:91:FF:93:9E:91:C7:FF:F9:B7:0A:99:08:30:FD:D7:CA:35:1D"
+            ],
+            "support_levels": [
+              ""
+            ],
+            "uptime": [
+              746845
+            ]
+          },
+          "sensitive_attributes": []
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "proxmox_virtual_environment_container",
+      "name": "adguard",
+      "provider": "provider[\"registry.terraform.io/bpg/proxmox\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "clone": [],
+            "console": [
+              {
+                "enabled": true,
+                "tty_count": 2,
+                "type": "tty"
+              }
+            ],
+            "cpu": [],
+            "description": "\u003cdiv align='center'\u003e\n  \u003ca href='https://Helper-Scripts.com' target='_blank' rel='noopener noreferrer'\u003e\n    \u003cimg src='https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/images/logo-81x112.png' alt='Logo' style='width:81px;height:112px;'/\u003e\n  \u003c/a\u003e\n\n  \u003ch2 style='font-size: 24px; margin: 20px 0;'\u003eAdguard LXC\u003c/h2\u003e\n\n  \u003cp style='margin: 16px 0;'\u003e\n    \u003ca href='https://ko-fi.com/community_scripts' target='_blank' rel='noopener noreferrer'\u003e\n      \u003cimg src='https://img.shields.io/badge/\u0026#x2615;-Buy us a coffee-blue' alt='spend Coffee' /\u003e\n    \u003c/a\u003e\n  \u003c/p\u003e\n\n  \u003cspan style='margin: 0 10px;'\u003e\n    \u003ci class=\"fa fa-github fa-fw\" style=\"color: #f5f5f5;\"\u003e\u003c/i\u003e\n    \u003ca href='https://github.com/community-scripts/ProxmoxVE' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'\u003eGitHub\u003c/a\u003e\n  \u003c/span\u003e\n  \u003cspan style='margin: 0 10px;'\u003e\n    \u003ci class=\"fa fa-comments fa-fw\" style=\"color: #f5f5f5;\"\u003e\u003c/i\u003e\n    \u003ca href='https://github.com/community-scripts/ProxmoxVE/discussions' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'\u003eDiscussions\u003c/a\u003e\n  \u003c/span\u003e\n  \u003cspan style='margin: 0 10px;'\u003e\n    \u003ci class=\"fa fa-exclamation-circle fa-fw\" style=\"color: #f5f5f5;\"\u003e\u003c/i\u003e\n    \u003ca href='https://github.com/community-scripts/ProxmoxVE/issues' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'\u003eIssues\u003c/a\u003e\n  \u003c/span\u003e\n\u003c/div\u003e\n",
+            "device_passthrough": [],
+            "disk": [
+              {
+                "datastore_id": "local-zfs",
+                "size": 2
+              }
+            ],
+            "features": [],
+            "hook_script_file_id": null,
+            "id": "103",
+            "initialization": [
+              {
+                "dns": [],
+                "hostname": "adguard",
+                "ip_config": [
+                  {
+                    "ipv4": [
+                      {
+                        "address": "dhcp",
+                        "gateway": ""
+                      }
+                    ],
+                    "ipv6": []
+                  }
+                ],
+                "user_account": []
+              }
+            ],
+            "memory": [
+              {
+                "dedicated": 512,
+                "swap": 512
+              }
+            ],
+            "mount_point": [],
+            "network_interface": [
+              {
+                "bridge": "vmbr0",
+                "enabled": true,
+                "firewall": false,
+                "mac_address": "BC:24:11:D5:A2:77",
+                "mtu": 0,
+                "name": "eth0",
+                "rate_limit": 0,
+                "vlan_id": 0
+              }
+            ],
+            "node_name": "prxhp136",
+            "operating_system": [
+              {
+                "template_file_id": "",
+                "type": "debian"
+              }
+            ],
+            "pool_id": null,
+            "protection": false,
+            "start_on_boot": null,
+            "started": true,
+            "startup": [],
+            "tags": [
+              "adblock",
+              "community-script"
+            ],
+            "template": false,
+            "timeout_clone": null,
+            "timeout_create": null,
+            "timeout_delete": null,
+            "timeout_start": null,
+            "timeout_update": null,
+            "unprivileged": null,
+            "vm_id": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjAifQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "proxmox_virtual_environment_container",
+      "name": "debian_test",
+      "provider": "provider[\"registry.terraform.io/bpg/proxmox\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "clone": [],
+            "console": [],
+            "cpu": [],
+            "description": "",
+            "device_passthrough": [],
+            "disk": [
+              {
+                "datastore_id": "local-zfs",
+                "size": 8
+              }
+            ],
+            "features": [],
+            "hook_script_file_id": null,
+            "id": "105",
+            "initialization": [
+              {
+                "dns": [],
+                "hostname": "debian-test",
+                "ip_config": [
+                  {
+                    "ipv4": [
+                      {
+                        "address": "dhcp",
+                        "gateway": ""
+                      }
+                    ],
+                    "ipv6": []
+                  }
+                ],
+                "user_account": []
+              }
+            ],
+            "memory": [],
+            "mount_point": [],
+            "network_interface": [
+              {
+                "bridge": "vmbr0",
+                "enabled": true,
+                "firewall": false,
+                "mac_address": "BC:24:11:45:B1:F4",
+                "mtu": 0,
+                "name": "eth0",
+                "rate_limit": 0,
+                "vlan_id": 0
+              }
+            ],
+            "node_name": "prxhp136",
+            "operating_system": [
+              {
+                "template_file_id": "",
+                "type": "debian"
+              }
+            ],
+            "pool_id": null,
+            "protection": false,
+            "start_on_boot": null,
+            "started": true,
+            "startup": [],
+            "tags": [],
+            "template": false,
+            "timeout_clone": null,
+            "timeout_create": null,
+            "timeout_delete": null,
+            "timeout_start": null,
+            "timeout_update": null,
+            "unprivileged": null,
+            "vm_id": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjAifQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "proxmox_virtual_environment_container",
+      "name": "docker",
+      "provider": "provider[\"registry.terraform.io/bpg/proxmox\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "clone": [],
+            "console": [
+              {
+                "enabled": true,
+                "tty_count": 2,
+                "type": "tty"
+              }
+            ],
+            "cpu": [
+              {
+                "architecture": "amd64",
+                "cores": 2,
+                "units": 1024
+              }
+            ],
+            "description": "\u003cdiv align='center'\u003e\n  \u003ca href='https://community-scripts.org' target='_blank' rel='noopener noreferrer'\u003e\n    \u003cimg src='https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/images/logo-81x112.png' alt='Logo' style='width:81px;height:112px;'/\u003e\n  \u003c/a\u003e\n\n  \u003ch2 style='font-size: 24px; margin: 20px 0;'\u003eDebian LXC\u003c/h2\u003e\n\n  \u003cp style='margin: 16px 0;'\u003e\n    \u003ca href='https://community-scripts.org/donate' target='_blank' rel='noopener noreferrer'\u003e\n      \u003cimg src='https://img.shields.io/badge/❤️-Sponsoring%20%26%20Donations-FF5E5B' alt='Sponsoring and donations' /\u003e\n    \u003c/a\u003e\n  \u003c/p\u003e\n\n  \u003cp style='margin: 12px 0;'\u003e\n    \u003ca href='https://community-scripts.org/scripts/debian' target='_blank' rel='noopener noreferrer'\u003e\n      \u003cimg src='https://img.shields.io/badge/📦-Open%20Script%20Page-00617f' alt='Open script page' /\u003e\n    \u003c/a\u003e\n  \u003c/p\u003e\n\n  \u003cspan style='margin: 0 10px;'\u003e\n    \u003ci class=\"fa fa-github fa-fw\" style=\"color: #f5f5f5;\"\u003e\u003c/i\u003e\n    \u003ca href='https://github.com/community-scripts/ProxmoxVE' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'\u003eGitHub\u003c/a\u003e\n  \u003c/span\u003e\n  \u003cspan style='margin: 0 10px;'\u003e\n    \u003ci class=\"fa fa-comments fa-fw\" style=\"color: #f5f5f5;\"\u003e\u003c/i\u003e\n    \u003ca href='https://github.com/community-scripts/ProxmoxVE/discussions' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'\u003eDiscussions\u003c/a\u003e\n  \u003c/span\u003e\n  \u003cspan style='margin: 0 10px;'\u003e\n    \u003ci class=\"fa fa-exclamation-circle fa-fw\" style=\"color: #f5f5f5;\"\u003e\u003c/i\u003e\n    \u003ca href='https://github.com/community-scripts/ProxmoxVE/issues' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'\u003eIssues\u003c/a\u003e\n  \u003c/span\u003e\n\u003c/div\u003e\n",
+            "device_passthrough": [],
+            "disk": [
+              {
+                "datastore_id": "local-zfs",
+                "size": 32
+              }
+            ],
+            "features": [],
+            "hook_script_file_id": null,
+            "id": "101",
+            "initialization": [
+              {
+                "dns": [],
+                "hostname": "docker",
+                "ip_config": [
+                  {
+                    "ipv4": [
+                      {
+                        "address": "dhcp",
+                        "gateway": ""
+                      }
+                    ],
+                    "ipv6": []
+                  }
+                ],
+                "user_account": []
+              }
+            ],
+            "memory": [
+              {
+                "dedicated": 4096,
+                "swap": 512
+              }
+            ],
+            "mount_point": [],
+            "network_interface": [
+              {
+                "bridge": "vmbr0",
+                "enabled": true,
+                "firewall": false,
+                "mac_address": "BC:24:11:C5:96:4D",
+                "mtu": 0,
+                "name": "eth0",
+                "rate_limit": 0,
+                "vlan_id": 0
+              }
+            ],
+            "node_name": "prxhp136",
+            "operating_system": [
+              {
+                "template_file_id": "",
+                "type": "debian"
+              }
+            ],
+            "pool_id": null,
+            "protection": false,
+            "start_on_boot": null,
+            "started": true,
+            "startup": [],
+            "tags": [
+              "community-script",
+              "os"
+            ],
+            "template": false,
+            "timeout_clone": null,
+            "timeout_create": null,
+            "timeout_delete": null,
+            "timeout_start": null,
+            "timeout_update": null,
+            "unprivileged": null,
+            "vm_id": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjAifQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "proxmox_virtual_environment_container",
+      "name": "tailscale",
+      "provider": "provider[\"registry.terraform.io/bpg/proxmox\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "clone": [],
+            "console": [
+              {
+                "enabled": true,
+                "tty_count": 2,
+                "type": "tty"
+              }
+            ],
+            "cpu": [],
+            "description": "\u003cdiv align='center'\u003e\n  \u003ca href='https://Helper-Scripts.com' target='_blank' rel='noopener noreferrer'\u003e\n    \u003cimg src='https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/images/logo-81x112.png' alt='Logo' style='width:81px;height:112px;'/\u003e\n  \u003c/a\u003e\n\n  \u003ch2 style='font-size: 24px; margin: 20px 0;'\u003eDebian LXC\u003c/h2\u003e\n\n  \u003cp style='margin: 16px 0;'\u003e\n    \u003ca href='https://ko-fi.com/community_scripts' target='_blank' rel='noopener noreferrer'\u003e\n      \u003cimg src='https://img.shields.io/badge/\u0026#x2615;-Buy us a coffee-blue' alt='spend Coffee' /\u003e\n    \u003c/a\u003e\n  \u003c/p\u003e\n\n  \u003cspan style='margin: 0 10px;'\u003e\n    \u003ci class=\"fa fa-github fa-fw\" style=\"color: #f5f5f5;\"\u003e\u003c/i\u003e\n    \u003ca href='https://github.com/community-scripts/ProxmoxVE' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'\u003eGitHub\u003c/a\u003e\n  \u003c/span\u003e\n  \u003cspan style='margin: 0 10px;'\u003e\n    \u003ci class=\"fa fa-comments fa-fw\" style=\"color: #f5f5f5;\"\u003e\u003c/i\u003e\n    \u003ca href='https://github.com/community-scripts/ProxmoxVE/discussions' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'\u003eDiscussions\u003c/a\u003e\n  \u003c/span\u003e\n  \u003cspan style='margin: 0 10px;'\u003e\n    \u003ci class=\"fa fa-exclamation-circle fa-fw\" style=\"color: #f5f5f5;\"\u003e\u003c/i\u003e\n    \u003ca href='https://github.com/community-scripts/ProxmoxVE/issues' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'\u003eIssues\u003c/a\u003e\n  \u003c/span\u003e\n\u003c/div\u003e\n",
+            "device_passthrough": [],
+            "disk": [
+              {
+                "datastore_id": "local-zfs",
+                "size": 2
+              }
+            ],
+            "features": [],
+            "hook_script_file_id": null,
+            "id": "102",
+            "initialization": [
+              {
+                "dns": [],
+                "hostname": "tailscale",
+                "ip_config": [
+                  {
+                    "ipv4": [
+                      {
+                        "address": "dhcp",
+                        "gateway": ""
+                      }
+                    ],
+                    "ipv6": []
+                  }
+                ],
+                "user_account": []
+              }
+            ],
+            "memory": [
+              {
+                "dedicated": 512,
+                "swap": 512
+              }
+            ],
+            "mount_point": [],
+            "network_interface": [
+              {
+                "bridge": "vmbr0",
+                "enabled": true,
+                "firewall": false,
+                "mac_address": "BC:24:11:CA:68:89",
+                "mtu": 0,
+                "name": "eth0",
+                "rate_limit": 0,
+                "vlan_id": 0
+              }
+            ],
+            "node_name": "prxhp136",
+            "operating_system": [
+              {
+                "template_file_id": "",
+                "type": "debian"
+              }
+            ],
+            "pool_id": null,
+            "protection": false,
+            "start_on_boot": null,
+            "started": true,
+            "startup": [],
+            "tags": [
+              "community-script",
+              "os",
+              "tailscale"
+            ],
+            "template": false,
+            "timeout_clone": null,
+            "timeout_create": null,
+            "timeout_delete": null,
+            "timeout_start": null,
+            "timeout_update": null,
+            "unprivileged": null,
+            "vm_id": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjAifQ=="
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}
