@@ -1,0 +1,17 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
+
+# Sensitive data
+variables.tfvars
+terraform.tfvars
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
