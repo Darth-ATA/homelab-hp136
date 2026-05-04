@@ -1,73 +1,90 @@
-# Homelab Terraform
+# homelab-hp136
 
-Configuración de Terraform para gestionar contenedores LXC en Proxmox.
+Terraform configuration for managing LXC containers on Proxmox VE using the `bpg/proxmox` provider.
 
-## Requisitos
+## Overview
 
-- Terraform >= 1.0
-- Proxmox VE con API habilitada
-- SSH configurado con llaves (para importación manual)
+This project provides Infrastructure as Code (IaC) for a Proxmox homelab environment. It allows you to create, modify, and manage LXC containers programmatically instead of using the Proxmox web interface interactively.
 
-## Estructura
+**Note:** This setup uses Terraform mainly for **creating new containers**. Due to known bugs in the `bpg/proxmox` provider with imports (issues #1406, #1998), existing containers are documented but not managed by Terraform to avoid unintended replacements.
+
+## Project Structure
 
 ```
 homelab-terraform/
-├── main.tf                    # Provider y configuración base
-├── variables.tf               # Definición de variables
-├── nuevo-contenedor-ejemplo.tf  # Ejemplo para nuevos contenedores
-├── .gitignore                # Archivos ignorados
+├── main.tf                      # Provider and base configuration
+├── variables.tf                 # Variable definitions
+├── new-container-example.tf     # Template for new containers
+├── .gitignore                  # Protect sensitive data
 └── README.md
 ```
 
-## Configuración
+## Prerequisites
 
-1. **Crear archivo `terraform.tfvars`** (no se sube a Git):
-   ```bash
-   cat > terraform.tfvars << 'EOL'
-   proxmox_api_token = "root@pam!terraform-token-root=TU_TOKEN_AQUI"
-   proxmox_endpoint = "https://192.168.1.134:8006/api2/json"
-   EOL
-   ```
+- Terraform >= 1.0
+- Proxmox VE with API enabled
+- SSH access configured with keys (for manual imports if needed)
+- Existing LXC templates on Proxmox (e.g., Debian 13)
 
-2. **Inicializar Terraform:**
-   ```bash
-   terraform init
-   ```
+## Setup
 
-3. **Crear un nuevo contenedor:**
-   - Editar `nuevo-contenedor-ejemplo.tf` con el ID, nombre y configuración deseada
-   - Asegurarse de usar un `vm_id` que no esté en uso
-   ```bash
-   terraform plan
-   terraform apply
-   ```
-
-## Contenedores Existentes (No gestionados por Terraform)
-
-Los siguientes contenedores fueron creados manualmente y **NO** están bajo gestión de Terraform para evitar reemplazos no deseados:
-
-| ID  | Nombre    | Descripción |
-|-----|-----------|-------------|
-| 101 | docker    | Contenedor con Docker (2 cores, 4GB RAM) |
-| 102 | tailscale  | Contenedor con Tailscale (1 core, 512MB RAM) |
-| 103 | adguard   | Contenedor con AdGuard (1 core, 512MB RAM) |
-| 105 | debian-test | Contenedor de prueba (1 core, 512MB RAM) |
-
-## Importar Contenedores (Avanzado)
-
-Si deseas importar un contenedor existente (requiere downtime):
+### 1. Create `terraform.tfvars` (not committed to Git):
 
 ```bash
-# Importar
-terraform import proxmox_virtual_environment_container.nombre prxhp136/ID
+cat > terraform.tfvars << 'EOL'
+proxmox_api_token = "root@pam!terraform-token-root=YOUR_TOKEN_HERE"
+proxmox_endpoint = "https://192.168.1.134:8006/api2/json"
+EOL
+```
 
-# Verificar
+### 2. Initialize Terraform:
+
+```bash
+terraform init
+```
+
+### 3. Create a new container:
+
+- Copy `new-container-example.tf` to a new file or edit it
+- Update `vm_id` (use an unused ID), `hostname`, and configuration
+- Run:
+  ```bash
+  terraform plan
+  terraform apply
+  ```
+
+## Existing Containers (Not managed by Terraform)
+
+The following containers were created manually and are **NOT** under Terraform management to prevent unintended replacements due to provider bugs:
+
+| ID  | Name      | Description |
+|-----|-----------|-------------|
+| 101 | docker    | Container with Docker (2 cores, 4GB RAM) |
+| 102 | tailscale  | Container with Tailscale (1 core, 512MB RAM) |
+| 103 | adguard   | Container with AdGuard (1 core, 512MB RAM) |
+| 105 | debian-test | Test container (1 core, 512MB RAM) |
+
+## Importing Containers (Advanced)
+
+If you want to import an existing container (requires downtime):
+
+```bash
+# Import
+terraform import proxmox_virtual_environment_container.name prxhp136/ID
+
+# Verify
 terraform show
 ```
 
-**Advertencia:** El provider `bpg/proxmox` tiene bugs conocidos con importación que pueden causar reemplazos no deseados. Usar con precaución.
+**Warning:** The `bpg/proxmox` provider has known issues (#1406, #1998) that may cause forced replacements after import. Use with caution.
 
-## Recursos
+## Resources
 
-- [Documentación del Provider bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox/latest/docs)
+- [bpg/proxmox Provider Documentation](https://registry.terraform.io/providers/bpg/proxmox/latest/docs)
 - [Proxmox VE API](https://pve.proxmox.com/pve-docs/api-viewer/index.html)
+
+## Security
+
+- API tokens and state files are excluded from Git via `.gitignore`
+- Never commit `terraform.tfvars` or `.terraform/` directory
+- Use sensitive variables for passwords and tokens
