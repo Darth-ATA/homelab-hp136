@@ -15,8 +15,15 @@ homelab-terraform/
 ├── main.tf                      # Provider and base configuration
 ├── variables.tf                 # Variable definitions
 ├── new-container-example.tf     # Template for new containers
+├── NETWORK.md                   # Network configuration and static IPs
+├── README.md                    # This file
 ├── .gitignore                  # Protect sensitive data
-└── README.md
+├── docs/                       # Additional documentation
+│   ├── adguard-dns-records.md
+│   ├── homeassistant-static-ip.md
+│   └── npm-config.md
+└── scripts/                    # Utility scripts
+    └── set-static-ips.sh
 ```
 
 ## Prerequisites
@@ -57,12 +64,15 @@ terraform init
 
 The following containers were created manually and are **NOT** under Terraform management to prevent unintended replacements due to provider bugs:
 
-| ID  | Name      | Description |
-|-----|-----------|-------------|
-| 101 | docker    | Container with Docker (2 cores, 4GB RAM) |
-| 102 | tailscale  | Container with Tailscale (1 core, 512MB RAM) |
-| 103 | adguard   | Container with AdGuard (1 core, 512MB RAM) |
-| 105 | debian-test | Test container (1 core, 512MB RAM) |
+| ID  | Name      | Description | Static IP |
+|-----|-----------|-------------|-----------|
+| 100 | homeassistant | Home Assistant VM (HAOS) | 192.168.1.100 |
+| 101 | docker    | Container with Docker + NPM + Arcane (2 cores, 4GB RAM) | 192.168.1.142 |
+| 102 | tailscale  | Container with Tailscale (1 core, 512MB RAM) | 192.168.1.102 |
+| 103 | adguard   | Container with AdGuard (1 core, 512MB RAM) | 192.168.1.2 |
+| 105 | debian-test | Test container (1 core, 512MB RAM) | 192.168.1.105 |
+
+**All services use static IPs configured in Proxmox/LXC/VM configs. See [NETWORK.md](./NETWORK.md) for complete network documentation.**
 
 ## Importing Containers (Advanced)
 
