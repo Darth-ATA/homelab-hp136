@@ -14,6 +14,12 @@ This project provides Infrastructure as Code (IaC) for a Proxmox homelab environ
 homelab-terraform/
 ├── main.tf                      # Provider and base configuration
 ├── variables.tf                 # Variable definitions
+├── firewall.tf                  # Firewall configuration (cluster, security groups, rules)
+├── homeassistant-vm.tf          # Home Assistant VM firewall options
+├── adguard-container.tf         # AdGuard LXC container
+├── docker-container.tf          # Docker/NPM LXC container
+├── tailscale-container.tf       # Tailscale LXC container
+├── debian-test-container.tf     # Test LXC container
 ├── new-container-example.tf     # Template for new containers
 ├── NETWORK.md                   # Network configuration and static IPs
 ├── README.md                    # This file
@@ -66,7 +72,7 @@ The following containers were created manually and are **NOT** under Terraform m
 
 | ID  | Name      | Description | Static IP |
 |-----|-----------|-------------|-----------|
-| 100 | homeassistant | Home Assistant VM (HAOS) | 192.168.1.100 |
+| 100 | homeassistant | Home Assistant VM (HAOS) - Firewall options managed by Terraform | 192.168.1.100 |
 | 101 | docker    | Container with Docker + NPM + Arcane (2 cores, 4GB RAM) | 192.168.1.142 |
 | 102 | tailscale  | Container with Tailscale (1 core, 512MB RAM) | 192.168.1.102 |
 | 103 | adguard   | Container with AdGuard (1 core, 512MB RAM) | 192.168.1.2 |
@@ -87,6 +93,53 @@ terraform show
 ```
 
 **Warning:** The `bpg/proxmox` provider has known issues (#1406, #1998) that may cause forced replacements after import. Use with caution.
+
+## Firewall Configuration ✅
+
+The firewall is **enabled with permissive ACCEPT policies** to avoid breaking existing services. See [Issue #3](https://github.com/Darth-ATA/homelab-hp136/issues/3) for implementation details.
+
+### Status (2026-05-05)
+- ✅ Cluster-level firewall enabled
+- ✅ Security groups created (mgmt, dns, web, homeassistant, tailscale)
+- ✅ Cluster firewall rules applied
+- ✅ Container-level firewall enabled on all LXC containers
+- ✅ Home Assistant VM firewall options configured
+
+### Architecture
+
+- **Cluster-level firewall**: Enabled with ACCEPT policies (input/output)
+- **Security Groups**: Reusable rule sets for common services
+- **Container-level firewall**: Enabled on all LXC containers (`firewall = true` on network interfaces)
+
+### Security Groups Defined
+
+| Group | Purpose | Target | Ports |
+|-------|---------|--------|-------|
+| `mgmt` | Management access (SSH + Proxmox UI) | 192.168.1.134 | 22, 8006 |
+| `dns` | AdGuard DNS | 192.168.1.2 | 53/tcp+udp |
+| `web` | Docker/NPM services | 192.168.1.142 | 80, 443, 81 |
+| `homeassistant` | Home Assistant UI | 192.168.1.100 | 8123 |
+| `tailscale` | Tailscale direct connections | 192.168.1.102 | 41641/udp |
+
+### Services & Ports
+
+| Service | IP | Open Ports | Notes |
+|---------|-----|------------|-------|
+| Proxmox Host | 192.168.1.134 | 8006 (UI), 22 (SSH) | Permissive (future: restrict to management IPs) |
+| Home Assistant (VM 100) | 192.168.1.100 | 8123 | VM not managed; firewall options ARE managed ✅ |
+| Docker/NPM (LXC 101) | 192.168.1.142 | 80, 443, 81 | NPM + Arcane |
+| Tailscale (LXC 102) | 192.168.1.102 | 41641/UDP | Optional direct connections |
+| AdGuard (LXC 103) | 192.168.1.2 | 53/tcp+udp | DNS server |
+| Debian Test (LXC 105) | 192.168.1.105 | - | Test container |
+
+### Firewall Files
+
+- `firewall.tf` - Cluster firewall, security groups, and rules
+- `homeassistant-vm.tf` - Home Assistant VM firewall options
+
+### Future Hardening
+
+A follow-up issue will restrict SSH and Proxmox UI to management IPs only, and potentially implement VLAN for IoT devices.
 
 ## Resources
 

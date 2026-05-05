@@ -9,3 +9,21 @@ variable "proxmox_endpoint" {
   type        = string
   default     = "https://192.168.1.134:8006/api2/json"
 }
+
+variable "local_network" {
+  description = "Local network CIDR"
+  type        = string
+  default     = "192.168.1.0/24"
+}
+
+variable "management_ips" {
+  description = "IPs allowed for SSH and Proxmox UI (for future tightening)"
+  type        = list(string)
+  default     = ["192.168.1.0/24"]
+}
+
+variable "proxmox_host_ip" {
+  description = "Proxmox host IP"
+  type        = string
+  default     = "192.168.1.134"
+}
