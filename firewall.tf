@@ -103,8 +103,8 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "web" {
 }
 
 # Security Group: Home Assistant
-resource "proxmox_virtual_environment_cluster_firewall_security_group" "homeassistant" {
-  name    = "homeassistant"
+resource "proxmox_virtual_environment_cluster_firewall_security_group" "home_assistant" {
+  name    = "home_assistant"
   comment = "Home Assistant"
 
   rule {
@@ -114,6 +114,26 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "homeassi
     dest    = "192.168.1.100"
     dport   = "8123"
     proto   = "tcp"
+    source  = var.local_network
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "mDNS (Zeroconf discovery)"
+    dest    = "192.168.1.100"
+    dport   = "5353"
+    proto   = "udp"
+    source  = var.local_network
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "UPnP (discovery)"
+    dest    = "192.168.1.100"
+    dport   = "1900"
+    proto   = "udp"
     source  = var.local_network
   }
 }
@@ -154,7 +174,7 @@ resource "proxmox_virtual_environment_firewall_rules" "cluster" {
   }
 
   rule {
-    security_group = proxmox_virtual_environment_cluster_firewall_security_group.homeassistant.name
+    security_group = proxmox_virtual_environment_cluster_firewall_security_group.home_assistant.name
     comment        = "Home Assistant"
   }
 

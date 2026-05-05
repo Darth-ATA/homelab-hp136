@@ -3,9 +3,9 @@
 # (See README.md for explanation regarding provider bugs)
 
 # Firewall Options for Home Assistant VM
-resource "proxmox_virtual_environment_firewall_options" "homeassistant" {
-  node_name = "prxhp136"
-  vm_id     = 100
+resource "proxmox_virtual_environment_firewall_options" "home_assistant" {
+  node_name = var.proxmox_node_name
+  vm_id     = var.home_assistant_vm_id
 
   enabled       = true
   input_policy  = "ACCEPT"

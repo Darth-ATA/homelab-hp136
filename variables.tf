@@ -27,3 +27,15 @@ variable "proxmox_host_ip" {
   type        = string
   default     = "192.168.1.134"
 }
+
+variable "proxmox_node_name" {
+  description = "Proxmox node name"
+  type        = string
+  default     = "prxhp136"
+}
+
+variable "home_assistant_vm_id" {
+  description = "Home Assistant VM ID"
+  type        = number
+  default     = 100
+}

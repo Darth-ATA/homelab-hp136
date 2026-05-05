@@ -15,7 +15,7 @@ homelab-terraform/
 ├── main.tf                      # Provider and base configuration
 ├── variables.tf                 # Variable definitions
 ├── firewall.tf                  # Firewall configuration (cluster, security groups, rules)
-├── homeassitant-vm.tf          # Home Assistant VM firewall options
+├── home_assitant-vm.tf          # Home Assistant VM firewall options
 ├── adguard-container.tf         # AdGuard LXC container
 ├── docker-container.tf          # Docker/NPM LXC container
 ├── tailscale-container.tf       # Tailscale LXC container
@@ -25,7 +25,7 @@ homelab-terraform/
 ├── .gitignore                  # Protect sensitive data
 ├── docs/                       # Additional documentation
 │   ├── adguard-dns-records.md
-│   ├── homeassitant-static-ip.md
+│   ├── home_assitant-static-ip.md
 │   └── npm-config.md
 └── scripts/                    # Utility scripts
     └── set-static-ips.sh
@@ -71,7 +71,7 @@ The following containers were created manually and are **NOT** under Terraform m
 
 | ID  | Name      | Description | Static IP |
 |-----|------------|-------------|-----------|
-| 100 | homeassitant | Home Assistant VM (HAOS) - Firewall options managed by Terraform. Backups: see Storage Strategy | 192.168.1.100 |
+| 100 | home_assistant | Home Assistant VM (HAOS) - Firewall options managed by Terraform. Backups: see Storage Strategy | 192.168.1.100 |
 | 101 | docker    | Docker with NPM + Arcane (2 cores, 4GB RAM, 32GB disk) | 192.168.1.142 |
 | 102 | tailscale  | Tailscale VPN connectivity (1 core, 512MB RAM, 2GB disk) | 192.168.1.102 |
 | 103 | adguard   | AdGuard Home DNS ad-blocker (1 core, 512MB RAM, 2GB disk) | 192.168.1.2 |
@@ -98,7 +98,7 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 
 ### Status (2026-05-05)
 - ✅ Cluster-level firewall enabled
-- ✅ Security groups created (mgmt, dns, web, homeassistant, tailscale)
+- ✅ Security groups created (mgmt, dns, web, home_assistant, tailscale)
 - ✅ Cluster firewall rules applied
 - ✅ Container-level firewall enabled on all LXC containers
 - ✅ Home Assistant VM firewall options configured
@@ -116,7 +116,7 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 | `mgmt` | Management access (SSH + Proxmox UI) | 192.168.1.134 | 22, 8006 |
 | `dns` | AdGuard DNS | 192.168.1.2 | 53/tcp+udp |
 | `web` | Docker/NPM services | 192.168.1.142 | 80, 443, 81 |
-| `homeassistant` | Home Assistant UI | 192.168.1.100 | 8123 |
+| `home_assistant` | Home Assistant UI | 192.168.1.100 | 8123 |
 | `tailscale` | Tailscale direct connections | 192.168.1.102 | 41641/udp |
 
 ### Services & Ports
@@ -132,7 +132,7 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 ### Firewall Files
 
 - `firewall.tf` - Cluster firewall, security groups, and rules
-- `homeassistant-vm.tf` - Home Assistant VM firewall options
+- `home_assitant-vm.tf` - Home Assistant VM firewall options
 
 ### Future Hardening
 
