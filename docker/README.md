@@ -6,7 +6,7 @@ This directory contains docker-compose files for services running in the Docker 
 
 | Service | Directory | Compose File | Container Name | Ports | Description |
 |---------|-----------|--------------|----------------|-------|-------------|
-| Nginx Proxy Manager | `npm/` | `compose.yaml` | `npm-app-1` | 80, 81, 443 | Reverse proxy + SSL termination |
+| Nginx Proxy Manager | `npm/` | `compose.yml` | `npm-app` | 80, 81, 443 | Reverse proxy + SSL termination |
 | Arcane | `arcane/` | `compose.yml` | `arcane` | 3552 | Game server management |
 | Vaultwarden | `vaultwarden/` | `compose.yml` | `vaultwarden` | 8080 | Bitwarden-compatible password manager |
 

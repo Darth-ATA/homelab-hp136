@@ -1,0 +1,24 @@
+# Arcane - Game Server Management Panel
+# Access: http://192.168.1.142:3552
+# Configure game servers via the web interface
+
+services:
+  arcane:
+    image: marctm/arcane:latest
+    container_name: arcane
+    restart: unless-stopped
+    ports:
+      - "3552:3552"
+    volumes:
+      - ./data:/arcane/data
+      - ./servers:/arcane/servers
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
