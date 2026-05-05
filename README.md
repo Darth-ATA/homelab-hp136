@@ -72,7 +72,7 @@ The following containers were created manually and are **NOT** under Terraform m
 
 | ID  | Name      | Description | Static IP |
 |-----|-----------|-------------|-----------|
-| 100 | homeassistant | Home Assistant VM (HAOS) - Firewall options managed by Terraform | 192.168.1.100 |
+| 100 | homeassistant | Home Assistant VM (HAOS) - Firewall options managed by Terraform. Backups: see Storage Strategy | 192.168.1.100 |
 | 101 | docker    | Container with Docker + NPM + Arcane (2 cores, 4GB RAM) | 192.168.1.142 |
 | 102 | tailscale  | Container with Tailscale (1 core, 512MB RAM) | 192.168.1.102 |
 | 103 | adguard   | Container with AdGuard (1 core, 512MB RAM) | 192.168.1.2 |
@@ -163,6 +163,8 @@ A follow-up issue will restrict SSH and Proxmox UI to management IPs only, and p
 | tailscale | 102 | Daily 22:30 | local-zfs (ZFS) | **Daily + Last of each month** |
 | adguard | 103 | Daily 23:00 | local-zfs (ZFS) | **Daily + Last of each month** |
 
+**Note:** Consider moving VM 100 backups from `local` to `local-zfs` for better compression. See [Storage Strategy](#storage-strategy).
+
 ### Special Retention Policy
 
 The cleanup script (`/usr/local/bin/cleanup-backups.sh`) implements a **custom retention policy**:
@@ -191,6 +193,64 @@ ssh root@192.168.1.134 "/usr/local/bin/cleanup-backups.sh"
 # Check log
 ssh root@192.168.1.134 "cat /var/log/backup-cleanup.log"
 ```
+
+## Storage Strategy
+
+### Storage Allocation
+
+| Storage | Type | Total | Used | Available | Used By |
+|---------|------|-------|------|-----------|---------|
+| `local` (dir) | Directory | 468GB | 105GB (22.5%) | 363GB | Proxmox ISOs, templates, VM 100 backups |
+| `local-zfs` (zfs) | ZFS pool | 370GB | 7.4GB (2%) | 362GB | Container disks (101, 102, 103, 105), container backups |
+
+### Why `local-zfs` for Containers
+- **ZFS compression** reduces actual disk usage
+- Better performance for container workloads
+- All container disks and backups are already on `local-zfs` ✓
+
+### VM 100 (Home Assistant) Backup Storage
+Currently, HAOS backups are stored on `local` (dir). To optimize storage:
+
+**Option A: Via Proxmox Web UI**
+1. Go to Datacenter → Backup
+2. Find the backup job for VM 100
+3. Edit → Change Storage from `local` to `local-zfs`
+4. Save and run a test backup
+
+**Option B: Via CLI**
+```bash
+# Edit backup job (find job ID first)
+ssh root@192.168.1.134 "cat /etc/pve/jobs.cfg"
+
+# Or run one-time backup to local-zfs
+ssh root@192.168.1.134 "vzdump 100 --storage local-zfs --mode snapshot"
+```
+
+**Cleanup old backups (keep last 3-5):**
+```bash
+# List HAOS backups
+ssh root@192.168.1.134 "ls -lht /var/lib/vz/dump/vzdump-qemu-100-*.vma.*"
+
+# Remove old backups (example - adjust dates as needed)
+ssh root@192.168.1.134 "rm /var/lib/vz/dump/vzdump-qemu-100-2026_0*"
+```
+
+### Cleanup: Unused Templates/ISOs
+```bash
+# Check what's in templates directory
+ssh root@192.168.1.134 "ls -lh /var/lib/vz/template/cache/ /var/lib/vz/template/iso/"
+
+# Remove unused templates (verify first!)
+ssh root@192.168.1.134 "rm /var/lib/vz/template/cache/<unused-template>.tar.gz"
+```
+
+### Disk Size Recommendations
+| Container | Current Size | Recommendation |
+|-----------|--------------|----------------|
+| docker (101) | 32GB | Monitor - sufficient for Docker + NPM |
+| tailscale (102) | 2GB | Sufficient for Tailscale only |
+| adguard (103) | 2GB | Sufficient for DNS |
+| debian-test (105) | 8GB | Adequate for testing |
 
 ### Restore Procedures
 
