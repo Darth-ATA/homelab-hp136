@@ -125,7 +125,7 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 |---------|-----|------------|-------|
 | Proxmox Host | 192.168.1.134 | 8006 (UI), 22 (SSH) | Permissive (future: restrict to management IPs) |
 | Home Assistant (VM 100) | 192.168.1.100 | 8123 | VM not managed; firewall options ARE managed ✅ |
-| Docker/NPM (LXC 101) | 192.168.1.142 | 80, 443, 81 | NPM + Arcane |
+| Docker/NPM (LXC 101) | 192.168.1.142 | 80, 443, 81 | NPM + Arcane + Vaultwarden (8080) |
 | Tailscale (LXC 102) | 192.168.1.102 | 41641/UDP | Optional direct connections |
 | AdGuard (LXC 103) | 192.168.1.2 | 53/tcp+udp | DNS server |
 
@@ -245,7 +245,7 @@ ssh root@192.168.1.134 "rm /var/lib/vz/template/cache/<unused-template>.tar.gz"
 
 | Container | Current Size | Recommendation |
 |-----------|--------------|----------------|
-| docker (101) | 32GB | Monitor - sufficient for Docker + NPM |
+| docker (101) | 32GB | Monitor - sufficient for Docker + NPM + Vaultwarden |
 | tailscale (102) | 2GB | Sufficient for Tailscale only |
 | adguard (103) | 2GB | Sufficient for DNS |
 

@@ -35,6 +35,7 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | Home Assistant | `http://192.168.1.100:8123` | VM 100 (HA OS) |
 | Nginx Proxy Manager | `http://192.168.1.142:81` | Docker container in LXC 101 |
 | Arcane | `http://192.168.1.142:3552` | Docker container in LXC 101 |
+| Vaultwarden | `https://vw.hp136.duckdns.org` | Docker container in LXC 101 |
 | AdGuard Home | `http://192.168.1.2` | LXC 103 |
 | Tailscale | `http://192.168.1.102` | LXC 102 |
 

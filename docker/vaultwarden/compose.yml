@@ -1,0 +1,26 @@
+# Vaultwarden - Bitwarden-compatible password manager
+# Domain: vw.hp136.duckdns.org
+# Follows pattern: /root/docker/vaultwarden/
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    environment:
+      - WEBSOCKET_ENABLED=true
+      - SIGNUPS_ALLOWED=true  # Set to false after creating your account
+      - INVITATIONS_ALLOWED=false
+      - DOMAIN=https://vw.hp136.duckdns.org
+      # Optional: Set admin token for admin panel
+      # - ADMIN_TOKEN=your-secure-admin-token-here
+    volumes:
+      - ./data:/data
+    ports:
+      - "8080:80"
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
