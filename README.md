@@ -15,18 +15,17 @@ homelab-terraform/
 ├── main.tf                      # Provider and base configuration
 ├── variables.tf                 # Variable definitions
 ├── firewall.tf                  # Firewall configuration (cluster, security groups, rules)
-├── homeassistant-vm.tf          # Home Assistant VM firewall options
+├── homeassitant-vm.tf          # Home Assistant VM firewall options
 ├── adguard-container.tf         # AdGuard LXC container
 ├── docker-container.tf          # Docker/NPM LXC container
 ├── tailscale-container.tf       # Tailscale LXC container
-├── debian-test-container.tf     # Test LXC container
 ├── new-container-example.tf     # Template for new containers
 ├── NETWORK.md                   # Network configuration and static IPs
 ├── README.md                    # This file
 ├── .gitignore                  # Protect sensitive data
 ├── docs/                       # Additional documentation
 │   ├── adguard-dns-records.md
-│   ├── homeassistant-static-ip.md
+│   ├── homeassitant-static-ip.md
 │   └── npm-config.md
 └── scripts/                    # Utility scripts
     └── set-static-ips.sh
@@ -71,12 +70,11 @@ terraform init
 The following containers were created manually and are **NOT** under Terraform management to prevent unintended replacements due to provider bugs:
 
 | ID  | Name      | Description | Static IP |
-|-----|-----------|-------------|-----------|
-| 100 | homeassistant | Home Assistant VM (HAOS) - Firewall options managed by Terraform. Backups: see Storage Strategy | 192.168.1.100 |
-| 101 | docker    | Container with Docker + NPM + Arcane (2 cores, 4GB RAM) | 192.168.1.142 |
-| 102 | tailscale  | Container with Tailscale (1 core, 512MB RAM) | 192.168.1.102 |
-| 103 | adguard   | Container with AdGuard (1 core, 512MB RAM) | 192.168.1.2 |
-| 105 | debian-test | Test container (1 core, 512MB RAM) | 192.168.1.105 |
+|-----|------------|-------------|-----------|
+| 100 | homeassitant | Home Assistant VM (HAOS) - Firewall options managed by Terraform. Backups: see Storage Strategy | 192.168.1.100 |
+| 101 | docker    | Docker with NPM + Arcane (2 cores, 4GB RAM, 32GB disk) | 192.168.1.142 |
+| 102 | tailscale  | Tailscale VPN connectivity (1 core, 512MB RAM, 2GB disk) | 192.168.1.102 |
+| 103 | adguard   | AdGuard Home DNS ad-blocker (1 core, 512MB RAM, 2GB disk) | 192.168.1.2 |
 
 **All services use static IPs configured in Proxmox/LXC/VM configs. See [NETWORK.md](./NETWORK.md) for complete network documentation.**
 
@@ -130,7 +128,6 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 | Docker/NPM (LXC 101) | 192.168.1.142 | 80, 443, 81 | NPM + Arcane |
 | Tailscale (LXC 102) | 192.168.1.102 | 41641/UDP | Optional direct connections |
 | AdGuard (LXC 103) | 192.168.1.2 | 53/tcp+udp | DNS server |
-| Debian Test (LXC 105) | 192.168.1.105 | - | Test container |
 
 ### Firewall Files
 
@@ -201,7 +198,7 @@ ssh root@192.168.1.134 "cat /var/log/backup-cleanup.log"
 | Storage | Type | Total | Used | Available | Used By |
 |---------|------|-------|------|-----------|---------|
 | `local` (dir) | Directory | 468GB | 105GB (22.5%) | 363GB | Proxmox ISOs, templates, VM 100 backups |
-| `local-zfs` (zfs) | ZFS pool | 370GB | 7.4GB (2%) | 362GB | Container disks (101, 102, 103, 105), container backups |
+| `local-zfs` (zfs) | ZFS pool | 370GB | 7.4GB (2%) | 362GB | Container disks (101, 102, 103), container backups |
 
 ### Why `local-zfs` for Containers
 - **ZFS compression** reduces actual disk usage
@@ -245,12 +242,12 @@ ssh root@192.168.1.134 "rm /var/lib/vz/template/cache/<unused-template>.tar.gz"
 ```
 
 ### Disk Size Recommendations
+
 | Container | Current Size | Recommendation |
 |-----------|--------------|----------------|
 | docker (101) | 32GB | Monitor - sufficient for Docker + NPM |
 | tailscale (102) | 2GB | Sufficient for Tailscale only |
 | adguard (103) | 2GB | Sufficient for DNS |
-| debian-test (105) | 8GB | Adequate for testing |
 
 ### Restore Procedures
 
