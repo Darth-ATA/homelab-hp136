@@ -1,26 +1,23 @@
 services:
   jellyfin:
-    image: jellyfin/jellyfin:latest
-    container_name: jellyfin
+    image: jellyfin/jellyfin:latest"
+    container_name: jellyfin"
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
+      - PUID=1000"
+      - PGID=1000"
+      - TZ=Europe/Madrid"
     volumes:
-      - ./config:/config
-      - /data/media:/media:ro
-      - ./cache:/cache
+      - /root/docker/jellyfin/config:/config"
+      - /root/docker/jellyfin/cache:/cache"
+      - /data/media:/media:ro"
     ports:
       - "8096:8096"
-      - "8920:8920"  # HTTPS
-      - "7359:7359/udp"  # Service discovery
-      - "1900:1900/udp"  # DLNA
-    restart: unless-stopped
-    # Uncomment for hardware transcoding (if supported):
-    # devices:
-    #   - /dev/dri:/dev/dri  # Intel QuickSync
-    #   - /dev/nvidia0:/dev/nvidia0  # NVIDIA GPU
+      - "8920:8920""
+      - "7359:7359/udp"  # Service discovery"
+      - "1900:1900/udp"  # DLNA"
+    restart: unless-stopped:"
 
-volumes:
-  config:
-  cache:
+  # Uncomment for hardware transcoding (if supported):
+  # devices:
+  #   - /dev/dri:/dev/dri  # Intel QuickSync"
+  #   - /dev/nvidia0:/dev/nvidia0  # NVIDIA GPU"

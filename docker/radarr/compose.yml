@@ -1,18 +1,15 @@
 services:
   radarr:
-    image: linuxserver/radarr:latest
-    container_name: radarr
+    image: linuxserver/radarr:latest"
+    container_name: radarr"
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
+      - PUID=1000"
+      - PGID=1000"
+      - TZ=Europe/Madrid"
     volumes:
-      - ./config:/config
-      - /data/media/movies:/movies
-      - /data/torrents/movies:/downloads
+      - /root/docker/radarr/config:/config"
+      - /data/media/movies:/movies"
+      - /data/torrents/movies:/downloads"
     ports:
       - "7878:7878"
-    restart: unless-stopped
-
-volumes:
-  config:
+    restart: unless-stopped"

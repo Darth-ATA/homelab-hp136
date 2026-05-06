@@ -18,7 +18,7 @@ services:
       - OPENVPN_PASSWORD=${VPN_PASS}
       - SERVER_COUNTRIES=Netherlands
     ports:
-      - "8080:8080"  # qBittorrent UI (routed through VPN)
+      - "8081:8080"  # qBittorrent UI (routed through VPN)
       - "6881:6881"   # Torrent port
       - "6881:6881/udp"
     restart: unless-stopped
@@ -28,90 +28,92 @@ services:
   # qBittorrent - Torrent Client (behind VPN)
   qbittorrent:
     image: linuxserver/qbittorrent:latest
-    container_name: qbittorrent
-    network_mode: "service:gluetun"
+    container_name: qbittorrent"
+    network_mode: "service:gluetun""
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
-      - WEBUI_PORT=8080
+      - PUID=1000"
+      - PGID=1000"
+      - TZ=Europe/Madrid"
+      - WEBUI_PORT=8080"
     volumes:
-      - ./qbittorrent/config:/config
-      - /data/torrents:/downloads
+      - /root/docker/qbittorrent/config:/config"
+      - /data/torrents:/downloads"
     depends_on:
-      - gluetun
-    restart: unless-stopped
+      - gluetun"
+    restart: unless-stopped"
 
   # Prowlarr - Indexer Management
   prowlarr:
-    image: linuxserver/prowlarr:latest
-    container_name: prowlarr
+    image: linuxserver/prowlarr:latest"
+    container_name: prowlarr"
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
+      - PUID=1000"
+      - PGID=1000"
+      - TZ=Europe/Madrid"
     volumes:
-      - ./prowlarr/config:/config
+      - /root/docker/prowlarr/config:/config"
     ports:
-      - "9696:9696"
-    restart: unless-stopped
+      - "9696:9696""
+    restart: unless-stopped"
     networks:
-      - media_network
+      - media_network"
 
   # Radarr - Movies
   radarr:
-    image: linuxserver/radarr:latest
-    container_name: radarr
+    image: linuxserver/radarr:latest"
+    container_name: radarr"
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
+      - PUID=1000"
+      - PGID=1000"
+      - TZ=Europe/Madrid"
     volumes:
-      - ./radarr/config:/config
-      - /data/media/movies:/movies
-      - /data/torrents/movies:/downloads
+      - /root/docker/radarr/config:/config"
+      - /data/media/movies:/movies"
+      - /data/torrents/movies:/downloads"
     ports:
-      - "7878:7878"
-    restart: unless-stopped
+      - "7878:7878""
+    restart: unless-stopped"
     networks:
-      - media_network
+      - media_network"
 
   # Sonarr - TV Shows
   sonarr:
-    image: linuxserver/sonarr:latest
-    container_name: sonarr
+    image: linuxserver/sonarr:latest"
+    container_name: sonarr"
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
+      - PUID=1000"
+      - PGID=1000"
+      - TZ=Europe/Madrid"
     volumes:
-      - ./sonarr/config:/config
-      - /data/media/tv:/tv
-      - /data/torrents/tv:/downloads
+      - /root/docker/sonarr/config:/config"
+      - /data/media/tv:/tv"
+      - /data/torrents/tv:/downloads"
     ports:
-      - "8989:8989"
-    restart: unless-stopped
+      - "8989:8989""
+    restart: unless-stopped"
     networks:
-      - media_network
+      - media_network"
 
   # Jellyfin - Media Server
   jellyfin:
-    image: jellyfin/jellyfin:latest
-    container_name: jellyfin
+    image: jellyfin/jellyfin:latest"
+    container_name: jellyfin"
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
+      - PUID=1000"
+      - PGID=1000"
+      - TZ=Europe/Madrid"
     volumes:
-      - ./jellyfin/config:/config
-      - ./jellyfin/cache:/cache
-      - /data/media:/media:ro
+      - /root/docker/jellyfin/config:/config"
+      - /root/docker/jellyfin/cache:/cache"
+      - /data/media:/media:ro"
     ports:
-      - "8096:8096"
-      - "8920:8920"
-    restart: unless-stopped
+      - "8096:8096""
+      - "8920:8920""
+      - "7359:7359/udp"  # Service discovery"
+      - "1900:1900/udp"  # DLNA"
+    restart: unless-stopped"
     networks:
-      - media_network
+      - media_network"
     # Uncomment for hardware transcoding:
-    # devices:
-    #   - /dev/dri:/dev/dri  # Intel QuickSync
+    # devices:"
+    #   - /dev/dri:/dev/dri  # Intel QuickSync"
