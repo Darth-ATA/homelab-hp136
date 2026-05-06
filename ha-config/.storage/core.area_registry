@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "minor_version": 9,
+  "key": "core.area_registry",
+  "data": {
+    "areas": [
+      {
+        "aliases": [],
+        "floor_id": null,
+        "humidity_entity_id": null,
+        "icon": "mdi:sofa",
+        "id": "salon",
+        "labels": [],
+        "name": "Salón",
+        "picture": null,
+        "temperature_entity_id": null,
+        "created_at": "2026-03-15T10:45:14.876572+00:00",
+        "modified_at": "2026-03-15T10:45:14.876574+00:00"
+      },
+      {
+        "aliases": [],
+        "floor_id": null,
+        "humidity_entity_id": null,
+        "icon": "mdi:stove",
+        "id": "cocina",
+        "labels": [],
+        "name": "Cocina",
+        "picture": null,
+        "temperature_entity_id": null,
+        "created_at": "2026-03-15T10:45:14.876668+00:00",
+        "modified_at": "2026-03-15T10:45:14.876669+00:00"
+      },
+      {
+        "aliases": [],
+        "floor_id": null,
+        "humidity_entity_id": null,
+        "icon": "mdi:bed",
+        "id": "dormitorio",
+        "labels": [],
+        "name": "Dormitorio",
+        "picture": null,
+        "temperature_entity_id": null,
+        "created_at": "2026-03-15T10:45:14.876708+00:00",
+        "modified_at": "2026-03-15T10:45:14.876709+00:00"
+      },
+      {
+        "aliases": [],
+        "floor_id": null,
+        "humidity_entity_id": null,
+        "icon": "mdi:desk",
+        "id": "despacho",
+        "labels": [],
+        "name": "Despacho",
+        "picture": null,
+        "temperature_entity_id": null,
+        "created_at": "2026-03-15T20:25:46.324625+00:00",
+        "modified_at": "2026-03-15T20:25:46.324629+00:00"
+      },
+      {
+        "aliases": [],
+        "floor_id": null,
+        "humidity_entity_id": null,
+        "icon": "mdi:washing-machine",
+        "id": "lavadero",
+        "labels": [],
+        "name": "Lavadero",
+        "picture": null,
+        "temperature_entity_id": null,
+        "created_at": "2026-03-15T20:27:24.420200+00:00",
+        "modified_at": "2026-03-15T20:27:24.420204+00:00"
+      }
+    ]
+  }
+}

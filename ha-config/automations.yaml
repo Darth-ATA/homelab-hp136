@@ -1,0 +1,42 @@
+- id: '1743833516442'
+  alias: Preguntar activar termo al llegar al gym
+  description: Pregunta si activar el termo cuando llego al gimnasio si está apagado
+  triggers:
+  - entity_id: person.alejandro
+    zone: zone.dreamfit_moratalaz
+    event: enter
+    trigger: zone
+  conditions:
+  - condition: state
+    entity_id: switch.sonoff_s60zbtpf
+    state: 'off'
+  actions:
+  - data:
+      title: "🔋 Termo Gym"
+      message: ¿Quieres encender el termo ahora que estás en el gym?
+      data:
+        tag: termo_gym
+        actions:
+        - action: ACTIVATE_TERMO
+          title: Sí, encender
+        - action: IGNORE_TERMO
+          title: 'No'
+    action: notify.mobile_app_alejandros_iphone
+  - wait_for_trigger:
+    - event_type: mobile_app_notification_action
+      event_data:
+        action: ACTIVATE_TERMO
+      trigger: event
+    timeout:
+      hours: 0
+      minutes: 15
+      seconds: 0
+      milliseconds: 0
+    continue_on_timeout: false
+  - target:
+      entity_id: switch.sonoff_s60zbtpf
+    action: switch.turn_on
+  - data:
+      message: Termo activado.
+    action: notify.mobile_app_alejandros_iphone
+  mode: single

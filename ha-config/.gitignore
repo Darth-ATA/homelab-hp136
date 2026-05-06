@@ -1,0 +1,13 @@
+# Sensitive data
+secrets.yaml
+.storage/core.config_entries
+
+# Temporary files
+*.tmp
+*.bak
+.DS_Store
+
+# Logs and databases
+*.log
+home-assistant_v2.db*
+zigbee.db*
