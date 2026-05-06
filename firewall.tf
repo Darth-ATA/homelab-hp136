@@ -104,7 +104,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "web" {
 
 # Security Group: Home Assistant
 resource "proxmox_virtual_environment_cluster_firewall_security_group" "home_assistant" {
-  name    = "home_assistant"
+  name    = "homeassistant"
   comment = "Home Assistant"
 
   rule {
