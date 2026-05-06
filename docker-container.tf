@@ -29,7 +29,7 @@ resource "proxmox_virtual_environment_container" "docker" {
 
   disk {
     datastore_id = "local-zfs"
-    size         = 32
+    size         = 100
   }
 
   network_interface {
@@ -39,8 +39,8 @@ resource "proxmox_virtual_environment_container" "docker" {
     firewall    = true
   }
 
-  operating_system {
-    template_file_id = "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
+    operating_system {
+    template_file_id = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
     type             = "debian"
   }
 
