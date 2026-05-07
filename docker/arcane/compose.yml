@@ -4,24 +4,24 @@
 
 services:
   arcane:
-    image: ghcr.io/getarcaneapp/arcane:latest"
-    container_name: arcane"
-    restart: unless-stopped"
+    image: ghcr.io/getarcaneapp/arcane:latest
+    container_name: arcane
+    restart: unless-stopped
     ports:
-      - "3552:3552""
+      - "3552:3552"
     volumes:
-      - /root/docker/arcane/data:/app/data"
-      - /root/docker/arcane/servers:/app/servers"
-      - /var/run/docker.sock:/var/run/docker.sock"
+      - /root/docker/arcane/data:/app/data
+      - /root/docker/arcane/servers:/app/servers
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - PUID=1000"
-      - PGID=1000"
-      - TZ=Europe/Madrid"
-      - APP_URL=http://192.168.1.142:3552"
-      - ENCRYPTION_KEY=BuNtxE/Zi4A8I8hOgdXmTqtlNHftzlq+UTUPWGuifKg="
-      - JWT_SECRET=goU5XYhn4wW/jaPZufNTIkoXb+hgiRTY5DlfngYrX3M="
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+      - APP_URL=http://192.168.1.142:3552
+      - ENCRYPTION_KEY=BuNtxE/Zi4A8I8hOgdXmTqtlNHftzlq+UTUPWGuifKg=
+      - JWT_SECRET=goU5XYhn4wW/jaPZufNTIkoXb+hgiRTY5DlfngYrX3M=
     networks:
-      - default:
+      - default
 
 networks:
   default:
