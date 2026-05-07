@@ -18,3 +18,7 @@ Thumbs.db
 
 # Docker secrets
 docker/arcane/.env
+docker/npm/.env
+
+# Git hooks (local, should not be committed)
+.githooks/
