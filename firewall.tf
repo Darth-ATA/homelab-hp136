@@ -155,6 +155,8 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "tailscal
 }
 
 # Cluster-Level Firewall Rules (apply security groups)
+# NOTE: If "Existing rules detected" error occurs, import existing rules:
+# terraform import proxmox_virtual_environment_firewall_rules.cluster cluster
 resource "proxmox_virtual_environment_firewall_rules" "cluster" {
   # No node_name/vm_id/container_id = cluster-level
 
