@@ -15,7 +15,7 @@ homelab-terraform/
 ├── main.tf                      # Provider and base configuration
 ├── variables.tf                 # Variable definitions
 ├── firewall.tf                  # Firewall configuration (cluster, security groups, rules)
-├── home_assitant-vm.tf          # Home Assistant VM firewall options
+├── ha-config/home_assitant-vm.tf  # Home Assistant VM (HAOS)
 ├── adguard-container.tf         # AdGuard LXC container
 ├── docker-container.tf          # Docker/NPM LXC container
 ├── tailscale-container.tf       # Tailscale LXC container
@@ -130,9 +130,8 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 | AdGuard (LXC 103) | 192.168.1.2 | 53/tcp+udp | DNS server |
 
 ### Firewall Files
-
 - `firewall.tf` - Cluster firewall, security groups, and rules
-- `home_assitant-vm.tf` - Home Assistant VM firewall options
+- `ha-config/home_assitant-vm.tf` - Home Assistant VM (HAOS) configuration and firewall options
 
 ### Future Hardening
 
@@ -156,11 +155,11 @@ A follow-up issue will restrict SSH and Proxmox UI to management IPs only, and p
 | Resource | VMID | Schedule | Storage | Retention Policy |
 |-----------|------|----------|---------|------------------|
 | Home Assistant | 100 | Daily 21:00 | local (dir) | Last 3-5 backups |
-| docker | 101 | Daily 22:00 | local-zfs (ZFS) | **Daily + Last of each month** |
-| tailscale | 102 | Daily 22:30 | local-zfs (ZFS) | **Daily + Last of each month** |
-| adguard | 103 | Daily 23:00 | local-zfs (ZFS) | **Daily + Last of each month** |
+| docker | 101 | Daily 22:00 | local (dir) | **Daily + Last of each month** |
+| tailscale | 102 | Daily 22:30 | local (dir) | **Daily + Last of each month** |
+| adguard | 103 | Daily 23:00 | local (dir) | **Daily + Last of each month** |
 
-**Note:** Consider moving VM 100 backups from `local` to `local-zfs` for better compression. See [Storage Strategy](#storage-strategy).
+**Note:** All backups use `local` (dir-type storage) which supports the backup content type. ZFS zpool storage (`local-zfs`) does NOT support backup content type.
 
 ### Special Retention Policy
 
@@ -197,30 +196,27 @@ ssh root@192.168.1.134 "cat /var/log/backup-cleanup.log"
 
 | Storage | Type | Total | Used | Available | Used By |
 |---------|------|-------|------|-----------|---------|
-| `local` (dir) | Directory | 468GB | 105GB (22.5%) | 363GB | Proxmox ISOs, templates, VM 100 backups |
-| `local-zfs` (zfs) | ZFS pool | 370GB | 7.4GB (2%) | 362GB | Container disks (101, 102, 103), container backups |
+| `local` (dir) | Directory | 468GB | 105GB (22.5%) | 363GB | Proxmox ISOs, templates, VM 100 backups, container backups (101, 102, 103) |
+| `local-zfs` (zfs) | ZFS pool | 370GB | 7.4GB (2%) | 362GB | Container disks (101, 102, 103) |
 
-### Why `local-zfs` for Containers
-- **ZFS compression** reduces actual disk usage
+### Why `local-zfs` for Container Disks
+- **ZFS compression** reduces actual disk usage for container disk images
 - Better performance for container workloads
-- All container disks and backups are already on `local-zfs` ✓
+- Container disks stored on `local-zfs` ✓
+- **Note:** Backups must use `local` (dir-type) storage as ZFS pools do NOT support backup content type
 
 ### VM 100 (Home Assistant) Backup Storage
-Currently, HAOS backups are stored on `local` (dir). To optimize storage:
+Currently, HAOS backups are stored on `local` (dir-type storage). This is the correct configuration as `local-zfs` (ZFS pool) does NOT support the backup content type.
 
-**Option A: Via Proxmox Web UI**
-1. Go to Datacenter → Backup
-2. Find the backup job for VM 100
-3. Edit → Change Storage from `local` to `local-zfs`
-4. Save and run a test backup
+**Note:** Do NOT move backups to `local-zfs` as ZFS pools only support `images` and `rootdir` content types.
 
-**Option B: Via CLI**
+**To verify backup storage via CLI:**
 ```bash
-# Edit backup job (find job ID first)
+# Check current backup jobs
 ssh root@192.168.1.134 "cat /etc/pve/jobs.cfg"
 
-# Or run one-time backup to local-zfs
-ssh root@192.168.1.134 "vzdump 100 --storage local-zfs --mode snapshot"
+# Run a test backup to local storage
+ssh root@192.168.1.134 "vzdump 100 --storage local --mode snapshot"
 ```
 
 **Cleanup old backups (keep last 3-5):**

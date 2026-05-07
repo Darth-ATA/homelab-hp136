@@ -1,3 +1,6 @@
+# Note: If "changing feature flags is only allowed for root@pam" error occurs:
+# Option 1: Remove features block (if present)
+# Option 2: Import existing container with: terraform import proxmox_virtual_environment_container.docker prxhp136/101
 resource "proxmox_virtual_environment_container" "docker" {
   node_name    = "prxhp136"
   vm_id        = 101
@@ -50,11 +53,20 @@ resource "proxmox_virtual_environment_container" "docker" {
     type      = "tty"
   }
 
+  features {
+    fuse    = false
+    keyctl  = true
+    mknod   = false
+    mount   = []
+    nesting = true
+  }
+
   lifecycle {
     ignore_changes = [
       operating_system,
       unprivileged,
       vm_id,
+      features,
     ]
   }
 }

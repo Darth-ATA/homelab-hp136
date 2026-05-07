@@ -1,13 +1,13 @@
 services:
   prowlarr:
-    image: linuxserver/prowlarr:latest"
-    container_name: prowlarr"
+    image: linuxserver/prowlarr:latest
+    container_name: prowlarr
     environment:
-      - PUID=1000"
-      - PGID=1000"
-      - TZ=Europe/Madrid"
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
     volumes:
-      - /root/docker/prowlarr/config:/config"
+      - /root/docker/prowlarr/config:/config
     ports:
       - "9696:9696"
-    restart: unless-stopped"
+    restart: unless-stopped
