@@ -15,3 +15,6 @@ terraform.tfvars
 # OS
 .DS_Store
 Thumbs.db
+
+# Docker secrets
+docker/arcane/.env

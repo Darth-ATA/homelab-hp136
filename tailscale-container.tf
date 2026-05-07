@@ -1,3 +1,6 @@
+# Note: If "changing feature flags is only allowed for root@pam" error occurs:
+# Option 1: Remove features block (if present)
+# Option 2: Import existing container with: terraform import proxmox_virtual_environment_container.tailscale prxhp136/102
 resource "proxmox_virtual_environment_container" "tailscale" {
   node_name    = "prxhp136"
   vm_id        = 102
@@ -32,14 +35,22 @@ resource "proxmox_virtual_environment_container" "tailscale" {
     size         = 2
   }
 
-  network_interface {
-    name        = "eth0"
-    bridge      = "vmbr0"
-    mac_address = "BC:24:11:CA:68:89"
-    firewall    = true
-  }
+   network_interface {
+     name        = "eth0"
+     bridge      = "vmbr0"
+     mac_address = "BC:24:11:CA:68:89"
+     firewall    = true
+   }
 
-  operating_system {
+   features {
+     fuse    = false
+     keyctl  = true
+     mknod   = false
+     mount   = []
+     nesting = true
+   }
+
+   operating_system {
     template_file_id = "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
     type             = "debian"
   }

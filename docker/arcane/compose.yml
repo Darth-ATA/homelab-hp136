@@ -18,8 +18,8 @@ services:
       - PGID=1000
       - TZ=Europe/Madrid
       - APP_URL=http://192.168.1.142:3552
-      - ENCRYPTION_KEY=BuNtxE/Zi4A8I8hOgdXmTqtlNHftzlq+UTUPWGuifKg=
-      - JWT_SECRET=goU5XYhn4wW/jaPZufNTIkoXb+hgiRTY5DlfngYrX3M=
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - default
 

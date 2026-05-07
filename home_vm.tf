@@ -18,6 +18,7 @@ resource "proxmox_virtual_environment_vm" "home_assistant" {
     enabled = true
     timeout = "15m"
     trim    = false
+    type    = "virtio"
   }
 
   cpu {
@@ -64,9 +65,15 @@ resource "proxmox_virtual_environment_vm" "home_assistant" {
     device = "socket"
   }
 
-  # USB passthrough (Zigbee/Z-Wave stick: 10c4:ea60)
   usb {
     host = "10c4:ea60"
+    usb3 = false
+  }
+
+  lifecycle {
+    ignore_changes = [
+      usb,
+    ]
   }
 }
 
