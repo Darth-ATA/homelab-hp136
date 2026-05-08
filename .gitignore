@@ -22,3 +22,5 @@ docker/npm/.env
 
 # Git hooks (local, should not be committed)
 .githooks/
+docker/.env
+docker/qbittorrent/.env
