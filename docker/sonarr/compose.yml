@@ -9,7 +9,7 @@ services:
     volumes:
       - /root/docker/sonarr/config:/config
       - /data/media/tv:/tv
-      - /data/torrents/tv:/downloads
+      - /data/torrents:/downloads
     ports:
       - "8989:8989"
     restart: unless-stopped

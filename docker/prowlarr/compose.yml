@@ -9,5 +9,5 @@ services:
     volumes:
       - /root/docker/prowlarr/config:/config
     ports:
-      - "9696:9696"
+      - 9696:9696
     restart: unless-stopped
