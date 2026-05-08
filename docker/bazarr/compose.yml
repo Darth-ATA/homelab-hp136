@@ -1,0 +1,23 @@
+services:
+  bazarr:
+    image: linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+    volumes:
+      - /root/docker/bazarr/config:/config
+      - /data/media:/media
+      - /data/media/tv:/tv
+      - /data/media/movies:/movies
+    ports:
+      - "6767:6767"
+    restart: unless-stopped
+    depends_on:
+      - sonarr
+      - radarr
+
+networks:
+  default:
+    name: arrsuite
