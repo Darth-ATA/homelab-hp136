@@ -1,0 +1,21 @@
+services:
+  deluge:
+    image: linuxserver/deluge:latest
+    container_name: deluge
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+    volumes:
+      - ./config:/config
+      - /data/torrents:/downloads
+    ports:
+      - "8112:8112"  # Deluge Web UI
+      - "6881:6881"  # Torrent port
+      - "6881:6881/udp"
+      - "58846:58846"  # Deluge daemon
+    restart: unless-stopped
+
+networks:
+  default:
+    name: arrsuite
