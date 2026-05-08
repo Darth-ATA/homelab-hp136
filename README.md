@@ -25,6 +25,7 @@ homelab-terraform/
 ├── .gitignore                  # Protect sensitive data
 ├── docs/                       # Additional documentation
 │   ├── adguard-dns-records.md
+│   ├── download-pipeline-troubleshooting.md
 │   ├── home_assitant-static-ip.md
 │   └── npm-config.md
 └── scripts/                    # Utility scripts
