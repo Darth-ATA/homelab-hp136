@@ -9,7 +9,7 @@ services:
     volumes:
       - /root/docker/jellyfin/config:/config
       - /root/docker/jellyfin/cache:/cache
-      - /data/media:/media:ro
+      - /data/media:/media:rw
     ports:
       - "8096:8096"
       - "8920:8920"

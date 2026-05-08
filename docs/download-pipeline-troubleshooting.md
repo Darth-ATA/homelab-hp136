@@ -157,6 +157,34 @@ Content not available on configured public indexers
 
 ---
 
+## Issue 6: Jellyfin Shows Empty Libraries
+
+### Symptoms
+- Movies and TV show folders show 0 items in Jellyfin
+- Media files exist in /data/media/
+
+### Cause
+- Mount was read-only (:ro) instead of read-write (:rw)
+- Libraries haven't been scanned after initial setup
+
+### Solution
+1. Fix the mount in compose file - change :ro to :rw:
+   ```yaml
+   - /data/media:/media:rw   # NOT :ro
+   ```
+
+2. Apply fix and restart:
+   ```bash
+   sed -i 's|:/media:ro|:/media:rw|' /path/to/compose.yml
+   docker compose up -d --force-recreate
+   ```
+
+3. Trigger library scan in Jellyfin UI:
+   - Dashboard → Scheduled Tasks → Scan Media Library → Run
+   - Or click the refresh icon on library cards
+
+---
+
 ## Quick Diagnostic Commands
 
 ### Check Container Status
@@ -195,6 +223,7 @@ ssh root@192.168.1.134 "pct exec 101 -- docker exec sonarr curl -s -H 'X-Api-Key
 - `docker/radarr/compose.yml`
 - `docker/prowlarr/compose.yml`
 - `docker/deluge/compose.yml`
+- `docker/jellyfin/compose.yml`
 - Prowlarr config: `/config/custom/torrentio.yml` (inside container 101)
 
 ## References
