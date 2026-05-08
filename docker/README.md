@@ -54,6 +54,36 @@ pct restart 101
    - Click "Generate" next to "OpenVPN / IKEv2 username and password"
 3. Edit `/root/docker/.env` with your credentials
 
+### 3. Enable TUN Device (Proxmox LXC)
+
+For VPN containers (Gluetun, WireGuard, OpenVPN), you need to enable TUN device passthrough:
+
+```bash
+# Find your container ID
+pct list
+
+# Add TUN device to container (replace 100 with your container ID)
+pct set 100 -dev0 /dev/net/tun
+
+# Restart container
+pct restart 100
+```
+
+Alternative: Add manually to `/etc/pve/lxc/<container-id>.conf`:
+```
+lxc.cgroup2.devices.allow: c 10:200 rwm
+lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file
+```
+
+Verify TUN is available inside container:
+```bash
+ls -l /dev/net/tun
+```
+
+The output should show: `crw-rw-rw- 1 root root 10, 200 ... /dev/net/tun`
+
+After adding TUN device, Gluetun VPN containers will work properly.
+
 ## TRaSH Guides Configuration
 
 After deploying, follow these guides:
