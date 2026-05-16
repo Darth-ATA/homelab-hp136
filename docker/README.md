@@ -14,6 +14,7 @@ This directory contains docker-compose files for services running in the Docker 
 | **Prowlarr** | `prowlarr/` | `compose.yml` | `prowlarr` | 9696 | Indexer management |
 | **Radarr** | `radarr/` | `compose.yml` | `radarr` | 7878 | Movies automation |
 | **Sonarr** | `sonarr/` | `compose.yml` | `sonarr` | 8989 | TV shows automation |
+| **Lidarr** | `lidarr/` | `compose.yml` | `lidarr` | 8686 | Music collection manager |
 | **Jellyfin** | `jellyfin/` | `compose.yml` | `jellyfin` | 8096 | Media server |
 
 *Ports marked with * are routed through VPN tunnel
@@ -144,6 +145,7 @@ ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker ps"
 - **Prowlarr**: http://192.168.1.142:9696
 - **Radarr**: http://192.168.1.142:7878
 - **Sonarr**: http://192.168.1.142:8989
+- **Lidarr**: http://192.168.1.142:8686
 - **Jellyfin**: http://192.168.1.142:8096
 
 ## Nginx Proxy Manager Configuration
@@ -152,6 +154,7 @@ Add proxy hosts in NPM (http://192.168.1.142:81):
 - `prowlarr.hp136.duckdns.org` → 192.168.1.142:9696
 - `radarr.hp136.duckdns.org` → 192.168.1.142:7878
 - `sonarr.hp136.duckdns.org` → 192.168.1.142:8989
+- `lidarr.hp136.duckdns.org` → 192.168.1.142:8686
 - `jellyfin.hp136.duckdns.org` → 192.168.1.142:8096
 
 ## Notes

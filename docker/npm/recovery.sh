@@ -50,7 +50,7 @@ BASE_HOST="192.168.1"
 
 # Format: subdomain -> "ip:port[:websocket]"
 # Using indirect reference to build associative array compatible with all bash versions
-PROXY_HOSTS="arcane:192.168.1.142:3552 npm:192.168.1.142:81 vw:192.168.1.142:8080 ha:192.168.1.100:8123:websocket agh:192.168.1.2:80 jelly:192.168.1.142:8096 rad:192.168.1.142:7878 son:192.168.1.142:8989 prowlarr:192.168.1.142:9696 qbit:192.168.1.142:8081"
+PROXY_HOSTS="arcane:192.168.1.142:3552 lidarr:192.168.1.142:8686 npm:192.168.1.142:81 vw:192.168.1.142:8080 ha:192.168.1.100:8123:websocket agh:192.168.1.2:80 jelly:192.168.1.142:8096 rad:192.168.1.142:7878 son:192.168.1.142:8989 prowlarr:192.168.1.142:9696 qbit:192.168.1.142:8081"
 
 # Validate proxy hosts are defined
 if [[ -z "$PROXY_HOSTS" ]]; then

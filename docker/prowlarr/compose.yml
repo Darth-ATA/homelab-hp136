@@ -8,6 +8,7 @@ services:
       - TZ=Europe/Madrid
     volumes:
       - /root/docker/prowlarr/config:/config
+      - ./custom:/custom
     ports:
       - 9696:9696
     restart: unless-stopped
