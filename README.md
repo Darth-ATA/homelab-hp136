@@ -6,7 +6,7 @@ Terraform configuration for managing LXC containers on Proxmox VE using the `bpg
 
 This project provides Infrastructure as Code (IaC) for a Proxmox homelab environment. It allows you to create, modify, and manage LXC containers programmatically instead of using the Proxmox web interface interactively.
 
-**Note:** This setup uses Terraform mainly for **creating new containers**. Due to known bugs in the `bpg/proxmox` provider with imports (issues #1406, #1998), existing containers are documented but not managed by Terraform to avoid unintended replacements.
+**Note:** This setup uses Terraform to **create, modify, and manage** all containers and VMs. The `bpg/proxmox` provider has known issues (#1406, #1998) that may cause replacements in certain import scenarios, but existing containers can be managed safely if imported correctly and changes applied incrementally.
 
 ## Project Structure
 
@@ -66,22 +66,22 @@ terraform init
   terraform apply
   ```
 
-## Existing Containers (Not managed by Terraform)
+## Existing Containers (Managed by Terraform)
 
-The following containers were created manually and are **NOT** under Terraform management to prevent unintended replacements due to provider bugs:
+The following containers and VMs are **fully managed** by Terraform:
 
-| ID  | Name      | Description | Static IP |
-|-----|------------|-------------|-----------|
-| 100 | home_assistant | Home Assistant VM (HAOS) - Firewall options managed by Terraform. Backups: see Storage Strategy | 192.168.1.100 |
-| 101 | docker    | Docker with NPM + Arcane (2 cores, 4GB RAM, 32GB disk) | 192.168.1.142 |
-| 102 | tailscale  | Tailscale VPN connectivity (1 core, 512MB RAM, 2GB disk) | 192.168.1.102 |
-| 103 | adguard   | AdGuard Home DNS ad-blocker (1 core, 512MB RAM, 2GB disk) | 192.168.1.2 |
+| ID  | Name      | Description | Static IP | Terraform File |
+|-----|------------|-------------|-----------|----------------|
+| 100 | home_assistant | Home Assistant VM (HAOS) - 4GB RAM, 32GB disk | 192.168.1.100 | `home_vm.tf` |
+| 101 | docker    | Docker with NPM + Arcane - 2 cores, 4GB RAM, 32GB disk | 192.168.1.142 | `docker-container.tf` |
+| 102 | tailscale  | Tailscale VPN connectivity - 1 core, 512MB RAM, 2GB disk | 192.168.1.102 | `tailscale-container.tf` |
+| 103 | adguard   | AdGuard Home DNS ad-blocker - 1 core, 512MB RAM, 2GB disk | 192.168.1.2 | `adguard-container.tf` |
 
 **All services use static IPs configured in Proxmox/LXC/VM configs. See [NETWORK.md](./NETWORK.md) for complete network documentation.**
 
-## Importing Containers (Advanced)
+## Importing Containers
 
-If you want to import an existing container (requires downtime):
+If you need to import an existing container (e.g., after recreating the Proxmox host):
 
 ```bash
 # Import
@@ -91,7 +91,10 @@ terraform import proxmox_virtual_environment_container.name prxhp136/ID
 terraform show
 ```
 
-**Warning:** The `bpg/proxmox` provider has known issues (#1406, #1998) that may cause forced replacements after import. Use with caution.
+**Best Practices:**
+- Run `terraform plan` before `apply` to detect any unintended replacements
+- Apply changes incrementally to catch issues early
+- The provider issues (#1406, #1998) are less problematic with recent versions; ensure you use v0.76.0+
 
 ## Firewall Configuration ✅
 
