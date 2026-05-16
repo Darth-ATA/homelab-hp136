@@ -24,3 +24,15 @@ docker/npm/.env
 .githooks/
 docker/.env
 docker/qbittorrent/.env
+
+# Agent/IDE config (user-specific)
+.agents/
+.atl/
+.claude/
+.cline/
+.codebuddy/
+.continue/
+.kiro/
+.ocx/
+.opencode/
+skills-lock.json
