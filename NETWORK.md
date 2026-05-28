@@ -18,14 +18,14 @@ This document describes the network configuration for the homelab Proxmox host a
 
 All services use static IPs to ensure DNS resolution and proxy configurations don't break on reboot.
 
-| Service | Type | ID | IP Address | Hostname | Notes |
-|---------|------|-----|------------|----------|-------|
-| **Proxmox Host** | Physical | - | 192.168.1.134 | `prxhp136` | Proxmox VE management |
-| **Home Assistant** | VM | 100 | 192.168.1.100 | `haos-17.1` | Home automation |
-| **Docker/NPM/Arcane** | LXC | 101 | 192.168.1.142 | `docker` | Container runtime + Nginx Proxy Manager + Arcane |
-| **Tailscale** | LXC | 102 | 192.168.1.102 | `tailscale` | VPN |
-| **AdGuard Home** | LXC | 103 | 192.168.1.2 | `adguard` | DNS ad-blocking |
-| **Debian Test** | LXC | 105 | 192.168.1.105 | `debian-test` | Test container |
+| Service | Type | ID | IP Address | MAC Address | Hostname | Notes |
+|---------|------|-----|------------|-------------|----------|-------|
+| **Proxmox Host** | Physical | - | 192.168.1.134 | — | `prxhp136` | Proxmox VE management |
+| **Home Assistant** | VM | 100 | 192.168.1.100 | (virtio, dinámica) | `haos-17.1` | Home automation |
+| **Docker/NPM/Arcane** | LXC | 101 | 192.168.1.142 | `BC:24:11:C5:96:4D` | `docker` | Container runtime + Nginx Proxy Manager + Arcane |
+| **Tailscale** | LXC | 102 | 192.168.1.102 | `BC:24:11:CA:68:89` | `tailscale` | VPN |
+| **AdGuard Home** | LXC | 103 | 192.168.1.2 | `BC:24:11:D5:A2:77` | `adguard` | DNS ad-blocking |
+| **Debian Test** | LXC | 105 | 192.168.1.105 | (pendiente) | `debian-test` | Test container |
 
 ## Service Access Points
 
@@ -38,6 +38,7 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | Vaultwarden | `https://vw.hp136.duckdns.org` | Docker container in LXC 101 |
 | AdGuard Home | `http://192.168.1.2` | LXC 103 |
 | Tailscale | `http://192.168.1.102` | LXC 102 |
+| Frigate NVR | `http://192.168.1.142:5000` | Docker container in LXC 101 |
 
 ## DNS Configuration
 
@@ -101,13 +102,97 @@ iface vmbr0 inet static
     bridge-fd 0
 ```
 
+## Router Configuration
+
+Router access: `http://192.168.1.1` (credentials on router sticker)
+
+### DHCP Settings (requerido para evitar conflictos)
+
+El pool DHCP del router debe **excluir** todas las IPs estáticas del homelab:
+
+| Campo | Valor |
+|-------|-------|
+| Pool inicio | `192.168.1.150` |
+| Pool fin | `192.168.1.254` |
+| Máscara | `255.255.255.0` |
+| Gateway | `192.168.1.1` |
+| Tiempo de concesión | `1440` min (default) |
+
+**IPs estáticas fuera del pool:** `.2` (AdGuard), `.100` (HA), `.102` (Tailscale), `.105` (Debian), `.134` (Proxmox), `.142` (Docker)
+
+### DNS Settings (requerido para que funcione la resolución)
+
+Los dispositivos deben recibir AdGuard como DNS. **NO apuntar a IPs sin servidor DNS** (ej: una cámara IP o alarma).
+
+| Campo | Valor |
+|-------|-------|
+| DNS primario | `192.168.1.2` (AdGuard) |
+| DNS secundario | `192.168.1.2` (o dejarlo vacío) |
+
+### Troubleshooting — Problema detectado (Mayo 2026)
+
+**Síntoma:** Dispositivos WiFi no conectaban correctamente, IPs conflictivas.
+
+**Causa raíz:**
+1. El pool DHCP original usaba `.128-254`, pisando IPs estáticas (`.134`, `.142`)
+2. El DNS del router apuntaba a `192.168.1.136` (alarma o cámara IP), que **no tiene servidor DNS** — los dispositivos recibían un DNS que no respondía y fallaban al resolver dominios
+
+**Fix:** Ajustar pool DHCP a `.150-254` y DNS a `192.168.1.2`.
+
 ## DHCP Range
 
-Reserve `192.168.1.200-250` for DHCP clients on your router to avoid conflicts.
+Reserve `192.168.1.150-254` for DHCP clients on your router to avoid conflicts with static homelab IPs.
 
 ## Notes
 
 - All static IPs use `/24` subnet (255.255.255.0)
 - Gateway for all devices: `192.168.1.1` (your router)
-- All devices use AdGuard (`192.168.1.2`) as DNS server
+- All devices should use AdGuard (`192.168.1.2`) as DNS server — configure this ON THE ROUTER so DHCP clients receive it automatically
 - `.local` domains may conflict with mDNS - prefer using `.home` domains
+
+## Frigate NVR
+
+Runs as a Docker container on LXC 101 (192.168.1.142).
+
+**Access:** http://192.168.1.142:5000
+
+### Camera — Dahua IPC-HDW2230T-AS-S2
+
+| Property | Value |
+|----------|-------|
+| IP | `192.168.1.108` |
+| RTSP port | `554` |
+| Auth | Digest (no Basic) |
+| RTSP path (sub/main) | `/live` |
+| Streaming user | `admin` |
+
+### Frigate setup
+
+```bash
+# Files in docker/frigate/
+# - compose.yml              # Docker compose with network_mode: host
+# - config/config.yml.j2     # Jinja2 template (Frigate processes at startup)
+# - .env                     # Contains FRIGATE_RTSP_PASSWORD (NOT committed)
+
+# Config template (config.yml.j2) uses Jinja2 variables:
+#   {{ FRIGATE_RTSP_PASSWORD }}    -> resolved from environment at runtime
+
+# .env file (required, NOT in git):
+#   FRIGATE_RTSP_PASSWORD=<camera_password>
+
+# Deploy on Proxmox LXC 101:
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker compose -f /root/docker/frigate/compose.yml up -d"
+
+# View logs:
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker logs frigate -f"
+```
+
+### Known issues
+
+- **Camera IP lock:** The Dahua blocks IPs after 5 failed auth attempts (`General.LockLoginEnable=true`). If Frigate shows auth errors, disable via CGI:
+  ```bash
+  curl --digest -u admin:<password> 'http://192.168.1.108/cgi-bin/configManager.cgi?action=setConfig&General.LockLoginEnable=false'
+  ```
+- **OpenVINO model shape:** The bundled model expects 300×300 input. If you see a shape broadcast error, verify `model.width: 300`, `model.height: 300` in config.
+- **go2rtc env limitation:** Frigate's bundled go2rtc v1.9.10 does not support `${VAR}` in stream URLs. Use `{{ VAR }}` Jinja2 syntax via `config.yml.j2` which Frigate's Python runtime resolves before passing to go2rtc.
+- **Cam connection:** Frigate uses `network_mode: host` to avoid Docker bridge routing issues with RTSP multicast.
