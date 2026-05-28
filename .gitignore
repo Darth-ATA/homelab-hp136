@@ -19,11 +19,15 @@ Thumbs.db
 # Docker secrets
 docker/arcane/.env
 docker/npm/.env
+docker/frigate/.env
 
 # Git hooks (local, should not be committed)
 .githooks/
 docker/.env
 docker/qbittorrent/.env
+
+# Frigate rendered config (use config.yml.j2 template instead)
+docker/frigate/config/config.yml
 
 # Agent/IDE config (user-specific)
 .agents/
