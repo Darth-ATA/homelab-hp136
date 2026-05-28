@@ -14,10 +14,8 @@ services:
     ports:
       - "6767:6767"
     restart: unless-stopped
-    depends_on:
-      - sonarr
-      - radarr
 
 networks:
   default:
     name: arrsuite
+    external: true
