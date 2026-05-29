@@ -27,7 +27,7 @@ NPM_CONTAINER_ID="${NPM_CONTAINER_ID:-101}"
 # NPM API credentials (change these!)
 NPM_API_URL="${NPM_API_URL:-http://localhost:81}"
 NPM_API_USER="${NPM_API_USER:-hasbringer1007@gmail.com}"
-NPM_API_PASS="${NPM_API_PASS:-Levantes1007}"
+NPM_API_PASS="${NPM_API_PASS:-}"
 
 # DuckDNS configuration
 DUBNSDNS_DOMAIN="${DUCKDNS_DOMAIN:-hp136}"

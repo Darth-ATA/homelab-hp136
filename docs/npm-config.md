@@ -71,7 +71,7 @@ cd docker/npm
 | `NPM_CONTAINER_ID` | 101 | NPM container ID |
 | `NPM_API_URL` | http://localhost:81 | NPM API URL |
 | `NPM_API_USER` | hasbringer1007@gmail.com | NPM admin email |
-| `NPM_API_PASS` | Levantes1007 | NPM admin password |
+| `NPM_API_PASS` | *(set in .env)* | NPM admin password |
 | `DUCKDNS_DOMAIN` | hp136 | DuckDNS subdomain |
 | `SSL_CERT_ID` | 3 | SSL certificate ID |
 
