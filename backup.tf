@@ -98,3 +98,24 @@ resource "proxmox_backup_job" "adguard" {
   mailnotification = "failure"
   mailto           = ["root"]
 }
+
+# --- Disk monitoring ---
+# Deploys check-backup-disk.sh and installs a cron job on the Proxmox host.
+# Runs hourly, logs to syslog, and emails root on warnings (>=80%) or criticals (>=90%).
+
+resource "null_resource" "deploy_disk_monitor" {
+  triggers = {
+    script_hash = filesha256("scripts/check-backup-disk.sh")
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOC
+      scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no \
+        scripts/check-backup-disk.sh \
+        root@192.168.1.134:/usr/local/bin/check-backup-disk.sh && \
+      ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
+        'chmod 755 /usr/local/bin/check-backup-disk.sh && \
+         echo "*/60 * * * * root /usr/local/bin/check-backup-disk.sh -w 80 -c 90" >/etc/cron.d/check-backup-disk'
+    EOC
+  }
+}
