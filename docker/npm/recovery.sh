@@ -50,7 +50,7 @@ BASE_HOST="192.168.1"
 
 # Format: subdomain -> "ip:port[:websocket]"
 # Using indirect reference to build associative array compatible with all bash versions
-PROXY_HOSTS="arcane:192.168.1.142:3552 lidarr:192.168.1.142:8686 npm:192.168.1.142:81 vw:192.168.1.142:8080 ha:192.168.1.100:8123:websocket agh:192.168.1.2:80 jelly:192.168.1.142:8096 rad:192.168.1.142:7878 son:192.168.1.142:8989 prowlarr:192.168.1.142:9696 qbit:192.168.1.142:8081"
+PROXY_HOSTS="arcane:192.168.1.142:3552 bazarr:192.168.1.142:6767 deluge:192.168.1.142:8112 frigate:192.168.1.142:5000 lidarr:192.168.1.142:8686 npm:192.168.1.142:81 vw:192.168.1.142:8080 ha:192.168.1.100:8123:websocket agh:192.168.1.2:80 jelly:192.168.1.142:8096 rad:192.168.1.142:7878 son:192.168.1.142:8989 prowlarr:192.168.1.142:9696 qbit:192.168.1.142:8081"
 
 # Validate proxy hosts are defined
 if [[ -z "$PROXY_HOSTS" ]]; then
@@ -217,9 +217,9 @@ npm_login() {
     log_info "Logging into NPM API..."
 
     local response
-    response=$(curl -s -X POST "${NPM_API_URL}/api/admin/login" \
+    response=$(curl -s -X POST "${NPM_API_URL}/api/tokens" \
         -H "Content-Type: application/json" \
-        -d "{\"identity\":\"${NPM_API_USER}\",\"password\":\"${NPM_API_PASS}\"}" \
+        -d "{\"identity\":\"${NPM_API_USER}\",\"scope\":\"user\",\"secret\":\"${NPM_API_PASS}\"}" \
     ) || {
         log_error "Failed to connect to NPM API"
         return 1
@@ -265,7 +265,7 @@ npm_list_proxy_hosts() {
 
     curl -s -X GET "${NPM_API_URL}/api/nginx/proxy-hosts" \
         -H "Authorization: Bearer $token" \
-        -H "Content-Type: application/json" | jq -r '.[] | "\(.id) \(.domain)"' 2>/dev/null || {
+        -H "Content-Type: application/json" | jq -r '.[] | "\(.id) \(.domain_names[0])"' 2>/dev/null || {
         log_error "Failed to list proxy hosts"
         return 1
     }
@@ -291,6 +291,12 @@ npm_create_proxy_host() {
 
     log_info "Creating proxy host: ${full_domain} -> ${target_host}:${target_port}"
 
+    # Convert websocket flag from string to boolean
+    local ws_flag="false"
+    if [[ "${websocket}" == "true" ]]; then
+        ws_flag="true"
+    fi
+
     # Prepare nginx study configuration
     local proxy_body
     local nginx_config
@@ -300,16 +306,15 @@ npm_create_proxy_host() {
   "forward_scheme": "http",
   "forward_host": "${target_host}",
   "forward_port": ${target_port},
-  "access_list_id": "0",
+  "access_list_id": 0,
   "certificate_id": ${SSL_CERT_ID},
   "ssl_forced": true,
   "http2_support": true,
   "hsts_enabled": false,
   "hsts_subdomains": false,
-  "meta": {
-    "letsencrypt_email": "letsencrypt",
-    "letsencrypt": true
-  },
+  "block_exploits": true,
+  "allow_websocket_upgrade": ${ws_flag},
+  "enabled": true,
   "advanced_config": ""
 }
 EOF
@@ -319,7 +324,7 @@ EOF
     local existing
     existing=$(curl -s -X GET "${NPM_API_URL}/api/nginx/proxy-hosts" \
         -H "Authorization: Bearer $token" \
-        -H "Content-Type: application/json" | jq -r ".[] | select(.domain == \"${full_domain}\") | .id" 2>/dev/null || echo "")
+        -H "Content-Type: application/json" | jq -r ".[] | select(.domain_names[0] == \"${full_domain}\") | .id" 2>/dev/null || echo "")
 
     if [[ -n "$existing" && "$existing" != "null" ]]; then
         log_warn "Proxy host already exists: ${full_domain} (ID: $existing)"
@@ -375,7 +380,7 @@ npm_delete_proxy_host() {
     local host_id
     host_id=$(curl -s -X GET "${NPM_API_URL}/api/nginx/proxy-hosts" \
         -H "Authorization: Bearer $token" \
-        -H "Content-Type: application/json" | jq -r ".[] | select(.domain == \"${domain}\") | .id" 2>/dev/null || echo "")
+        -H "Content-Type: application/json" | jq -r ".[] | select(.domain_names[0] == \"${domain}\") | .id" 2>/dev/null || echo "")
 
     if [[ -z "$host_id" || "$host_id" == "null" ]]; then
         log_warn "Proxy host not found: $domain"
