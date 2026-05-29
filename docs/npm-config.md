@@ -15,16 +15,20 @@ All services are accessible via `https://<service>.hp136.duckdns.org`
 
 | Subdomain | Full Domain | Target | Port | Notes |
 |-----------|-------------|--------|------|-------|
-| arcane | arcane.hp136.duckdns.org | 192.168.1.142 | 3552 | Arcane |
-| npm | npm.hp136.duckdns.org | 192.168.1.142 | 81 | Nginx Proxy Manager |
-| vw | vw.hp136.duckdns.org | 192.168.1.142 | 8080 | Volkswagen |
-| ha | ha.hp136.duckdns.org | 192.168.1.100 | 8123 | Home Assistant (websockets enabled) |
 | agh | agh.hp136.duckdns.org | 192.168.1.2 | 80 | AdGuard Home |
+| arcane | arcane.hp136.duckdns.org | 192.168.1.142 | 3552 | Arcane |
+| bazarr | bazarr.hp136.duckdns.org | 192.168.1.142 | 6767 | Bazarr (subtitles) |
+| deluge | deluge.hp136.duckdns.org | 192.168.1.142 | 8112 | Deluge (torrent client) |
+| frigate | frigate.hp136.duckdns.org | 192.168.1.142 | 5000 | Frigate (NVR) |
+| ha | ha.hp136.duckdns.org | 192.168.1.100 | 8123 | Home Assistant (websockets enabled) |
 | jelly | jelly.hp136.duckdns.org | 192.168.1.142 | 8096 | Jellyfin |
-| rad | rad.hp136.duckdns.org | 192.168.1.142 | 7878 | Radarr |
-| son | son.hp136.duckdns.org | 192.168.1.142 | 8989 | Sonarr |
+| lidarr | lidarr.hp136.duckdns.org | 192.168.1.142 | 8686 | Lidarr (music) |
+| npm | npm.hp136.duckdns.org | 192.168.1.142 | 81 | Nginx Proxy Manager |
 | prowlarr | prowlarr.hp136.duckdns.org | 192.168.1.142 | 9696 | Prowlarr |
 | qbit | qbit.hp136.duckdns.org | 192.168.1.142 | 8081 | qBittorrent |
+| rad | rad.hp136.duckdns.org | 192.168.1.142 | 7878 | Radarr |
+| son | son.hp136.duckdns.org | 192.168.1.142 | 8989 | Sonarr |
+| vw | vw.hp136.duckdns.org | 192.168.1.142 | 8080 | Vaultwarden |
 
 ## SSL Certificate
 
