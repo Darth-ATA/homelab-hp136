@@ -7,7 +7,7 @@ resource "proxmox_virtual_environment_container" "docker" {
   started      = true
   unprivileged = false
 
-  description = "Docker container with NPM and Arcane (2 cores, 4GB RAM, 32GB disk)"
+  description = "Docker host: media stack + NPM + Arcane (2 cores, 6GB RAM, 150GB disk, iGPU passthrough)"
 
   tags = ["community-script", "os"]
 
@@ -26,13 +26,13 @@ resource "proxmox_virtual_environment_container" "docker" {
   }
 
   memory {
-    dedicated = 4096
+    dedicated = 6144
     swap      = 512
   }
 
   disk {
     datastore_id = "local-zfs"
-    size         = 100
+    size         = 150
   }
 
   network_interface {
@@ -59,6 +59,22 @@ resource "proxmox_virtual_environment_container" "docker" {
     mknod   = false
     mount   = []
     nesting = true
+  }
+
+  device_passthrough {
+    path       = "/dev/dri/card0"
+    uid        = 0
+    gid        = 0
+    mode       = "0666"
+    deny_write = false
+  }
+
+  device_passthrough {
+    path       = "/dev/dri/renderD128"
+    uid        = 0
+    gid        = 0
+    mode       = "0666"
+    deny_write = false
   }
 
   lifecycle {
