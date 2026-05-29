@@ -14,10 +14,13 @@ resource "proxmox_backup_job" "home_assistant" {
   compress  = "zstd"
   enabled   = true
   
-  # Keep last 3-5 backups
+  # Keep last 5 backups
   prune_backups = {
     keep-last = "5"
   }
+
+  mailnotification = "failure"
+  mailto           = ["root"]
 }
 
 # Docker container (101) - Daily 03:00 (off-peak, no contention)
@@ -39,6 +42,9 @@ resource "proxmox_backup_job" "docker" {
     keep-daily   = "1"
     keep-monthly = "1"
   }
+  
+  mailnotification = "failure"
+  mailto           = ["root"]
 }
 
 # Workaround: bpg/proxmox provider can't handle exclude-path on PVE 9.x API
@@ -68,6 +74,9 @@ resource "proxmox_backup_job" "tailscale" {
     keep-daily   = "1"
     keep-monthly = "1"
   }
+  
+  mailnotification = "failure"
+  mailto           = ["root"]
 }
 
 # AdGuard container (103) - Daily 04:00 (after CT 102)
@@ -85,4 +94,7 @@ resource "proxmox_backup_job" "adguard" {
     keep-daily   = "1"
     keep-monthly = "1"
   }
+  
+  mailnotification = "failure"
+  mailto           = ["root"]
 }
