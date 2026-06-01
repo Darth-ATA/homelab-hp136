@@ -38,7 +38,7 @@ resource "proxmox_virtual_environment_container" "docker" {
   network_interface {
     name        = "eth0"
     bridge      = "vmbr0"
-    mac_address = "BC:24:11:C5:96:4D"
+    mac_address = "BC:24:11:C5:96:4F"
     firewall    = true
   }
 
