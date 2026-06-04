@@ -3,13 +3,13 @@
 # Ajusta temperatura de color y brillo según la hora del día.
 # Ventana al oeste (268°): el sol de la tarde compensa luz artificial,
 # por eso bajamos brillo entre 12-17h cuando el sol está alto.
-# temp_color en mireds (color_temp): 222=4500K, 250=4000K, 333=3000K,
-# 370=2700K, 455=2200K, 500=2000K.
+# color_temp_kelvin: 4500=neutral, 4000=ligero calido, 3000=calido,
+# 2700=calido bajo, 2200=muy calido, 2000=minimo calido.
 # Entity IDs: light.ventilador_de_techo_despacho_main_light
 # =============================================================================
 - id: '1749052800001'
   alias: 'Circadiana: Luz despacho'
-  description: 'Ajusta temperatura de color y brillo segun hora del dia. Maniana (>08:00): 4500K/80%. Tarde sol oeste (12-17h): 4000K/60%. Noche: 2200K/25%.'
+  description: 'Ajusta temperatura de color (Kelvin directo) y brillo segun hora del dia. Maniana: 4500K/80%. Tarde sol oeste: 4000K/60%. Noche: 2200K/25%.'
   triggers:
   - minutes: /15
     trigger: time_pattern
@@ -37,7 +37,7 @@
         metadata: {}
         data:
           brightness_pct: 50
-          color_temp: 370
+          color_temp_kelvin: 2700
         target:
           entity_id: light.ventilador_de_techo_despacho_main_light
     - conditions:
@@ -49,7 +49,7 @@
         metadata: {}
         data:
           brightness_pct: 80
-          color_temp: 222
+          color_temp_kelvin: 4500
         target:
           entity_id: light.ventilador_de_techo_despacho_main_light
     - conditions:
@@ -61,7 +61,7 @@
         metadata: {}
         data:
           brightness_pct: 60
-          color_temp: 250
+          color_temp_kelvin: 4000
         target:
           entity_id: light.ventilador_de_techo_despacho_main_light
     - conditions:
@@ -73,7 +73,7 @@
         metadata: {}
         data:
           brightness_pct: 70
-          color_temp: 333
+          color_temp_kelvin: 3000
         target:
           entity_id: light.ventilador_de_techo_despacho_main_light
     - conditions:
@@ -85,7 +85,7 @@
         metadata: {}
         data:
           brightness_pct: 40
-          color_temp: 370
+          color_temp_kelvin: 2700
         target:
           entity_id: light.ventilador_de_techo_despacho_main_light
     - conditions:
@@ -97,7 +97,7 @@
         metadata: {}
         data:
           brightness_pct: 25
-          color_temp: 455
+          color_temp_kelvin: 2200
         target:
           entity_id: light.ventilador_de_techo_despacho_main_light
     - conditions:
@@ -108,7 +108,7 @@
         metadata: {}
         data:
           brightness_pct: 15
-          color_temp: 500
+          color_temp_kelvin: 2000
         target:
           entity_id: light.ventilador_de_techo_despacho_main_light
   mode: single
