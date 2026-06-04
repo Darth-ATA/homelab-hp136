@@ -141,6 +141,18 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 
 A follow-up issue will restrict SSH and Proxmox UI to management IPs only, and potentially implement VLAN for IoT devices.
 
+## Notable Infrastructure Workarounds
+
+### Bluetooth USB Passthrough (VM 100)
+
+The N100 has a built-in Realtek Bluetooth Radio (0bda:c821) used by Home Assistant for BLE devices.
+
+**Workaround:** The Proxmox API token can't pass real USB devices (root-only operation). The `usb` block in `home_vm.tf` is declared with `ignore_changes = [usb]`, and a `null_resource` with `local-exec` via SSH applies the actual `qm set` command.
+
+**Host config:** `btusb` is blacklisted via `/etc/modprobe.d/blacklist-btusb.conf` to release the device from the host kernel so it can be passed to the VM.
+
+See `docs/bluetooth-ceiling-fan-setup.md` for the full step-by-step guide.
+
 ## Resources
 
 - [bpg/proxmox Provider Documentation](https://registry.terraform.io/providers/bpg/proxmox/latest/docs)
