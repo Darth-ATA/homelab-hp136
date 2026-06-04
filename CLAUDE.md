@@ -71,3 +71,12 @@ terraform apply
 1. **NEVER commit credentials** - terraform.tfvars and .env files are gitignored
 2. **Check .claude/rules.md** for NPM documentation requirements
 3. **Container disks are on local-zfs**, backups go to `local` (dir storage)
+
+## Bluetooth Passthrough (VM 100)
+
+- **Device:** Realtek Bluetooth Radio (0bda:c821, RTL8821C), built-in on N100
+- **Purpose:** FanLamp Pro ceiling fan BLE control via `ble_adv` custom component in HA
+- **Host config:** `btusb` blacklisted via `/etc/modprobe.d/blacklist-btusb.conf` (needs initramfs rebuild + reboot)
+- **Terraform note:** USB passthrough is declared in `home_vm.tf` as `ignore_changes = [usb]` because the API token can't pass real USB devices (root-only). A `null_resource` with `local-exec` via SSH applies the actual `qm set` command.
+- **Ha-ble-adv:** Installed via HACS, config via Duplicate Config method (FanLamp Pro app)
+- **Full guide:** `docs/bluetooth-ceiling-fan-setup.md`
