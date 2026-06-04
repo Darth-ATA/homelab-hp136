@@ -70,10 +70,28 @@ resource "proxmox_virtual_environment_vm" "home_assistant" {
     usb3 = false
   }
 
+  usb {
+    host = "0bda:c821"
+    usb3 = false
+  }
+
   lifecycle {
     ignore_changes = [
       usb,
     ]
+  }
+}
+
+# USB passthrough for built-in Bluetooth (Realtek RTL8821C 0bda:c821)
+# NOTE: Set via SSH because API token can't pass real USB devices (root-only)
+resource "null_resource" "bluetooth_usb_passthrough" {
+  triggers = {
+    vm_id       = var.home_assistant_vm_id
+    bt_usb_spec = "0bda:c821"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'qm set ${var.home_assistant_vm_id} -usb1 host=0bda:c821 >/dev/null 2>&1'"
   }
 }
 
