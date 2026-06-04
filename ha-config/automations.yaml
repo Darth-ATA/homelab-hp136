@@ -13,7 +13,10 @@
   trigger:
     - platform: time_pattern
       minutes: /15
-  condition: []
+  condition:
+    - condition: state
+      entity_id: light.ventilador_de_techo_despacho
+      state: "on"
   action:
     - choose:
         # Madrugada: apagar (00:00 - 06:00)
@@ -140,7 +143,10 @@
   trigger:
     - platform: time_pattern
       minutes: /15
-  condition: []
+  condition:
+    - condition: state
+      entity_id: fan.ventilador_de_techo_despacho
+      state: "on"
   action:
     - choose:
         # Maniana temprano: apagado (antes de 08:00)
