@@ -5,7 +5,7 @@ Torrentio is a Stremio add-on that aggregates torrents from multiple providers. 
 
 ### Prerequisites
 - Prowlarr running at http://192.168.1.142:9696
-- API Key: `e52b442319834cd7b1a4f8b3a37280d0`
+- API Key: `<your-prowlarr-api-key>`
 - SSH access to Proxmox: `ssh -i ~/.ssh/homelab_key root@192.168.1.134`
 
 ---
