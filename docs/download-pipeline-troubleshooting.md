@@ -6,9 +6,9 @@ This document covers common issues with the Sonarr → Prowlarr → Deluge downl
 ## Infrastructure
 - **Proxmox Host**: 192.168.1.134
 - **Docker LXC**: 101 (192.168.1.142)
-- **Prowlarr**: port 9696, API: `e52b442319834cd7b1a4f8b3a37280d0`
-- **Sonarr**: port 8989, API: `4ceaa8d5ea564ad4a6b37888b2ed76ee`
-- **Deluge**: port 8112, password: `deluge`
+- **Prowlarr**: port 9696, API: `<your-prowlarr-api-key>`
+- **Sonarr**: port 8989, API: `<your-sonarr-api-key>`
+- **Deluge**: port 8112, password: `<your-deluge-password>`
 
 ---
 
@@ -107,7 +107,7 @@ Use **Season Search** instead of Episode Search:
 3. Use bulk action to "Search Selected"
 4. Or trigger via API:
 ```bash
-curl -s -H "X-Api-Key: 4ceaa8d5ea564ad4a6b37888b2ed76ee" \
+curl -s -H "X-Api-Key: <your-sonarr-api-key>" \
   http://192.168.1.142:8989/api/v3/command \
   -X POST -H "Content-Type: application/json" \
   -d '{"name":"SeasonSearch","seriesId":<SERIES_ID>,"seasonId":<SEASON_ID>}'
@@ -204,7 +204,7 @@ ssh root@192.168.1.134 "pct exec 101 -- docker logs prowlarr --tail 100"
 
 ### Test Deluge Connectivity
 ```bash
-ssh root@192.168.1.134 "pct exec 101 -- docker exec deluge curl -s http://localhost:8112/json -u 'localclient:deluge' -d '{\"method\":\"daemon.get_config\",\"id\":1}'"
+ssh root@192.168.1.134 "pct exec 101 -- docker exec deluge curl -s http://localhost:8112/json -u 'localclient:<your-deluge-password>' -d '{\"method\":\"daemon.get_config\",\"id\":1}'"
 ```
 
 ### Force Season Search via API
@@ -213,7 +213,7 @@ ssh root@192.168.1.134 "pct exec 101 -- docker exec deluge curl -s http://localh
 ssh root@192.168.1.134 "pct exec 101 -- docker exec sonarr sqlite3 /config/sonarr.db 'SELECT Id,Title FROM Series;'"
 
 # Trigger search
-ssh root@192.168.1.134 "pct exec 101 -- docker exec sonarr curl -s -H 'X-Api-Key: 4ceaa8d5ea564ad4a6b37888b2ed76ee' 'http://localhost:8989/api/v3/command' -X POST -H 'Content-Type: application/json' -d '{\"name\":\"SeasonSearch\",\"seriesId\":<ID>,\"seasonId\":1}'"
+ssh root@192.168.1.134 "pct exec 101 -- docker exec sonarr curl -s -H 'X-Api-Key: <your-sonarr-api-key>' 'http://localhost:8989/api/v3/command' -X POST -H 'Content-Type: application/json' -d '{\"name\":\"SeasonSearch\",\"seriesId\":<ID>,\"seasonId\":1}'"
 ```
 
 ---
