@@ -34,9 +34,9 @@ SONARR_CONTAINER="${SONARR_CONTAINER:-sonarr}"
 # Alert email (empty = no email sent)
 ALERT_EMAIL="${ALERT_EMAIL:-}"
 
-# Telegram bot (empty = no telegram alerts)
-TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-8726659431:AAGq91ltZD2CsPdFAcCp4lnAM6inH6_VRQQ}"
-TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-31608430}"
+# Telegram bot (empty = no telegram alerts — set in host cron environment)
+TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
+TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
 
 # State tracking
 STATE_FILE="${STATE_FILE:-/var/tmp/sonarr-healthcheck.state}"
