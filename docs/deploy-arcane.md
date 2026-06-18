@@ -24,14 +24,14 @@ Before deploying Arcane, ensure you have:
 
 An SSH key must be configured for authentication to the Proxmox host.
 
-- **Key location**: `~/.ssh/homelab_ata`
+- **Key location**: `~/.ssh/homelab_key`
 - **Target host**: `192.168.1.134`
 - **SSH user**: `root`
 
 Test your connection:
 
 ```bash
-ssh -i ~/.ssh/homelab_ata -o StrictHostKeyChecking=no root@192.168.1.134
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134
 ```
 
 ### 2. Proxmox LXC Running
@@ -41,7 +41,7 @@ The target LXC container (ID: **101**) must be running before deployment.
 Check LXC status:
 
 ```bash
-ssh -i ~/.ssh/homelab_ata -o StrictHostKeyChecking=no root@192.168.1.134 "pct status 101"
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 "pct status 101"
 ```
 
 ### 3. Source Files
@@ -135,7 +135,7 @@ Options:
 │  └──────────────┘    └──────────────┘    │  JWT_SECRET)     │   │
 │         │                                    └──────────────────┘         │
 └─────────│────────────────────────────────────────────────────────┘         │
-          │ SSH (key: ~/.ssh/homelab_ata)                                    │
+          │ SSH (key: ~/.ssh/homelab_key)                                    │
           ▼                                                                   │
 ┌─────────────────────────────────────────────────────────────────┐
 │                    PROXMOX HOST (192.168.1.134)                         │
@@ -173,12 +173,12 @@ Options:
 
 ### SSH Key Not Found
 
-**Error**: `SSH key not found: ~/.ssh/homelab_ata`
+**Error**: `SSH key not found: ~/.ssh/homelab_key`
 
 **Solution**: Ensure the SSH key exists and the path is correct:
 
 ```bash
-ls -la ~/.ssh/homelab_ata
+ls -la ~/.ssh/homelab_key
 ```
 
 If the key is in a different location, edit `SSH_KEY` in `deploy-arcane.sh`:
@@ -194,13 +194,13 @@ SSH_KEY="/path/to/your/key"
 **Solution**: Start the LXC:
 
 ```bash
-ssh -i ~/.ssh/homelab_ata root@192.168.1.134 "pct start 101"
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct start 101"
 ```
 
 Then verify:
 
 ```bash
-ssh -i ~/.ssh/homelab_ata root@192.168.1.134 "pct status 101"
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct status 101"
 ```
 
 ### Container Not Starting
@@ -210,13 +210,13 @@ ssh -i ~/.ssh/homelab_ata root@192.168.1.134 "pct status 101"
 **Solution**: Check container logs inside the LXC:
 
 ```bash
-ssh -i ~/.ssh/homelab_ata root@192.168.1.134 "pct exec 101 -- docker logs arcane"
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker logs arcane"
 ```
 
 Also check container status:
 
 ```bash
-ssh -i ~/.ssh/homelab_ata root@192.168.1.134 "pct exec 101 -- docker ps -a"
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker ps -a"
 ```
 
 ### Files Not Found
@@ -243,7 +243,7 @@ ls -la docker/arcane/
 **Solution**: Check what's using the port:
 
 ```bash
-ssh -i ~/.ssh/homelab_ata root@192.168.1.134 "pct exec 101 -- netstat -tlnp | grep 3552"
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- netstat -tlnp | grep 3552"
 ```
 
 Either stop the conflicting service or change the port in `compose.yml`.
@@ -268,9 +268,9 @@ JWT_SECRET=your-jwt-secret-here
 
 ### SSH Key Security
 
-- The SSH key (`~/.ssh/homelab_ata`) should have restricted permissions:
+- The SSH key (`~/.ssh/homelab_key`) should have restricted permissions:
   ```bash
-  chmod 600 ~/.ssh/homelab_ata
+  chmod 600 ~/.ssh/homelab_key
   ```
 - Never share or commit this key to version control
 
@@ -287,7 +287,7 @@ Arcane is accessible at `http://192.168.1.142:3552`. Consider:
 |----------|-------------|---------|
 | `LXC_ID` | Proxmox LXC container ID | `101` |
 | `PROXMOX_HOST` | Proxmox host IP | `192.168.1.134` |
-| `SSH_KEY` | Path to SSH private key | `~/.ssh/homelab_ata` |
+| `SSH_KEY` | Path to SSH private key | `~/.ssh/homelab_key` |
 | `APP_PORT` | Application port | `3552` |
 | `APP_URL` | Full access URL | `http://192.168.1.142:3552` |
 
@@ -297,7 +297,7 @@ To modify these, edit the configuration section at the top of `deploy-arcane.sh`
 # Configuration
 LXC_ID="101"
 PROXMOX_HOST="192.168.1.134"
-SSH_KEY="~/.ssh/homelab_ata"
+SSH_KEY="~/.ssh/homelab_key"
 LOCAL_DIR="$(cd "$(dirname "$0")/../docker/arcane" && pwd)"
 REMOTE_DIR="/root/docker/arcane"
 APP_PORT="3552"
@@ -317,11 +317,11 @@ APP_URL="http://192.168.1.142:${APP_PORT}"
 ./scripts/deploy-arcane.sh --help
 
 # Check container status (inside LXC)
-ssh -i ~/.ssh/homelab_ata root@192.168.1.134 "pct exec 101 -- docker ps"
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker ps"
 
 # View logs
-ssh -i ~/.ssh/homelab_ata root@192.168.1.134 "pct exec 101 -- docker logs arcane"
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker logs arcane"
 
 # Restart container
-ssh -i ~/.ssh/homelab_ata root@192.168.1.134 "pct exec 101 -- docker restart arcane"
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker restart arcane"
 ```

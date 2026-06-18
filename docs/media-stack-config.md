@@ -1,4 +1,4 @@
-# Media Stack Configuration Guide - Prowlarr, Sonarr, Radarr, Jellyfin, qBittorrent, Gluetun
+# Media Stack Configuration Guide - Prowlarr, Sonarr, Radarr, Jellyfin, Deluge, Bazarr
 
 ## Overview
 Configuration guide for your media applications. Language preferences:
@@ -173,26 +173,9 @@ For anime with original audio + Spanish subs only:
 
 ---
 
-## 4. Bazarr (Recommended for Spanish Subtitles - Port 6767)
+## 4. Bazarr (Spanish Subtitles - Port 6767)
 
-Create compose at /Users/alejandrotorresaguilera/homelab-terraform/docker/bazarr/compose.yml:
-
-```yaml
-services:
-  bazarr:
-    image: linuxserver/bazarr:latest
-    container_name: bazarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
-    volumes:
-      - /root/docker/bazarr/config:/config
-      - /data/media:/media
-    ports:
-      - "6767:6767"
-    restart: unless-stopped
-```
+Bazarr is already deployed and managed via Arcane. Access at http://192.168.1.142:6767
 
 Configuration:
 1. Connect Sonarr (http://sonarr:8989) + Radarr (http://radarr:7878)
@@ -215,19 +198,11 @@ Configuration:
 
 ---
 
-## 6. qBittorrent + Gluetun (Already Configured)
+## 6. Deluge (Already Configured)
 
-- qBittorrent UI: http://localhost:8081
-- VPN: ProtonVPN Netherlands
-
-### Verify VPN:
-```bash
-curl --interface gluetun https://api.ipify.org
-```
-
-### qBittorrent Settings:
-- Language: Español
-- Default save: /data/torrents
+- Deluge UI: http://192.168.1.142:8112
+- **No VPN** — torrents go through the regular WAN connection
+- Default save: `/data/torrents` (mounted as `/downloads` inside container)
 
 ---
 
@@ -235,18 +210,20 @@ curl --interface gluetun https://api.ipify.org
 
 | Service | Port | Status |
 |---------|------|--------|
-| Prowlarr | 9696 | ✅ Ready to configure |
-| Radarr | 7878 | Add CFs |
-| Sonarr | 8989 | Add CFs |
+| Prowlarr | 9696 | ✅ Configured |
+| Radarr | 7878 | ✅ Add CFs |
+| Sonarr | 8989 | ✅ Add CFs |
+| Bazarr | 6767 | ✅ Subtitles configured |
+| Lidarr | 8686 | ✅ Configured |
 | Jellyfin | 8096/8920 | Configure Spanish |
-| qBittorrent | 8081 | ✅ Ready |
-| Gluetun | 8081, 6881 | ✅ Ready |
+| Deluge | 8112 | ✅ Configured (no VPN) |
 
 ---
 
 ## Important Notes
 
 1. Spanish (Spain) is code 4 in Radarr/Sonarr
-2. Use Bazarr for automatic Spanish subtitles
+2. Bazarr is already configured with Sonarr + Radarr for automatic subtitles
 3. For anime, prefer original audio with subs - consider separate Sonarr instance
 4. Quality profiles should use CF scoring, not language in profile
+5. **Torrent client is Deluge** (not qBittorrent), and there is **no VPN**
