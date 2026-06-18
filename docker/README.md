@@ -36,7 +36,7 @@ docker compose -f docker-compose.yml up -d
 
 ### 1. Storage Setup (on Proxmox host)
 
-**IMPORTANTE:** La LXC 101 monta `/data` como bind mount desde el host. Todo el contenido de torrents y media está bajo un mismo punto de montaje para que **hardlinks funcionen** dentro de los contenedores Docker.
+**CRITICAL:** LXC 101 mounts `/data` as a single bind mount from the Proxmox host. All torrents and media live under one mount point so **hardlinks work** inside Docker containers.
 
 ```bash
 # SSH into Proxmox host
@@ -46,17 +46,17 @@ ssh root@192.168.1.134
 mkdir -p /data/{torrents,media}/{movies,tv,music}
 chmod 777 -R /data
 
-# Add bind mount to LXC 101 (verificar que ya existe)
+# Verify bind mount exists in LXC config
 cat /etc/pve/lxc/101.conf | grep mp0
-# Debería mostrar: mp0: /data,mp=/data
+# Expected: mp0: /data,mp=/data
 
 # Directory layout inside LXC (/data):
 # /data/
-# ├── torrents/      # Downloads (Deluge escribe acá)
+# ├── torrents/      # Downloads (Deluge writes here)
 # │   ├── movies/
 # │   ├── tv/
 # │   └── music/
-# └── media/         # Medios organizados (*arr hardlink acá)
+# └── media/         # Organized media (*arr hardlinks here)
 #     ├── movies/
 #     ├── tv/
 #     └── music/
