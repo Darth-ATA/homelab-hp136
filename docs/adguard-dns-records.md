@@ -16,7 +16,7 @@ Access AdGuard at: http://192.168.1.2
 | `adguard.local` | `192.168.1.2` | AdGuard Home admin panel |
 | `npm.local` | `192.168.1.142` | Nginx Proxy Manager admin |
 | `tailscale.local` | `192.168.1.102` | Tailscale (if needed) |
-| `debian-test.local` | `192.168.1.105` | Debian test container |
+
 
 ## Additional Configuration:
 

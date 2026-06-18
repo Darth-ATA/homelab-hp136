@@ -6,7 +6,7 @@ Terraform configuration for managing LXC containers on Proxmox VE using the `bpg
 
 This project provides Infrastructure as Code (IaC) for a Proxmox homelab environment. It allows you to create, modify, and manage LXC containers programmatically instead of using the Proxmox web interface interactively.
 
-**Note:** This setup uses Terraform to **create, modify, and manage** all containers and VMs. The `bpg/proxmox` provider has known issues (#1406, #1998) that may cause replacements in certain import scenarios, but existing containers can be managed safely if imported correctly and changes applied incrementally.
+**Note:** This setup uses Terraform to **create, modify, and manage** all containers and VMs. All resources are managed safely via the `bpg/proxmox` provider (v0.76.0+).
 
 ## Project Structure
 
@@ -15,21 +15,41 @@ homelab-terraform/
 ├── main.tf                      # Provider and base configuration
 ├── variables.tf                 # Variable definitions
 ├── firewall.tf                  # Firewall configuration (cluster, security groups, rules)
-├── ha-config/home_assitant-vm.tf  # Home Assistant VM (HAOS)
+├── home_vm.tf                   # Home Assistant VM (HAOS)
 ├── adguard-container.tf         # AdGuard LXC container
 ├── docker-container.tf          # Docker/NPM LXC container
 ├── tailscale-container.tf       # Tailscale LXC container
-├── new-container-example.tf     # Template for new containers
+├── backup.tf                    # Backup job configurations
+├── proxmox-storage.tf           # Storage configuration (local-zfs)
 ├── NETWORK.md                   # Network configuration and static IPs
 ├── README.md                    # This file
-├── .gitignore                  # Protect sensitive data
-├── docs/                       # Additional documentation
+├── RECOVERY.md                  # Disaster recovery procedures
+├── .gitignore                   # Protect sensitive data
+├── docker/                      # Docker compose files (reference copies)
+│   ├── README.md                # Docker services documentation
+│   ├── arcane/                  # Arcane orchestrator config
+│   ├── frigate/                 # Frigate NVR (not deployed)
+│   ├── immich/                  # Immich photo backup (not deployed)
+│   └── .../                     # Per-service compose files
+├── docs/                        # Additional documentation
 │   ├── adguard-dns-records.md
 │   ├── download-pipeline-troubleshooting.md
-│   ├── home_assitant-static-ip.md
-│   └── npm-config.md
-└── scripts/                    # Utility scripts
-    └── set-static-ips.sh
+│   ├── home_assistant-static-ip.md
+│   ├── npm-config.md
+│   ├── bluetooth-ceiling-fan-setup.md
+│   ├── media-stack-config.md
+│   └── .../
+├── ha-config/                   # Home Assistant configuration
+│   ├── configuration.yaml
+│   ├── automations.yaml
+│   └── ...
+└── scripts/                     # Utility scripts
+    ├── set-static-ips.sh
+    ├── deploy-arcane.sh
+    ├── deploy-media-stack.sh
+    ├── cleanup-backups.sh
+    ├── check-router-dns.sh
+    └── sonarr-healthcheck.sh
 ```
 
 ## Prerequisites
@@ -72,8 +92,8 @@ The following containers and VMs are **fully managed** by Terraform:
 
 | ID  | Name      | Description | Static IP | Terraform File |
 |-----|------------|-------------|-----------|----------------|
-| 100 | home_assistant | Home Assistant VM (HAOS) - 4GB RAM, 32GB disk | 192.168.1.100 | `home_vm.tf` |
-| 101 | docker    | Docker with NPM + Arcane - 2 cores, 4GB RAM, 32GB disk | 192.168.1.142 | `docker-container.tf` |
+| 100 | home_assistant | Home Assistant VM (HAOS) - 2 cores, 4GB RAM, 32GB disk | 192.168.1.100 | `home_vm.tf` |
+| 101 | docker    | Docker host — media stack + NPM + Arcane — 2 cores, 6GB RAM, 150GB disk, iGPU passthrough | 192.168.1.142 | `docker-container.tf` |
 | 102 | tailscale  | Tailscale VPN connectivity - 1 core, 512MB RAM, 2GB disk | 192.168.1.102 | `tailscale-container.tf` |
 | 103 | adguard   | AdGuard Home DNS ad-blocker - 1 core, 512MB RAM, 2GB disk | 192.168.1.2 | `adguard-container.tf` |
 
@@ -84,8 +104,8 @@ The following containers and VMs are **fully managed** by Terraform:
 If you need to import an existing container (e.g., after recreating the Proxmox host):
 
 ```bash
-# Import
-terraform import proxmox_virtual_environment_container.name prxhp136/ID
+# Import (find the resource name in state or .tf files)
+terraform import proxmox_virtual_environment_container.docker prxhp136/101
 
 # Verify
 terraform show
@@ -94,13 +114,13 @@ terraform show
 **Best Practices:**
 - Run `terraform plan` before `apply` to detect any unintended replacements
 - Apply changes incrementally to catch issues early
-- The provider issues (#1406, #1998) are less problematic with recent versions; ensure you use v0.76.0+
+- Use provider v0.76.0+
 
 ## Firewall Configuration ✅
 
 The firewall is **enabled with permissive ACCEPT policies** to avoid breaking existing services. See [Issue #3](https://github.com/Darth-ATA/homelab-hp136/issues/3) for implementation details.
 
-### Status (2026-05-05)
+### Status (2026-06-18)
 - ✅ Cluster-level firewall enabled
 - ✅ Security groups created (mgmt, dns, web, home_assistant, tailscale)
 - ✅ Cluster firewall rules applied
@@ -128,8 +148,13 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 | Service | IP | Open Ports | Notes |
 |---------|-----|------------|-------|
 | Proxmox Host | 192.168.1.134 | 8006 (UI), 22 (SSH) | Permissive (future: restrict to management IPs) |
-| Home Assistant (VM 100) | 192.168.1.100 | 8123 | VM not managed; firewall options ARE managed ✅ |
-| Docker/NPM (LXC 101) | 192.168.1.142 | 80, 443, 81 | NPM + Arcane + Vaultwarden (8080) |
+| Home Assistant (VM 100) | 192.168.1.100 | 8123 | VM managed via Terraform ✅ |
+| Docker/NPM (LXC 101) | 192.168.1.142 | 80, 443, 81 | NPM reverse proxy |
+| Docker — *arr suite | 192.168.1.142 | 7878, 8989, 8686, 9696, 6767 | Radarr, Sonarr, Lidarr, Prowlarr, Bazarr |
+| Docker — Deluge | 192.168.1.142 | 8112, 6881 | Torrent client (no VPN) |
+| Docker — Jellyfin | 192.168.1.142 | 8096 | Media server |
+| Docker — Vaultwarden | 192.168.1.142 | 8080 | Password manager (behind NPM at vw.hp136.duckdns.org) |
+| Docker — Arcane | 192.168.1.142 | 3552 | Service orchestrator |
 | Tailscale (LXC 102) | 192.168.1.102 | 41641/UDP | Optional direct connections |
 | AdGuard (LXC 103) | 192.168.1.2 | 53/tcp+udp | DNS server |
 
@@ -170,10 +195,12 @@ See `docs/bluetooth-ceiling-fan-setup.md` for the full step-by-step guide.
 
 | Resource | VMID | Schedule | Storage | Retention Policy |
 |-----------|------|----------|---------|------------------|
-| Home Assistant | 100 | Daily 21:00 | local (dir) | Last 3-5 backups |
-| docker | 101 | Daily 22:00 | local (dir) | **Daily + Last of each month** |
-| tailscale | 102 | Daily 22:30 | local (dir) | **Daily + Last of each month** |
-| adguard | 103 | Daily 23:00 | local (dir) | **Daily + Last of each month** |
+| Home Assistant | 100 | Daily 21:00 | local (dir) | Keep last 5 |
+| docker | 101 | Daily 03:00 | local (dir) | Keep daily + monthly (excludes `/data`) |
+| tailscale | 102 | Daily 03:45 | local (dir) | Keep daily + monthly |
+| adguard | 103 | Daily 04:00 | local (dir) | Keep daily + monthly |
+
+**Note:** Docker backup excludes `/data` (media + torrents) to save space. Schedules are staggered off-peak to avoid I/O contention.
 
 **Note:** All backups use `local` (dir-type storage) which supports the backup content type. ZFS zpool storage (`local-zfs`) does NOT support backup content type.
 
@@ -212,8 +239,10 @@ ssh root@192.168.1.134 "cat /var/log/backup-cleanup.log"
 
 | Storage | Type | Total | Used | Available | Used By |
 |---------|------|-------|------|-----------|---------|
-| `local` (dir) | Directory | 468GB | 105GB (22.5%) | 363GB | Proxmox ISOs, templates, VM 100 backups, container backups (101, 102, 103) |
-| `local-zfs` (zfs) | ZFS pool | 370GB | 7.4GB (2%) | 362GB | Container disks (101, 102, 103) |
+| `local` (dir) | Directory | 468GB | ~103GB (31%) | 236GB | Proxmox ISOs, templates, VM 100 backups, container backups |
+| `local-zfs` (zfs) | ZFS pool | 370GB | ~114GB (31%) | 236GB | Container disks (101: 150G, 102: 2G, 103: 2G), VM 100 disk |
+
+> **Note:** local-zfs usage increased mainly due to docker container's 150GB disk with media stack data (torrents, media library).
 
 ### Why `local-zfs` for Container Disks
 - **ZFS compression** reduces actual disk usage for container disk images
@@ -257,7 +286,7 @@ ssh root@192.168.1.134 "rm /var/lib/vz/template/cache/<unused-template>.tar.gz"
 
 | Container | Current Size | Recommendation |
 |-----------|--------------|----------------|
-| docker (101) | 32GB | Monitor - sufficient for Docker + NPM + Vaultwarden |
+| docker (101) | **150GB** | Sufficient for Docker stack + media library. Monitor `/data` usage — if media grows, expand. |
 | tailscale (102) | 2GB | Sufficient for Tailscale only |
 | adguard (103) | 2GB | Sufficient for DNS |
 
