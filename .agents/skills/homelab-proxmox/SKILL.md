@@ -57,6 +57,57 @@ terraform apply
 
 **Important**: Backups MUST use `local` (dir-type). ZFS pools do NOT support backup content type.
 
+## Media Stack Storage Layout (LXC 101)
+
+### Directory Structure
+
+```
+/data/                         # Single mount point inside LXC 101
+├── torrents/                  # Deluge downloads here
+│   ├── movies/
+│   ├── tv/
+│   └── music/
+└── media/                     # Organized media (*arr hardlinks here)
+    ├── movies/
+    ├── tv/
+    └── music/
+```
+
+### Docker Volumes — Single Mount Rule (CRITICAL)
+
+All *arr containers MUST mount `/data:/data` as a **single volume**. Do NOT use separate mounts:
+
+```yaml
+# ✅ CORRECT — hardlinks work
+volumes:
+  - /data:/data
+
+# ❌ WRONG — hardlinks break with "Cross-device link" (EXDEV)
+volumes:
+  - /data/media/movies:/movies
+  - /data/torrents:/downloads
+```
+
+**Why:** Docker creates a separate mount point inside the container for each bind mount. Even when source directories share the same ZFS subvol on the host, inside the Docker container they appear as different filesystems. The `link()` syscall returns EXDEV ("Cross-device link") when trying to hardlink across mount points.
+
+### *Arr Root Folder Paths
+
+With `/data:/data` single mount, root folders are:
+
+| Service | Root Folder |
+|---------|-------------|
+| Radarr | `/data/media/movies` |
+| Sonarr | `/data/media/tv` |
+| Lidarr | `/data/media/music` |
+
+### Post-Deploy Path Migration
+
+After changing from separate mounts to single mount, each series/movie/artist record in the *arr database stores individual `path` and `rootFolderPath`. Update every record via API:
+```
+GET /api/v1/{resource}/{id} → modify path → PUT /api/v1/{resource}/{id}
+```
+Updating only the RootFolders endpoint is NOT sufficient.
+
 ## Backup Strategy
 
 - **Schedule**: Daily at 21:00-23:00
@@ -101,6 +152,17 @@ cd /Users/alejandrotorresaguilera/homelab-terraform
 terraform plan
 terraform apply
 ```
+
+## Agent Rules — Operational Fixes
+
+When resolving an operational problem (disk full, hardlinks broken, service crash, config migration), the agent MUST leave the repo in a better state for future rebuilds:
+
+1. **Create a script** if the fix involves manual steps that would be needed again (API calls, config changes, path migrations). Save to `scripts/` with a clear name and usage comment.
+2. **Update the skill** (`homelab-proxmox`) if the fix reveals infrastructure knowledge agents should have from the start.
+3. **Update docs** in `docs/` or `docker/README.md` if the fix changes setup procedures, paths, or storage layout.
+4. **Commit everything** in the same PR as the fix — docs and scripts are part of the deliverable, not an afterthought.
+
+Exception: one-off transient issues (e.g., "TorrentGalaxy domain is down") do not need scripts or doc updates.
 
 ## Language
 
