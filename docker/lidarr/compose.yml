@@ -1,0 +1,14 @@
+services:
+  lidarr:
+    image: linuxserver/lidarr:latest
+    container_name: lidarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+    volumes:
+      - /root/docker/lidarr/config:/config
+      - /data:/data
+    ports:
+      - "8686:8686"
+    restart: unless-stopped
