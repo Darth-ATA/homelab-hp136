@@ -7,6 +7,64 @@ Configuration guide for your media applications. Language preferences:
 
 ---
 
+## Storage Layout & Hardlinks
+
+### Directory Structure
+
+```
+/data/                         # Single mount point inside LXC 101
+├── torrents/                  # Deluge downloads here
+│   ├── movies/
+│   ├── tv/
+│   └── music/
+└── media/                     # Organized media (*arr hardlinks here)
+    ├── movies/
+    ├── tv/
+    └── music/
+```
+
+### Docker Volumes — Single Mount Rule (CRITICAL)
+
+All *arr containers MUST use a **single volume mount** to preserve hardlink capability:
+
+```yaml
+# ✅ CORRECT — hardlinks work
+volumes:
+  - /data:/data
+
+# ❌ WRONG — hardlinks break with "Cross-device link" (EXDEV)
+volumes:
+  - /data/media/movies:/movies
+  - /data/torrents:/downloads
+```
+
+**Why:** Docker creates a separate mount point inside the container for each bind mount. Even though `/data/media/movies` and `/data/torrents` are on the same ZFS subvol on the Proxmox host, inside the Docker container they appear as different filesystems. The `link()` syscall returns EXDEV ("Cross-device link") when trying to hardlink across mount points.
+
+### *Arr Root Folder Paths
+
+With the single `/data:/data` mount, root folders use the **full path**:
+
+| Service | Root Folder |
+|---------|-------------|
+| Radarr | `/data/media/movies` |
+| Sonarr | `/data/media/tv` |
+| Lidarr | `/data/media/music` |
+
+### Migrating from Separate Mounts
+
+If you previously used separate mounts (e.g., `/data/media/movies:/movies`), each series/movie/artist in the *arr database stores its own `path` and `rootFolderPath`. You need to update every record via API:
+
+```python
+# Pattern: GET /api/v1/{resource}/{id} → modify path → PUT /api/v1/{resource}/{id}
+# For each record, change:
+#   path: /movies/MovieName  →  /data/media/movies/MovieName
+#   rootFolderPath: /movies  →  /data/media/movies
+```
+
+Updating only the RootFolders endpoint is NOT sufficient — each record must be individually migrated.
+
+---
+
 ## Language Codes (Radarr/Sonarr)
 | Language | Code |
 |----------|------|

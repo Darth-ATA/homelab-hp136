@@ -35,17 +35,31 @@ docker compose -f docker-compose.yml up -d
 ## Prerequisites
 
 ### 1. Storage Setup (on Proxmox host)
+
+**CRITICAL:** LXC 101 mounts `/data` as a single bind mount from the Proxmox host. All torrents and media live under one mount point so **hardlinks work** inside Docker containers.
+
 ```bash
 # SSH into Proxmox host
 ssh root@192.168.1.134
 
 # Create media folder structure
-mkdir -p /mnt/media/{torrents,media}/{movies,tv,music}
-chmod 777 -R /mnt/media
+mkdir -p /data/{torrents,media}/{movies,tv,music}
+chmod 777 -R /data
 
-# Add bind mount to LXC 101
-echo "mp0: /mnt/media,mp=/data" >> /etc/pve/lxc/101.conf
-pct restart 101
+# Verify bind mount exists in LXC config
+cat /etc/pve/lxc/101.conf | grep mp0
+# Expected: mp0: /data,mp=/data
+
+# Directory layout inside LXC (/data):
+# /data/
+# ├── torrents/      # Downloads (Deluge writes here)
+# │   ├── movies/
+# │   ├── tv/
+# │   └── music/
+# └── media/         # Organized media (*arr hardlinks here)
+#     ├── movies/
+#     ├── tv/
+#     └── music/
 ```
 
 ### 2. VPN Credentials (ProtonVPN Free)
@@ -159,7 +173,8 @@ Add proxy hosts in NPM (http://192.168.1.142:81):
 
 ## Notes
 - All compose files follow the pattern: `/root/docker/<service>/compose.yml`
-- Media storage uses `/data` mount (bound from Proxmox host `/mnt/media`)
+- Media storage uses `/data` mount (single mount point from Proxmox host)
+- **CRITICAL — Hardlinks:** Mount `/data:/data` in *arr containers. Do NOT use separate mounts like `/data/media/movies:/movies` + `/data/torrents:/downloads` — Docker treats each bind mount as a separate filesystem, breaking hardlinks with "Cross-device link" (EXDEV).
 - qBittorrent runs behind VPN (Gluetun) for privacy
 - Arr apps connect to qBittorrent via internal Docker network
 - Jellyfin has read-only access to media (`/data/media:/media:ro`)
