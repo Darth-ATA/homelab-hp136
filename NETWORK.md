@@ -20,12 +20,11 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 
 | Service | Type | ID | IP Address | MAC Address | Hostname | Notes |
 |---------|------|-----|------------|-------------|----------|-------|
-| **Proxmox Host** | Physical | - | 192.168.1.134 | — | `prxhp136` | Proxmox VE management |
-| **Home Assistant** | VM | 100 | 192.168.1.100 | (virtio, dinámica) | `haos-17.1` | Home automation |
-| **Docker/NPM/Arcane** | LXC | 101 | 192.168.1.142 | `BC:24:11:C5:96:4D` | `docker` | Container runtime + Nginx Proxy Manager + Arcane |
+| **Proxmox Host** | Physical | - | 192.168.1.134 | — | `prxhp136` | Proxmox VE management (pve-manager/9.2.3) |
+| **Home Assistant** | VM | 100 | 192.168.1.100 | `02:8D:AB:80:C0:9D` | `haos-17.1` | Home automation |
+| **Docker/NPM/Arcane** | LXC | 101 | 192.168.1.142 | `BC:24:11:C5:96:4F` | `docker` | 2 cores, 6GB RAM, 150GB disk, iGPU passthrough |
 | **Tailscale** | LXC | 102 | 192.168.1.102 | `BC:24:11:CA:68:89` | `tailscale` | VPN |
 | **AdGuard Home** | LXC | 103 | 192.168.1.2 | `BC:24:11:D5:A2:77` | `adguard` | DNS ad-blocking |
-| **Debian Test** | LXC | 105 | 192.168.1.105 | (pendiente) | `debian-test` | Test container |
 
 ## Service Access Points
 
@@ -34,11 +33,17 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | Proxmox Web UI | `https://192.168.1.134:8006` | Proxmox host |
 | Home Assistant | `http://192.168.1.100:8123` | VM 100 (HA OS) |
 | Nginx Proxy Manager | `http://192.168.1.142:81` | Docker container in LXC 101 |
-| Arcane | `http://192.168.1.142:3552` | Docker container in LXC 101 |
-| Vaultwarden | `https://vw.hp136.duckdns.org` | Docker container in LXC 101 |
+| Arcane | `http://192.168.1.142:3552` | Docker container in LXC 101 (service orchestrator) |
+| Vaultwarden | `https://vw.hp136.duckdns.org` | Docker, port 8080 (proxied via NPM) |
 | AdGuard Home | `http://192.168.1.2` | LXC 103 |
 | Tailscale | `http://192.168.1.102` | LXC 102 |
-| Frigate NVR | `http://192.168.1.142:5000` | Docker container in LXC 101 |
+| Sonarr | `http://192.168.1.142:8989` | Docker (managed via Arcane) |
+| Radarr | `http://192.168.1.142:7878` | Docker (managed via Arcane) |
+| Lidarr | `http://192.168.1.142:8686` | Docker (managed via Arcane) |
+| Prowlarr | `http://192.168.1.142:9696` | Docker (managed via Arcane) |
+| Bazarr | `http://192.168.1.142:6767` | Docker (managed via Arcane) |
+| Deluge | `http://192.168.1.142:8112` | Docker (managed via Arcane) |
+| Jellyfin | `http://192.168.1.142:8096` | Docker (managed via Arcane) |
 
 ## DNS Configuration
 
@@ -65,7 +70,7 @@ Proxy hosts configured in NPM (http://192.168.1.142:81):
 
 ## How to Recreate Static IPs
 
-### LXC Containers (101, 102, 103, 105)
+### LXC Containers (101, 102, 103)
 
 SSH to Proxmox and edit configs:
 ```bash
@@ -118,7 +123,7 @@ El pool DHCP del router debe **excluir** todas las IPs estáticas del homelab:
 | Gateway | `192.168.1.1` |
 | Tiempo de concesión | `1440` min (default) |
 
-**IPs estáticas fuera del pool:** `.2` (AdGuard), `.100` (HA), `.102` (Tailscale), `.105` (Debian), `.134` (Proxmox), `.142` (Docker)
+**IPs estáticas fuera del pool:** `.2` (AdGuard), `.100` (HA), `.102` (Tailscale), `.134` (Proxmox), `.142` (Docker)
 
 ### DNS Settings (requerido para que funcione la resolución)
 
@@ -150,11 +155,27 @@ Reserve `192.168.1.150-254` for DHCP clients on your router to avoid conflicts w
 - All devices should use AdGuard (`192.168.1.2`) as DNS server — configure this ON THE ROUTER so DHCP clients receive it automatically
 - `.local` domains may conflict with mDNS - prefer using `.home` domains
 
-## Frigate NVR
+## Frigate NVR (NOT deployed)
 
-Runs as a Docker container on LXC 101 (192.168.1.142).
+Frigate is **configured but not currently running** on LXC 101. The compose file and config exist on the host at `/root/docker/frigate/`.
 
-**Access:** http://192.168.1.142:5000
+**Why not deployed:** The Dahua camera (192.168.1.108) requires authentication setup and OpenVINO GPU passthrough validation.
+
+**To deploy when ready:**
+
+```bash
+# 1. Set FRIGATE_RTSP_PASSWORD in docker/.env
+# 2. Install Intel OpenCL runtime:
+ssh root@192.168.1.142 "apt install -y intel-opencl-icd intel-igc-cm && groupadd -g 44 video && usermod -aG video root"
+
+# 3. Start Frigate:
+ssh root@192.168.1.134 "pct exec 101 -- docker compose -f /root/docker/frigate/compose.yml up -d"
+
+# 4. View logs:
+ssh root@192.168.1.134 "pct exec 101 -- docker logs frigate -f"
+```
+
+**Access when running:** http://192.168.1.142:5000
 
 ### Camera — Dahua IPC-HDW2230T-AS-S2
 
@@ -165,27 +186,6 @@ Runs as a Docker container on LXC 101 (192.168.1.142).
 | Auth | Digest (no Basic) |
 | RTSP path (sub/main) | `/live` |
 | Streaming user | `admin` |
-
-### Frigate setup
-
-```bash
-# Files in docker/frigate/
-# - compose.yml              # Docker compose with network_mode: host
-# - config/config.yml.j2     # Jinja2 template (Frigate processes at startup)
-# - .env                     # Contains FRIGATE_RTSP_PASSWORD (NOT committed)
-
-# Config template (config.yml.j2) uses Jinja2 variables:
-#   {{ FRIGATE_RTSP_PASSWORD }}    -> resolved from environment at runtime
-
-# .env file (required, NOT in git):
-#   FRIGATE_RTSP_PASSWORD=<camera_password>
-
-# Deploy on Proxmox LXC 101:
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker compose -f /root/docker/frigate/compose.yml up -d"
-
-# View logs:
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker logs frigate -f"
-```
 
 ### Known issues
 
