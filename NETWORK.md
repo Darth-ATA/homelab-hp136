@@ -25,6 +25,7 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | **Docker/NPM/Arcane** | LXC | 101 | 192.168.1.142 | `BC:24:11:C5:96:4F` | `docker` | 2 cores, 6GB RAM, 150GB disk, iGPU passthrough |
 | **Tailscale** | LXC | 102 | 192.168.1.102 | `BC:24:11:CA:68:89` | `tailscale` | VPN |
 | **AdGuard Home** | LXC | 103 | 192.168.1.2 | `BC:24:11:D5:A2:77` | `adguard` | DNS ad-blocking |
+| **Vaultwarden** | LXC | 104 | 192.168.1.144 | `BC:24:11:78:83:C3` | `alpine-vaultwarden` | Password manager |
 
 ## Service Access Points
 
@@ -34,7 +35,7 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | Home Assistant | `http://192.168.1.100:8123` | VM 100 (HA OS) |
 | Nginx Proxy Manager | `http://192.168.1.142:81` | Docker container in LXC 101 |
 | Arcane | `http://192.168.1.142:3552` | Docker container in LXC 101 (service orchestrator) |
-| Vaultwarden | `https://vw.hp136.duckdns.org` | Docker, port 8080 (proxied via NPM) |
+| Vaultwarden | `https://vw.hp136.duckdns.org` | LXC 104 (Alpine), port 8000 (proxied via NPM) |
 | AdGuard Home | `http://192.168.1.2` | LXC 103 |
 | Tailscale | `http://192.168.1.102` | LXC 102 |
 | Sonarr | `http://192.168.1.142:8989` | Docker (managed via Arcane) |
@@ -70,7 +71,7 @@ Proxy hosts configured in NPM (http://192.168.1.142:81):
 
 ## How to Recreate Static IPs
 
-### LXC Containers (101, 102, 103)
+### LXC Containers (101, 102, 103, 104)
 
 SSH to Proxmox and edit configs:
 ```bash
@@ -123,7 +124,7 @@ El pool DHCP del router debe **excluir** todas las IPs estáticas del homelab:
 | Gateway | `192.168.1.1` |
 | Tiempo de concesión | `1440` min (default) |
 
-**IPs estáticas fuera del pool:** `.2` (AdGuard), `.100` (HA), `.102` (Tailscale), `.134` (Proxmox), `.142` (Docker)
+**IPs estáticas fuera del pool:** `.2` (AdGuard), `.100` (HA), `.102` (Tailscale), `.134` (Proxmox), `.142` (Docker), `.144` (Vaultwarden)
 
 ### DNS Settings (requerido para que funcione la resolución)
 
