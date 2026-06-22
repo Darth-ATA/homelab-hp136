@@ -7,13 +7,13 @@
 # Commented out - backup job needs to be recreated
 resource "proxmox_backup_job" "home_assistant" {
   id       = "home-assistant-backup"
-  schedule  = "*-*-* 21:00"
-  storage   = "local"
-  vmid      = ["100"]
-  mode      = "snapshot"
-  compress  = "zstd"
-  enabled   = true
-  
+  schedule = "*-*-* 21:00"
+  storage  = "local"
+  vmid     = ["100"]
+  mode     = "snapshot"
+  compress = "zstd"
+  enabled  = true
+
   # Keep last 3-5 backups
   prune_backups = {
     keep-last = "5"
@@ -27,13 +27,13 @@ resource "proxmox_backup_job" "home_assistant" {
 # simplified once the provider fixes it.
 resource "proxmox_backup_job" "docker" {
   id       = "docker-backup"
-  schedule  = "*-*-* 03:00"
-  storage   = "local"
-  vmid      = ["101"]
-  mode      = "snapshot"
-  compress  = "zstd"
-  enabled   = true
-  
+  schedule = "*-*-* 03:00"
+  storage  = "local"
+  vmid     = ["101"]
+  mode     = "snapshot"
+  compress = "zstd"
+  enabled  = true
+
   # Daily + Last of each month
   prune_backups = {
     keep-daily   = "1"
@@ -56,13 +56,13 @@ resource "null_resource" "docker_backup_exclude" {
 # Tailscale container (102) - Daily 03:45 (after CT 101)
 resource "proxmox_backup_job" "tailscale" {
   id       = "tailscale-backup"
-  schedule  = "*-*-* 03:45"
-  storage   = "local"
-  vmid      = ["102"]
-  mode      = "snapshot"
-  compress  = "zstd"
-  enabled   = true
-  
+  schedule = "*-*-* 03:45"
+  storage  = "local"
+  vmid     = ["102"]
+  mode     = "snapshot"
+  compress = "zstd"
+  enabled  = true
+
   # Daily + Last of each month
   prune_backups = {
     keep-daily   = "1"
@@ -73,13 +73,30 @@ resource "proxmox_backup_job" "tailscale" {
 # AdGuard container (103) - Daily 04:00 (after CT 102)
 resource "proxmox_backup_job" "adguard" {
   id       = "adguard-backup"
-  schedule  = "*-*-* 04:00"
-  storage   = "local"
-  vmid      = ["103"]
-  mode      = "snapshot"
-  compress  = "zstd"
-  enabled   = true
-  
+  schedule = "*-*-* 04:00"
+  storage  = "local"
+  vmid     = ["103"]
+  mode     = "snapshot"
+  compress = "zstd"
+  enabled  = true
+
+  # Daily + Last of each month
+  prune_backups = {
+    keep-daily   = "1"
+    keep-monthly = "1"
+  }
+}
+
+# Vaultwarden container (104) - Daily 04:15 (after CT 103)
+resource "proxmox_backup_job" "vaultwarden" {
+  id       = "vaultwarden-backup"
+  schedule = "*-*-* 04:15"
+  storage  = "local"
+  vmid     = ["104"]
+  mode     = "snapshot"
+  compress = "zstd"
+  enabled  = true
+
   # Daily + Last of each month
   prune_backups = {
     keep-daily   = "1"

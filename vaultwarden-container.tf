@@ -1,21 +1,21 @@
 # Note: If "changing feature flags is only allowed for root@pam" error occurs:
 # Option 1: Remove features block (if present)
-# Option 2: Import existing container with: terraform import proxmox_virtual_environment_container.tailscale prxhp136/102
-resource "proxmox_virtual_environment_container" "tailscale" {
+# Option 2: Import existing container with: terraform import proxmox_virtual_environment_container.vaultwarden prxhp136/104
+resource "proxmox_virtual_environment_container" "vaultwarden" {
   node_name    = "prxhp136"
-  vm_id        = 102
+  vm_id        = 104
   started      = true
-  unprivileged = false
+  unprivileged = true
 
-  description = "Tailscale container for VPN connectivity (1 core, 512MB RAM, 2GB disk)"
+  description = "Vaultwarden password manager (Alpine, 1 core, 512MB RAM, 4GB disk)"
 
-  tags = ["community-script", "os", "tailscale"]
+  tags = ["community-script", "password-manager", "vaultwarden"]
 
   initialization {
-    hostname = "tailscale"
+    hostname = "alpine-vaultwarden"
     ip_config {
       ipv4 {
-        address = "192.168.1.102/24"
+        address = "192.168.1.144/24"
         gateway = "192.168.1.1"
       }
     }
@@ -32,13 +32,13 @@ resource "proxmox_virtual_environment_container" "tailscale" {
 
   disk {
     datastore_id = "local-zfs"
-    size         = 2
+    size         = 4
   }
 
   network_interface {
     name        = "eth0"
     bridge      = "vmbr0"
-    mac_address = "BC:24:11:CA:68:89"
+    mac_address = "BC:24:11:78:83:C3"
     firewall    = true
   }
 
@@ -51,8 +51,8 @@ resource "proxmox_virtual_environment_container" "tailscale" {
   }
 
   operating_system {
-    template_file_id = "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
-    type             = "debian"
+    template_file_id = "local:vztmpl/alpine-3.23-default_20260116_amd64.tar.xz"
+    type             = "alpine"
   }
 
   console {
