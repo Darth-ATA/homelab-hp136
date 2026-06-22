@@ -3,16 +3,16 @@ resource "proxmox_virtual_environment_vm" "home_assistant" {
   node_name = var.proxmox_node_name
   vm_id     = var.home_assistant_vm_id
 
-  name        = "haos-17.1"
-  description = "Home Assistant OS 17.1"
-  tags        = ["community-script"]
-  started     = true
-  template    = false
-  machine     = "q35"
-  bios        = "ovmf"
+  name          = "haos-17.1"
+  description   = "Home Assistant OS 17.1"
+  tags          = ["community-script"]
+  started       = true
+  template      = false
+  machine       = "q35"
+  bios          = "ovmf"
   scsi_hardware = "virtio-scsi-pci"
   tablet_device = false
-  protection  = false
+  protection    = false
 
   agent {
     enabled = true

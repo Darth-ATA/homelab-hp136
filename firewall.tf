@@ -154,6 +154,22 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "tailscal
   }
 }
 
+# Security Group: Vaultwarden
+resource "proxmox_virtual_environment_cluster_firewall_security_group" "vaultwarden" {
+  name    = "vaultwarden"
+  comment = "Vaultwarden HTTP access from local network"
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Vaultwarden HTTP"
+    dest    = "192.168.1.144"
+    dport   = "8000"
+    proto   = "tcp"
+    source  = var.local_network
+  }
+}
+
 # Cluster-Level Firewall Rules (apply security groups)
 # NOTE: If "Existing rules detected" error occurs, import existing rules:
 # terraform import proxmox_virtual_environment_firewall_rules.cluster cluster
@@ -183,5 +199,10 @@ resource "proxmox_virtual_environment_firewall_rules" "cluster" {
   rule {
     security_group = proxmox_virtual_environment_cluster_firewall_security_group.tailscale.name
     comment        = "Tailscale"
+  }
+
+  rule {
+    security_group = proxmox_virtual_environment_cluster_firewall_security_group.vaultwarden.name
+    comment        = "Vaultwarden"
   }
 }
