@@ -17,17 +17,20 @@ This skill provides context-specific guidance for the homelab-hp136 project.
 
 | ID  | Name        | Type          | IP            | Specs                  |
 | --- | ----------- | ------------- | ------------- | ---------------------- |
-| 100 | home_assistant | VM (HAOS)  | 192.168.1.100 | 4GB RAM, 32GB disk     |
-| 101 | docker      | LXC           | 192.168.1.142 | 2 cores, 4GB RAM, 32GB |
+| 100 | home_assistant | VM (HAOS)  | 192.168.1.100 | 2 cores, 4GB RAM, 32GB disk |
+| 101 | docker      | LXC           | 192.168.1.142 | 2 cores, **6GB RAM, 150GB disk, iGPU passthrough** |
 | 102 | tailscale   | LXC           | 192.168.1.102 | 1 core, 512MB, 2GB     |
 | 103 | adguard     | LXC           | 192.168.1.2   | 1 core, 512MB, 2GB     |
 
 ## Docker Stack (LXC 101)
 
-9 services via docker-compose:
-- **Media**: Sonarr, Radarr, Lidarr, Prowlarr, Jellyfin, Deluge
+10 running services, managed via **Arcane** (`/root/docker/arcane/`):
+- **Media**: Sonarr, Radarr, Lidarr, Prowlarr, Jellyfin, Deluge, Bazarr
 - **Proxy**: nginx-proxy-manager (ports 80, 443, 81)
-- **Other**: Arcane (tracker), Vaultwarden (password manager)
+- **Other**: Arcane (orchestrator), Vaultwarden (password manager)
+- **Configured (not running)**: Frigate, Immich, qBittorrent
+
+> **Note:** All services are defined as Arcane projects under `/root/docker/arcane/data/projects/`. Do NOT use raw `docker compose` — use the Arcane UI at http://192.168.1.142:3552.
 
 ## Terraform Management
 
@@ -50,10 +53,10 @@ terraform apply
 
 ## Storage
 
-| Storage    | Type  | Used  | Purpose              |
-|------------|-------|-------|----------------------|
-| local      | dir   | 22.5% | Backups, ISOs        |
-| local-zfs  | zfs   | 2%    | Container disks      |
+| Storage    | Type  | Used   | Purpose              |
+|------------|-------|--------|----------------------|
+| local      | dir   | ~31%   | Backups, ISOs, templates |
+| local-zfs  | zfs   | ~114GB | Container disks (incl. 150GB docker + media) |
 
 **Important**: Backups MUST use `local` (dir-type). ZFS pools do NOT support backup content type.
 
@@ -110,9 +113,11 @@ Updating only the RootFolders endpoint is NOT sufficient.
 
 ## Backup Strategy
 
-- **Schedule**: Daily at 21:00-23:00
-- **Retention**: Keep all current month, last of each previous month
-- **Cleanup**: `/usr/local/bin/cleanup-backups.sh` via cron
+- **Schedule**: HA at 21:00, docker at 03:00, tailscale at 03:45, adguard at 04:00 (staggered off-peak)
+- **Storage**: All backups use `local` (dir). DO NOT use `local-zfs` — it does NOT support backup content type.
+- **Docker excludes**: `/data` (media + torrents) excluded from CT 101 backup to save space
+- **Retention**: HA keeps last 5; containers keep daily + monthly
+- **Cleanup**: `/usr/local/bin/cleanup-backups.sh` via cron at 1:00 AM
 
 ## Networking
 
@@ -128,9 +133,11 @@ Updating only the RootFolders endpoint is NOT sufficient.
 - `adguard-container.tf` - AdGuard config
 - `tailscale-container.tf` - Tailscale config
 - `home_vm.tf` - Home Assistant VM
-- `docker/` - Docker Compose files
-- `docs/` - Troubleshooting guides
-- `NETWORK.md` - IP allocation
+- `docker/` - Docker Compose reference files
+- `docs/` - Troubleshooting and setup guides
+- `NETWORK.md` - IP allocation, MACs, services, Frigate details
+- `scripts/` - Utility scripts (deploy, backup, monitoring)
+- `ha-config/` - Home Assistant configuration (automations, scenes, scripts)
 
 ## Commands
 
