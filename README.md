@@ -19,6 +19,7 @@ homelab-terraform/
 ├── adguard-container.tf         # AdGuard LXC container
 ├── docker-container.tf          # Docker/NPM LXC container
 ├── tailscale-container.tf       # Tailscale LXC container
+├── vaultwarden-container.tf     # Vaultwarden LXC container
 ├── backup.tf                    # Backup job configurations
 ├── proxmox-storage.tf           # Storage configuration (local-zfs)
 ├── NETWORK.md                   # Network configuration and static IPs
@@ -96,6 +97,7 @@ The following containers and VMs are **fully managed** by Terraform:
 | 101 | docker    | Docker host — media stack + NPM + Arcane — 2 cores, 6GB RAM, 150GB disk, iGPU passthrough | 192.168.1.142 | `docker-container.tf` |
 | 102 | tailscale  | Tailscale VPN connectivity - 1 core, 512MB RAM, 2GB disk | 192.168.1.102 | `tailscale-container.tf` |
 | 103 | adguard   | AdGuard Home DNS ad-blocker - 1 core, 512MB RAM, 2GB disk | 192.168.1.2 | `adguard-container.tf` |
+| 104 | vaultwarden | Vaultwarden password manager (Alpine) - 1 core, 512MB RAM, 4GB disk | 192.168.1.144 | `vaultwarden-container.tf` |
 
 **All services use static IPs configured in Proxmox/LXC/VM configs. See [NETWORK.md](./NETWORK.md) for complete network documentation.**
 
@@ -122,7 +124,7 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 
 ### Status (2026-06-18)
 - ✅ Cluster-level firewall enabled
-- ✅ Security groups created (mgmt, dns, web, home_assistant, tailscale)
+- ✅ Security groups created (mgmt, dns, web, home_assistant, tailscale, vaultwarden)
 - ✅ Cluster firewall rules applied
 - ✅ Container-level firewall enabled on all LXC containers
 - ✅ Home Assistant VM firewall options configured
@@ -142,6 +144,7 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 | `web` | Docker/NPM services | 192.168.1.142 | 80, 443, 81 |
 | `home_assistant` | Home Assistant UI | 192.168.1.100 | 8123 |
 | `tailscale` | Tailscale direct connections | 192.168.1.102 | 41641/udp |
+| `vaultwarden` | Vaultwarden HTTP | 192.168.1.144 | 8000 |
 
 ### Services & Ports
 
@@ -153,7 +156,7 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 | Docker — *arr suite | 192.168.1.142 | 7878, 8989, 8686, 9696, 6767 | Radarr, Sonarr, Lidarr, Prowlarr, Bazarr |
 | Docker — Deluge | 192.168.1.142 | 8112, 6881 | Torrent client (no VPN) |
 | Docker — Jellyfin | 192.168.1.142 | 8096 | Media server |
-| Docker — Vaultwarden | 192.168.1.142 | 8080 | Password manager (behind NPM at vw.hp136.duckdns.org) |
+| Vaultwarden (LXC 104) | 192.168.1.144 | 8000 | Password manager (behind NPM at vw.hp136.duckdns.org) |
 | Docker — Arcane | 192.168.1.142 | 3552 | Service orchestrator |
 | Tailscale (LXC 102) | 192.168.1.102 | 41641/UDP | Optional direct connections |
 | AdGuard (LXC 103) | 192.168.1.2 | 53/tcp+udp | DNS server |
@@ -199,6 +202,7 @@ See `docs/bluetooth-ceiling-fan-setup.md` for the full step-by-step guide.
 | docker | 101 | Daily 03:00 | local (dir) | Keep daily + monthly (excludes `/data`) |
 | tailscale | 102 | Daily 03:45 | local (dir) | Keep daily + monthly |
 | adguard | 103 | Daily 04:00 | local (dir) | Keep daily + monthly |
+| vaultwarden | 104 | Daily 04:15 | local (dir) | Keep daily + monthly |
 
 **Note:** Docker backup excludes `/data` (media + torrents) to save space. Schedules are staggered off-peak to avoid I/O contention.
 
@@ -289,6 +293,7 @@ ssh root@192.168.1.134 "rm /var/lib/vz/template/cache/<unused-template>.tar.gz"
 | docker (101) | **150GB** | Sufficient for Docker stack + media library. Monitor `/data` usage — if media grows, expand. |
 | tailscale (102) | 2GB | Sufficient for Tailscale only |
 | adguard (103) | 2GB | Sufficient for DNS |
+| vaultwarden (104) | 4GB | Sufficient for small password database |
 
 ### Restore Procedures
 

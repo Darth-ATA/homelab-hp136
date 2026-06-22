@@ -35,22 +35,22 @@ resource "proxmox_virtual_environment_container" "adguard" {
     size         = 2
   }
 
-   network_interface {
-     name        = "eth0"
-     bridge      = "vmbr0"
-     mac_address = "BC:24:11:D5:A2:77"
-     firewall    = true
-   }
+  network_interface {
+    name        = "eth0"
+    bridge      = "vmbr0"
+    mac_address = "BC:24:11:D5:A2:77"
+    firewall    = true
+  }
 
-   features {
-     fuse    = false
-     keyctl  = true
-     mknod   = false
-     mount   = []
-     nesting = true
-   }
+  features {
+    fuse    = false
+    keyctl  = true
+    mknod   = false
+    mount   = []
+    nesting = true
+  }
 
-     operating_system {
+  operating_system {
     template_file_id = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
     type             = "debian"
   }

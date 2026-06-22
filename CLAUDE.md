@@ -43,6 +43,7 @@ ssh -i ~/.ssh/homelab_key root@192.168.1.134 "qm terminal 100"
 | 101 | docker | LXC | 192.168.1.142 | 2 cores, 6GB RAM, **150GB** disk, iGPU passthrough |
 | 102 | tailscale | LXC | 192.168.1.102 | 1 core, 512MB RAM, 2GB disk |
 | 103 | adguard | LXC | 192.168.1.2 | 1 core, 512MB RAM, 2GB disk |
+| 104 | vaultwarden | LXC | 192.168.1.144 | 1 core, 512MB RAM, 4GB disk |
 
 ## Terraform
 

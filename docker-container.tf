@@ -42,7 +42,7 @@ resource "proxmox_virtual_environment_container" "docker" {
     firewall    = true
   }
 
-    operating_system {
+  operating_system {
     template_file_id = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
     type             = "debian"
   }
