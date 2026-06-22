@@ -2,6 +2,8 @@
 
 This directory contains reference copies of docker-compose files for services running in the Docker LXC container (192.168.1.142).
 
+> **Vaultwarden was migrated to a dedicated LXC (ID 104, Alpine, 192.168.1.144).** See [NETWORK.md](../NETWORK.md) for details. The vaultwarden/ Arcane project is now inactive.
+
 ## Service Management
 
 **All services are managed via [Arcane](https://getarcane.app)** — a project-based Docker orchestrator.
@@ -22,7 +24,7 @@ Arcane runs at `http://192.168.1.142:3552` and manages individual compose files 
 # ├── bazarr/
 # ├── jellyfin/
 # ├── npm/
-# ├── vaultwarden/
+# ├── vaultwarden/ (inactive — migrated to LXC 104)
 # └── qbittorrent/ (inactive — Deluge is the active torrent client)
 ```
 
@@ -32,7 +34,6 @@ Arcane runs at `http://192.168.1.142:3552` and manages individual compose files 
 |---------|---------------|------|-------------|-----------|
 | Nginx Proxy Manager | `npm-app` | 80, 81, 443 | Reverse proxy + SSL termination | Arcane |
 | Arcane | `arcane` | 3552 | Docker orchestrator | Arcane itself |
-| Vaultwarden | `vaultwarden` | 8080 | Bitwarden-compatible password manager | Arcane |
 | **Deluge** | `deluge` | 8112, 6881 | **Active** torrent client (no VPN) | Arcane |
 | Prowlarr | `prowlarr` | 9696 | Indexer management | Arcane |
 | Radarr | `radarr` | 7878 | Movies automation | Arcane |
@@ -107,7 +108,7 @@ cd /root/docker/arcane && docker compose up -d
 - **Lidarr**: http://192.168.1.142:8686
 - **Bazarr**: http://192.168.1.142:6767
 - **Jellyfin**: http://192.168.1.142:8096
-- **Vaultwarden**: https://vw.hp136.duckdns.org (via NPM)
+- **Vaultwarden**: https://vw.hp136.duckdns.org (LXC 104, proxied via NPM)
 - **NPM Admin**: http://192.168.1.142:81
 - **Arcane**: http://192.168.1.142:3552
 
