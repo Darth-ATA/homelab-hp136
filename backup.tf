@@ -21,37 +21,9 @@ resource "proxmox_backup_job" "home_assistant" {
 }
 
 # Docker container (101) - Daily 03:00 (off-peak, no contention)
-# Excluded /data (media + torrents) via null_resource workaround below
-# Reason: provider bpg/proxmox v0.106.0 has a bug with PVE 9.x API returning
-# exclude-path as JSON array instead of comma-separated string. This will be
-# simplified once the provider fixes it.
-resource "proxmox_backup_job" "docker" {
-  id       = "docker-backup"
-  schedule = "*-*-* 03:00"
-  storage  = "local"
-  vmid     = ["101"]
-  mode     = "snapshot"
-  compress = "zstd"
-  enabled  = true
-
-  # Daily + Last of each month
-  prune_backups = {
-    keep-daily   = "1"
-    keep-monthly = "1"
-  }
-}
-
-# Workaround: bpg/proxmox provider can't handle exclude-path on PVE 9.x API
-# Sets it via Proxmox CLI after any change to the backup job
-resource "null_resource" "docker_backup_exclude" {
-  triggers = {
-    backup_job_id = proxmox_backup_job.docker.id
-  }
-
-  provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 'pvesh set /cluster/backup/docker-backup --exclude-path /data >/dev/null 2>&1'"
-  }
-}
+# Managed manually via PVE until provider bpg/proxmox fixes PVE 9.x API compatibility.
+# The API returns `exclude-path` as JSON array which the provider can't parse.
+# Re-import when fixed: terraform import proxmox_backup_job.docker prxhp136/docker-backup
 
 # Tailscale container (102) - Daily 03:45 (after CT 101)
 resource "proxmox_backup_job" "tailscale" {
