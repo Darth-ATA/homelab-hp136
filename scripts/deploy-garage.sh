@@ -144,8 +144,11 @@ if ${VERIFY_ONLY}; then
   # Check terraform
   info "Running terraform plan..."
   pushd "${PROJECT_ROOT}" >/dev/null
-  set +a; source "${LOCAL_ENV}" 2>/dev/null || true; set -a
-  terraform plan 2>&1 | tail -5
+  set -a
+  # shellcheck disable=SC1090
+  source "${LOCAL_ENV}" 2>/dev/null || true
+  set +a
+  terraform plan 2>&1 | tail -10
   popd >/dev/null
 
   exit 0
@@ -370,11 +373,11 @@ if ${WITH_MIGRATE}; then
   if ! ${DRY_RUN}; then
     pushd "${PROJECT_ROOT}" >/dev/null
 
-    # Source the .env with credentials
-    set +a
+    # Source the .env with credentials (set -a exports all sourced vars)
+    set -a
     # shellcheck disable=SC1090
     source "${LOCAL_ENV}" 2>/dev/null || true
-    set -a
+    set +a
 
     export AWS_ENDPOINT_URL_S3="http://192.168.1.142:3900"
     export AWS_S3_FORCE_PATH_STYLE="true"
