@@ -164,7 +164,7 @@ main() {
     #   - Only process entries within the 24h cutoff window
     declare -A failures=()
 
-    while read -r epoch vmid status; do
+    while read -r _ vmid status; do
         if [[ "$status" != "OK" ]]; then
             failures["$vmid"]="$status"
             log_warn "Backup FAILED for VM $vmid (${VMID_NAMES[$vmid]:-unknown}): $status"
