@@ -75,3 +75,22 @@ resource "proxmox_backup_job" "vaultwarden" {
     keep-monthly = "1"
   }
 }
+
+# Jellyfin container (105) - Daily 04:30 (after CT 104)
+# NOTE: Import after creating LXC 105:
+#   terraform import proxmox_backup_job.jellyfin prxhp136/jellyfin-backup
+resource "proxmox_backup_job" "jellyfin" {
+  id       = "jellyfin-backup"
+  schedule = "*-*-* 04:30"
+  storage  = "local"
+  vmid     = ["105"]
+  mode     = "snapshot"
+  compress = "zstd"
+  enabled  = true
+
+  # Daily + Last of each month
+  prune_backups = {
+    keep-daily   = "1"
+    keep-monthly = "1"
+  }
+}

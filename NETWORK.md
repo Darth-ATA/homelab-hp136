@@ -26,6 +26,7 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | **Tailscale** | LXC | 102 | 192.168.1.102 | `BC:24:11:CA:68:89` | `tailscale` | VPN |
 | **AdGuard Home** | LXC | 103 | 192.168.1.2 | `BC:24:11:D5:A2:77` | `adguard` | DNS ad-blocking |
 | **Vaultwarden** | LXC | 104 | 192.168.1.144 | `BC:24:11:78:83:C3` | `alpine-vaultwarden` | Password manager |
+| **Jellyfin** | LXC | 105 | 192.168.1.145 | `BC:24:11:46:95:DE` | `jellyfin` | Media server (native, not Docker), iGPU passthrough |
 
 ## Service Access Points
 
@@ -44,7 +45,7 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | Prowlarr | `http://192.168.1.142:9696` | Docker (managed via Arcane) |
 | Bazarr | `http://192.168.1.142:6767` | Docker (managed via Arcane) |
 | Deluge | `http://192.168.1.142:8112` | Docker (managed via Arcane) |
-| Jellyfin | `http://192.168.1.142:8096` | Docker (managed via Arcane) |
+| Jellyfin | `http://192.168.1.145:8096` | LXC 105 (native, Ubuntu 24.04, iGPU passthrough) |
 
 ## DNS Configuration
 
@@ -71,7 +72,7 @@ Proxy hosts configured in NPM (http://192.168.1.142:81):
 
 ## How to Recreate Static IPs
 
-### LXC Containers (101, 102, 103, 104)
+### LXC Containers (101, 102, 103, 104, 105)
 
 SSH to Proxmox and edit configs:
 ```bash

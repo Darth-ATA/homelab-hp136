@@ -21,14 +21,18 @@ This skill provides context-specific guidance for the homelab-hp136 project.
 | 101 | docker      | LXC           | 192.168.1.142 | 2 cores, **6GB RAM, 150GB disk, iGPU passthrough** |
 | 102 | tailscale   | LXC           | 192.168.1.102 | 1 core, 512MB, 2GB     |
 | 103 | adguard     | LXC           | 192.168.1.2   | 1 core, 512MB, 2GB     |
+| 104 | vaultwarden | LXC           | 192.168.1.144 | 1 core, 512MB, 4GB     |
+| 105 | jellyfin    | LXC           | 192.168.1.145 | 2 cores, 4GB RAM, 16GB disk, iGPU passthrough |
 
 ## Docker Stack (LXC 101)
 
-10 running services, managed via **Arcane** (`/root/docker/arcane/`):
-- **Media**: Sonarr, Radarr, Lidarr, Prowlarr, Jellyfin, Deluge, Bazarr
+9 running services, managed via **Arcane** (`/root/docker/arcane/`):
+- **Media**: Sonarr, Radarr, Lidarr, Prowlarr, Deluge, Bazarr
 - **Proxy**: nginx-proxy-manager (ports 80, 443, 81)
 - **Other**: Arcane (orchestrator), Vaultwarden (password manager)
 - **Configured (not running)**: Frigate, Immich, qBittorrent
+
+> **Note:** Jellyfin was migrated to a **dedicated LXC 105** (native, not Docker). See infra table above.
 
 > **Note:** All services are defined as Arcane projects under `/root/docker/arcane/data/projects/`. Do NOT use raw `docker compose` — use the Arcane UI at http://192.168.1.142:3552.
 
@@ -60,20 +64,37 @@ terraform apply
 
 **Important**: Backups MUST use `local` (dir-type). ZFS pools do NOT support backup content type.
 
-## Media Stack Storage Layout (LXC 101)
+## Media Stack Storage Layout (LXC 101 + LXC 105)
 
-### Directory Structure
+### ZFS Datasets
+
+Media is stored on a **dedicated ZFS dataset** (`rpool/data/media`) shared between LXC 101 and LXC 105:
+
+| Dataset | Size | Mount Point | Used By |
+|---------|------|-------------|---------|
+| `rpool/data/media` | ~75G | `/rpool/data/media` | Bind-mounted to LXC 101 (`/data/media`) and LXC 105 (`/media`) |
+
+### LXC 101 Directory Structure
 
 ```
-/data/                         # Single mount point inside LXC 101
-├── torrents/                  # Deluge downloads here
+/data/                         # Bind mount: rpool/data/media → /data/media (rw)
+├── media/                     # Organized media (*arr hardlinks here)
 │   ├── movies/
 │   ├── tv/
 │   └── music/
-└── media/                     # Organized media (*arr hardlinks here)
-    ├── movies/
-    ├── tv/
-    └── music/
+/data/torrents/                # Deluge downloads (inside subvol)
+├── movies/
+├── tv/
+└── music/
+```
+
+### LXC 105 (Jellyfin) Directory Structure
+
+```
+/media/                        # Bind mount: rpool/data/media → /media (rw)
+├── movies/
+├── tv/
+└── music/
 ```
 
 ### Docker Volumes — Single Mount Rule (CRITICAL)
@@ -113,7 +134,7 @@ Updating only the RootFolders endpoint is NOT sufficient.
 
 ## Backup Strategy
 
-- **Schedule**: HA at 21:00, docker at 03:00, tailscale at 03:45, adguard at 04:00 (staggered off-peak)
+- **Schedule**: HA at 21:00, docker at 03:00, tailscale at 03:45, adguard at 04:00, vaultwarden at 04:15, jellyfin at 04:30 (staggered off-peak)
 - **Storage**: All backups use `local` (dir). DO NOT use `local-zfs` — it does NOT support backup content type.
 - **Docker excludes**: `/data` (media + torrents) excluded from CT 101 backup to save space
 - **Retention**: HA keeps last 5; containers keep daily + monthly
@@ -130,6 +151,7 @@ Updating only the RootFolders endpoint is NOT sufficient.
 - `main.tf` - Provider configuration
 - `firewall.tf` - Firewall rules
 - `docker-container.tf` - Docker LXC config
+- `jellyfin-container.tf` - Jellyfin LXC 105 config
 - `adguard-container.tf` - AdGuard config
 - `tailscale-container.tf` - Tailscale config
 - `home_vm.tf` - Home Assistant VM
