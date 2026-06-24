@@ -26,6 +26,9 @@ docker/frigate/.env
 docker/.env
 docker/qbittorrent/.env
 
+# Proxmox /root/.env with Telegram secrets (deployed manually via scp)
+/root/.env
+
 # Frigate rendered config (use config.yml.j2 template instead)
 docker/frigate/config/config.yml
 
