@@ -20,6 +20,7 @@ Thumbs.db
 docker/arcane/.env
 docker/npm/.env
 docker/frigate/.env
+docker/garage/.env
 
 # Git hooks (local, should not be committed)
 .githooks/
