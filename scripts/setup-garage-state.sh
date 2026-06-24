@@ -32,6 +32,10 @@ GARAGE_CLI="docker exec ${GARAGE_CONTAINER} garage"
 # Local .env to update
 ENV_FILE="${PROJECT_ROOT}/docker/garage/.env"
 
+# Remote paths
+GARAGE_PROJECT_DIR="/root/docker/arcane/data/projects/garage"
+REMOTE_ENV="${GARAGE_PROJECT_DIR}/.env"
+
 # --- Helper ---
 info()  { printf "\033[1;34m[INFO]\033[0m %s\n" "$*"; }
 ok()    { printf "\033[1;32m[OK]\033[0m   %s\n" "$*"; }
@@ -144,8 +148,8 @@ if ! ${DRY_RUN}; then
   # Also update the remote .env on LXC
   if [[ -n "${ACCESS_KEY_ID}" ]] && [[ -n "${SECRET_ACCESS_KEY}" ]]; then
     info "Updating remote .env on LXC..."
-    remote "sed -i 's/^AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}/' ${GARAGE_PROJECT_DIR:-/root/docker/arcane/data/projects/garage}/.env"
-    remote "sed -i 's/^AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}/' ${GARAGE_PROJECT_DIR:-/root/docker/arcane/data/projects/garage}/.env"
+    remote "sed -i 's/^AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}/' ${REMOTE_ENV}"
+    remote "sed -i 's/^AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}/' ${REMOTE_ENV}"
     ok "Remote .env updated"
   fi
 
