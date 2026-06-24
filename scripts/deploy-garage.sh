@@ -92,6 +92,16 @@ copy_file "${GARAGE_TOML_SRC}" "${REMOTE_PATH}/garage.toml"
 copy_file "${ENV_SRC}"       "${REMOTE_PATH}/.env"
 ok "Files copied to ${REMOTE_PATH}"
 
+# --- Substitute RPC secret in garage.toml ---
+RPC_SECRET=$(grep "^GARAGE_RPC_SECRET=" "${ENV_SRC}" | cut -d= -f2) || RPC_SECRET=""
+if [[ -n "${RPC_SECRET}" ]] && ! ${DRY_RUN}; then
+  info "Substituting rpc_secret in remote garage.toml..."
+  remote "sed -i 's/__RPC_SECRET__/${RPC_SECRET}/' ${REMOTE_PATH}/garage.toml"
+  ok "rpc_secret substituted"
+elif [[ -z "${RPC_SECRET}" ]]; then
+  warn "GARAGE_RPC_SECRET not found in .env — garage.toml will have placeholder!"
+fi
+
 # ============================================================
 # STEP 3: Register project in Arcane SQLite DB
 # ============================================================
