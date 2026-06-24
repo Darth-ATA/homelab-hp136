@@ -68,7 +68,7 @@ alert_via_telegram() {
     now=$(date +%s)
     local elapsed=$((now - LAST_ALERT_TIME))
 
-    if [[ "$PREVIOUS_STATE" == "unhealthy" ]] && [[ "$elapsed" -lt "$STATE_COOLDOWN" ]]; then
+    if [[ "$PREVIOUS_STATE" != "healthy" ]] && [[ "$elapsed" -lt "$STATE_COOLDOWN" ]]; then
         return 0  # Cooldown active
     fi
 
