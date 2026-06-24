@@ -1,0 +1,30 @@
+# Garage config for single-node deployment on LXC 101 (192.168.1.142)
+#
+# Tokens are resolved from environment variables at runtime.
+# Set GARAGE_ADMIN_TOKEN and GARAGE_METRICS_TOKEN in docker/garage/.env.
+#
+# See https://garagehq.deuxfleurs.fr/documentation/reference-manual/configuration/
+
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+db_engine = "lmdb"
+
+replication_mode = "none"
+
+[rpc]
+bind_addr = "0.0.0.0:3901"
+public_addr = "192.168.1.142:3901"
+
+[s3_api]
+bind_addr = "0.0.0.0:3900"
+root_domain = ".s3.garage.localhost"
+region = "garage"
+
+[s3_web]
+bind_addr = "0.0.0.0:3902"
+root_domain = ".web.garage.localhost"
+
+[admin]
+api_bind_addr = "0.0.0.0:3903"
+admin_token = "${GARAGE_ADMIN_TOKEN}"
+metrics_token = "${GARAGE_METRICS_TOKEN}"

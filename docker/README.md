@@ -24,6 +24,7 @@ Arcane runs at `http://192.168.1.142:3552` and manages individual compose files 
 # ├── bazarr/
 # ├── jellyfin/
 # ├── npm/
+# ├── garage/
 # ├── vaultwarden/ (inactive — migrated to LXC 104)
 # └── qbittorrent/ (inactive — Deluge is the active torrent client)
 ```
@@ -41,6 +42,7 @@ Arcane runs at `http://192.168.1.142:3552` and manages individual compose files 
 | Lidarr | `lidarr` | 8686 | Music collection manager | Arcane |
 | **Bazarr** | `bazarr` | 6767 | Subtitle management | Arcane |
 | Jellyfin | `jellyfin` | 8096, 8920 | Media server | Arcane |
+| **Garage** | `garage` | 3900, 3901, 3902, 3903 | S3-compatible object storage (Terraform state backend) | Arcane |
 
 ## Configured but Not Deployed
 
@@ -111,6 +113,8 @@ cd /root/docker/arcane && docker compose up -d
 - **Vaultwarden**: https://vw.hp136.duckdns.org (LXC 104, proxied via NPM)
 - **NPM Admin**: http://192.168.1.142:81
 - **Arcane**: http://192.168.1.142:3552
+- **Garage (S3 API)**: http://192.168.1.142:3900
+- **Garage (Admin)**: http://192.168.1.142:3903
 
 ## Nginx Proxy Manager Configuration
 

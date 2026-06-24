@@ -12,12 +12,17 @@ services:
     image: dxflrs/garage:v1.0.1
     container_name: garage
     environment:
-      - GARAGE_S3_REGION=garage
+      # These env vars are referenced by garage.toml via ${VAR} expansion at runtime.
+      # They must remain in the container environment for config resolution.
       - GARAGE_ADMIN_TOKEN=${GARAGE_ADMIN_TOKEN:?err}
       - GARAGE_METRICS_TOKEN=${GARAGE_METRICS_TOKEN:?err}
     ports:
-      - "3900:3900"
+      - "3900:3900"   # S3 API
+      - "3901:3901"   # RPC (cluster/internal)
+      - "3902:3902"   # Web UI
+      - "3903:3903"   # Admin API
     volumes:
+      - ./garage.toml:/etc/garage.toml:ro
       - garage-data:/var/lib/garage
     restart: unless-stopped
     healthcheck:

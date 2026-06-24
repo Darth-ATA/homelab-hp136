@@ -45,6 +45,10 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | Prowlarr | `http://192.168.1.142:9696` | Docker (managed via Arcane) |
 | Bazarr | `http://192.168.1.142:6767` | Docker (managed via Arcane) |
 | Deluge | `http://192.168.1.142:8112` | Docker (managed via Arcane) |
+| Garage (S3 API) | `http://192.168.1.142:3900` | Docker container in LXC 101 (managed via Arcane) — Terraform state backend |
+| Garage (RPC) | `http://192.168.1.142:3901` | Garage cluster/internal RPC |
+| Garage (Web UI) | `http://192.168.1.142:3902` | Garage web interface |
+| Garage (Admin API) | `http://192.168.1.142:3903` | Garage admin API |
 | Jellyfin | `http://192.168.1.145:8096` | LXC 105 (native, Ubuntu 24.04, iGPU passthrough) |
 
 ## DNS Configuration
