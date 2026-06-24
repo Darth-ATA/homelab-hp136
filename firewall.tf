@@ -170,6 +170,22 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "vaultwar
   }
 }
 
+# Security Group: Jellyfin (LXC 105)
+resource "proxmox_virtual_environment_cluster_firewall_security_group" "jellyfin" {
+  name    = "jellyfin"
+  comment = "Jellyfin media server access from local network"
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Jellyfin HTTP"
+    dest    = "192.168.1.145"
+    dport   = "8096"
+    proto   = "tcp"
+    source  = var.local_network
+  }
+}
+
 # Cluster-Level Firewall Rules (apply security groups)
 # NOTE: If "Existing rules detected" error occurs, import existing rules:
 # terraform import proxmox_virtual_environment_firewall_rules.cluster cluster
@@ -204,5 +220,10 @@ resource "proxmox_virtual_environment_firewall_rules" "cluster" {
   rule {
     security_group = proxmox_virtual_environment_cluster_firewall_security_group.vaultwarden.name
     comment        = "Vaultwarden"
+  }
+
+  rule {
+    security_group = proxmox_virtual_environment_cluster_firewall_security_group.jellyfin.name
+    comment        = "Jellyfin"
   }
 }

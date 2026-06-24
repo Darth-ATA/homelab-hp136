@@ -83,6 +83,20 @@ resource "proxmox_virtual_environment_container" "docker" {
       unprivileged,
       vm_id,
       features,
+      mount_point,
     ]
+  }
+}
+
+# Mount point: LXC 101 shared media bind mount (shared ZFS dataset with LXC 105)
+# Moves /data/media from subvol-101-disk-1 to dedicated rpool/data/media dataset
+resource "null_resource" "docker_media_mount_point" {
+  triggers = {
+    container_id = 101
+    mount_spec   = "/rpool/data/media,mp=/data/media"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct set 101 -mp0 /rpool/data/media,mp=/data/media'"
   }
 }
