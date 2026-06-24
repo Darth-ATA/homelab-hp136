@@ -14,6 +14,8 @@ resource "proxmox_backup_job" "home_assistant" {
   compress = "zstd"
   enabled  = true
 
+  mailnotification = "failure"
+
   # Keep last 3-5 backups
   prune_backups = {
     keep-last = "5"
@@ -35,6 +37,8 @@ resource "proxmox_backup_job" "tailscale" {
   compress = "zstd"
   enabled  = true
 
+  mailnotification = "failure"
+
   # Daily + Last of each month
   prune_backups = {
     keep-daily   = "1"
@@ -52,6 +56,8 @@ resource "proxmox_backup_job" "adguard" {
   compress = "zstd"
   enabled  = true
 
+  mailnotification = "failure"
+
   # Daily + Last of each month
   prune_backups = {
     keep-daily   = "1"
@@ -68,6 +74,8 @@ resource "proxmox_backup_job" "vaultwarden" {
   mode     = "snapshot"
   compress = "zstd"
   enabled  = true
+
+  mailnotification = "failure"
 
   # Daily + Last of each month
   prune_backups = {
@@ -87,6 +95,8 @@ resource "proxmox_backup_job" "jellyfin" {
   mode     = "snapshot"
   compress = "zstd"
   enabled  = true
+
+  mailnotification = "failure"
 
   # Daily + Last of each month
   prune_backups = {
