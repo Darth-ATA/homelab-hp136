@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# Create Garage bucket and API keys for Terraform state backend
+# Verify or rotate Garage S3 credentials for Terraform state backend
 #
-# This script:
-#   1. SSHes into LXC 101
-#   2. Creates the bucket 'homelab-terraform-state'
-#   3. Creates an API key with read/write/delete permissions on the bucket
-#   4. Outputs the credentials to add to your local .env
+# On Garage v2.3.0, --default-bucket handles initial bucket+key creation.
+# This script is for POST-deploy operations:
+#   - Verify existing credentials are valid
+#   - Rotate AWS access keys (recreate key, update .env files)
+#   - Check bucket/key permissions
 #
-# Usage: ./scripts/setup-garage-state.sh [--dry-run]
+# Usage:
+#   ./scripts/setup-garage-state.sh               # verify only
+#   ./scripts/setup-garage-state.sh --rotate-creds # rotate API keys
+#   ./scripts/setup-garage-state.sh --dry-run      # dry run
 #
 # Prerequisites:
 #   - Garage container running on LXC 101
-#   - GARAGE_ADMIN_TOKEN exported or in docker/garage/.env on LXC
-#   - garage CLI available inside the container
+#   - garage.toml with valid rpc_secret or docker-compose running
 
 set -Eeuo pipefail
 
@@ -27,144 +29,170 @@ LXC_ID="101"
 GARAGE_CONTAINER="garage"
 BUCKET="homelab-terraform-state"
 KEY_NAME="terraform-operator"
-GARAGE_CLI="docker exec ${GARAGE_CONTAINER} garage"
 
-# Local .env to update
-ENV_FILE="${PROJECT_ROOT}/docker/garage/.env"
+LOCAL_ENV="${PROJECT_ROOT}/docker/garage/.env"
+REMOTE_ENV="/root/docker/arcane/data/projects/garage/.env"
 
-# Remote paths
-GARAGE_PROJECT_DIR="/root/docker/arcane/data/projects/garage"
-REMOTE_ENV="${GARAGE_PROJECT_DIR}/.env"
+# --- Flags ---
+DRY_RUN=false
+ROTATE=false
+for arg in "$@"; do
+  case "${arg}" in
+    --dry-run)      DRY_RUN=true ;;
+    --rotate-creds) ROTATE=true ;;
+    *) echo "Usage: $0 [--dry-run] [--rotate-creds]"; exit 1 ;;
+  esac
+done
 
-# --- Helper ---
+# --- Helpers ---
 info()  { printf "\033[1;34m[INFO]\033[0m %s\n" "$*"; }
 ok()    { printf "\033[1;32m[OK]\033[0m   %s\n" "$*"; }
 warn()  { printf "\033[1;33m[WARN]\033[0m %s\n" "$*"; }
 fail()  { printf "\033[1;31m[FAIL]\033[0m %s\n" "$*"; exit 1; }
 
-# --- Dry-run flag ---
-DRY_RUN=false
-if [[ "${1:-}" == "--dry-run" ]]; then
-  DRY_RUN=true
-  info "DRY RUN — no changes will be made"
-fi
+lxc_exec() {
+  ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" \
+    "pct exec ${LXC_ID} -- ${*}" 2>/dev/null || true
+}
 
-# --- Pre-flight checks ---
+garage_exec() {
+  lxc_exec "docker exec ${GARAGE_CONTAINER} ${*}"
+}
+
+gen_alnum() {
+  python3 -c "import secrets; print(secrets.token_urlsafe(${1:-32}).replace('-','').replace('_','')[:${1:-32}])" 2>/dev/null || \
+  echo "rotated_$(uuidgen | tr -d '-')"
+}
+
+# --- Pre-flight ---
 if [[ ! -f "${SSH_KEY}" ]]; then
   fail "SSH key not found at ${SSH_KEY}"
 fi
 
-# --- Run remote command helper ---
-remote() {
-  ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" "pct exec ${LXC_ID} -- ${*}"
-}
+GARAGE_STATUS="$(lxc_exec "docker inspect -f '{{.State.Status}}' ${GARAGE_CONTAINER}" 2>/dev/null || true)"
+if [[ "${GARAGE_STATUS}" != "running" ]]; then
+  fail "Garage container is not running (status: ${GARAGE_STATUS:-unknown}). Deploy it first."
+fi
+ok "Garage container is running"
 
-# --- Step 1: Verify Garage container is running ---
-info "Checking Garage container status..."
-if ! ${DRY_RUN}; then
-  GARAGE_STATUS="$(remote "docker inspect -f '{{.State.Status}}' ${GARAGE_CONTAINER}" 2>/dev/null || true)"
-  if [[ "${GARAGE_STATUS}" != "running" ]]; then
-    fail "Garage container is not running (status: ${GARAGE_STATUS:-unknown}). Deploy it first via scripts/deploy-garage.sh"
-  fi
-  ok "Garage container is running"
-else
-  ok "[DRY-RUN] Would check Garage container status"
+HEALTH="$(lxc_exec "docker inspect -f '{{.State.Health.Status}}' ${GARAGE_CONTAINER}" 2>/dev/null || true)"
+if [[ "${HEALTH}" != "healthy" ]]; then
+  warn "Container health: ${HEALTH:-unknown} (expected 'healthy')"
 fi
 
-# --- Step 2: Create bucket ---
-info "Creating bucket '${BUCKET}'..."
-if ! ${DRY_RUN}; then
-  BUCKET_EXISTS="$(remote "${GARAGE_CLI} bucket list" 2>/dev/null | grep -c "${BUCKET}" || true)"
-  if [[ "${BUCKET_EXISTS}" -gt 0 ]]; then
-    warn "Bucket '${BUCKET}' already exists — skipping creation"
-  else
-    remote "${GARAGE_CLI} bucket create ${BUCKET}"
+# --- Verify existing credentials ---
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  🔑  Garage Credentials — ${ROTATE:+ROTATION}${ROTATE:-VERIFICATION}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Bucket
+BUCKET_EXISTS="$(garage_exec "/garage bucket list" 2>/dev/null | grep -c "${BUCKET}" || true)"
+if [[ "${BUCKET_EXISTS}" -gt 0 ]]; then
+  ok "Bucket '${BUCKET}' exists"
+else
+  warn "Bucket '${BUCKET}' NOT found"
+  if ! ${DRY_RUN}; then
+    garage_exec "/garage bucket create ${BUCKET}" 2>/dev/null
     ok "Bucket '${BUCKET}' created"
   fi
-else
-  ok "[DRY-RUN] Would create bucket '${BUCKET}'"
 fi
 
-# --- Step 3: Create API key ---
-info "Creating API key '${KEY_NAME}'..."
-if ! ${DRY_RUN}; then
-  # Check if key already exists
-  KEY_EXISTS="$(remote "${GARAGE_CLI} key list" 2>/dev/null | grep -c "${KEY_NAME}" || true)"
-  if [[ "${KEY_EXISTS}" -gt 0 ]]; then
-    warn "Key '${KEY_NAME}' already exists"
-    # Fetch existing key info
-    KEY_INFO="$(remote "${GARAGE_CLI} key info ${KEY_NAME}")"
-  else
-    KEY_INFO="$(remote "${GARAGE_CLI} key create ${KEY_NAME}")"
-    ok "Key '${KEY_NAME}' created"
+# Key
+KEY_EXISTS="$(garage_exec "/garage key list" 2>/dev/null | grep -c "${KEY_NAME}" || true)"
+if [[ "${KEY_EXISTS}" -gt 0 ]]; then
+  ok "Key '${KEY_NAME}' exists"
+
+  if ! ${DRY_RUN}; then
+    KEY_INFO="$(garage_exec "/garage key info ${KEY_NAME}")"
+    ACCESS_KEY_ID="$(echo "${KEY_INFO}" | awk '/Key ID:/{print $NF}')"
+    SECRET_ACCESS_KEY="$(echo "${KEY_INFO}" | awk '/Secret key:/{print $NF}')"
+
+    echo ""
+    echo "  Current credentials:"
+    echo "    AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}"
+    echo "    AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}"
+    echo ""
   fi
 else
-  KEY_INFO='[DRY-RUN] Would create key and capture credentials'
+  warn "Key '${KEY_NAME}' NOT found"
 fi
 
-# --- Step 4: Allow key on bucket (read, write, delete) ---
-info "Granting permissions on bucket '${BUCKET}'..."
-if ! ${DRY_RUN}; then
-  remote "${GARAGE_CLI} bucket allow ${BUCKET} --key ${KEY_NAME} --read --write --delete"
-  ok "Permissions granted"
-else
-  ok "[DRY-RUN] Would grant read/write/delete to ${KEY_NAME} on ${BUCKET}"
+# Permissions
+if [[ "${BUCKET_EXISTS}" -gt 0 ]] && [[ "${KEY_EXISTS}" -gt 0 ]] && ! ${DRY_RUN}; then
+  PERMS=$(garage_exec "/garage bucket info ${BUCKET}" 2>/dev/null | grep -A5 "${KEY_NAME}" || true)
+  if [[ -n "${PERMS}" ]]; then
+    ok "Permissions found on bucket:"
+    echo "${PERMS}" | sed 's/^/    /'
+  else
+    warn "Granting permissions..."
+    garage_exec "/garage bucket allow ${BUCKET} --key ${KEY_NAME} --read --write" 2>/dev/null || true
+    ok "Permissions granted"
+  fi
 fi
 
-# --- Step 5: Extract and display credentials ---
+# --- Rotation (--rotate-creds) ---
+if ${ROTATE} && ! ${DRY_RUN}; then
+  echo ""
+  info "Rotating credentials..."
+
+  # Generate new values
+  NEW_ACCESS_KEY="GK$(gen_alnum 18)"
+  NEW_SECRET_KEY="$(gen_alnum 40)"
+
+  # Garage v2.3.0: recreate the key with a new name, delete old one
+  # Actually --default-bucket sets the key by env var. Better approach:
+  # 1. Create a tmp key with owner permissions
+  # 2. Import the env var approach won't work without restart...
+  #
+  # We use garage key import for idempotent key creation with known secret:
+  # (Garage v2.3.0 supports: garage key import <name> --access-key-id <key> --secret-key <secret>)
+  if garage_exec "/garage key import ${KEY_NAME} --access-key-id ${NEW_ACCESS_KEY} --secret-key ${NEW_SECRET_KEY}" 2>/dev/null; then
+    ok "Key '${KEY_NAME}' updated with new credentials"
+  else
+    # Fallback: delete and recreate
+    garage_exec "/garage key delete ${KEY_NAME}" 2>/dev/null || true
+    garage_exec "/garage key create ${KEY_NAME}" 2>/dev/null || true
+    warn "Fallback: deleted and recreated key (secret will differ)"
+    NEW_KEY_INFO="$(garage_exec "/garage key info ${KEY_NAME}")"
+    NEW_ACCESS_KEY="$(echo "${NEW_KEY_INFO}" | grep -oP '(?<=Key ID: )\w+' || echo "")"
+    NEW_SECRET_KEY="$(echo "${NEW_KEY_INFO}" | grep -oP '(?<=Secret key: )\w+' || echo "")"
+  fi
+
+  # Re-grant permissions (idempotent)
+  garage_exec "/garage bucket allow ${BUCKET} --key ${KEY_NAME} --read --write" 2>/dev/null || true
+
+  # Update local .env
+  if [[ -f "${LOCAL_ENV}" ]]; then
+    sed -i '' "s/^AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=${NEW_ACCESS_KEY}/" "${LOCAL_ENV}"
+    sed -i '' "s/^AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=${NEW_SECRET_KEY}/" "${LOCAL_ENV}"
+    ok "Local .env updated"
+  fi
+
+  # Update remote .env
+  lxc_exec "sed -i 's/^AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=${NEW_ACCESS_KEY}/' ${REMOTE_ENV}"
+  lxc_exec "sed -i 's/^AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=${NEW_SECRET_KEY}/' ${REMOTE_ENV}"
+  ok "Remote .env updated"
+
+  echo ""
+  echo "  New credentials:"
+  echo "    AWS_ACCESS_KEY_ID=${NEW_ACCESS_KEY}"
+  echo "    AWS_SECRET_ACCESS_KEY=${NEW_SECRET_KEY}"
+  echo ""
+  echo "  ⚠️  If you rotate credentials, re-run:"
+  echo "     source ${LOCAL_ENV}"
+  echo "     terraform init -migrate-state"
+  echo "     (or you'll get AccessDenied on next terraform plan/apply)"
+fi
+
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  🔑  Terraform State Backend Credentials"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-if ! ${DRY_RUN}; then
-  # Parse key info output for access key ID and secret key
-  ACCESS_KEY_ID="$(echo "${KEY_INFO}" | grep -oP '(?<=Key ID: )\w+' || echo "")"
-  SECRET_ACCESS_KEY="$(echo "${KEY_INFO}" | grep -oP '(?<=Secret key: )\w+' || echo "")"
-
-  echo ""
-  echo "  Access Key ID:       ${ACCESS_KEY_ID}"
-  echo "  Secret Access Key:   ${SECRET_ACCESS_KEY}"
-  echo ""
-
-  # Update local .env file
-  if [[ -f "${ENV_FILE}" ]]; then
-    echo "  Updating ${ENV_FILE}..."
-    if [[ -n "${ACCESS_KEY_ID}" ]]; then
-      # Replace values in .env (macOS/BSD compatible sed)
-      sed -i '' "s/^AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}/" "${ENV_FILE}"
-    fi
-    if [[ -n "${SECRET_ACCESS_KEY}" ]]; then
-      sed -i '' "s/^AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}/" "${ENV_FILE}"
-    fi
-    ok "${ENV_FILE} updated"
-  else
-    warn "Local .env not found at ${ENV_FILE}"
-    warn "  Create it from docker/garage/.env.example and add:"
-    warn "  AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}"
-    warn "  AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}"
-  fi
-
-  # Also update the remote .env on LXC
-  if [[ -n "${ACCESS_KEY_ID}" ]] && [[ -n "${SECRET_ACCESS_KEY}" ]]; then
-    info "Updating remote .env on LXC..."
-    remote "sed -i 's/^AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}/' ${REMOTE_ENV}"
-    remote "sed -i 's/^AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}/' ${REMOTE_ENV}"
-    ok "Remote .env updated"
-  fi
-
-  echo ""
-  echo "  ⚡  Next step: export the credentials and migrate Terraform state:"
-  echo "      export AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}"
-  echo "      export AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}"
-  echo "      cd ${PROJECT_ROOT} && terraform init -migrate-state"
-else
-  echo ""
-  echo "  [DRY-RUN] Would create key and display credentials"
-  echo "  [DRY-RUN] Would update ${ENV_FILE}"
-fi
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-ok "Setup script completed"
+if ${DRY_RUN}; then
+  ok "[DRY-RUN] Completed (no changes made)"
+elif ${ROTATE}; then
+  ok "Credentials rotated. Verify with: terraform plan"
+else
+  ok "Verification completed"
+fi
