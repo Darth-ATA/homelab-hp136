@@ -4,8 +4,8 @@
 # This script:
 #   1. SSHes into Proxmox host, then pct enters LXC 101
 #   2. Creates the Arcane project directory for Garage
-#   3. Copies the compose.yml reference to the LXC
-#   4. Creates a minimal garage.toml config
+#   3. Copies compose.yml, garage.toml, and .env to the LXC
+#   4. Pre-pulls the Docker image
 #   5. Provides instructions to complete setup via Arcane UI
 #
 # Usage: ./scripts/deploy-garage.sh [--dry-run]
@@ -28,8 +28,10 @@ SSH_OPTS=(-i "${SSH_KEY}" -o StrictHostKeyChecking=no)
 LXC_ID="101"
 GARAGE_PROJECT_DIR="/root/docker/arcane/data/projects/garage"
 COMPOSE_SRC="${PROJECT_ROOT}/docker/garage/compose.yml"
+GARAGE_TOML_SRC="${PROJECT_ROOT}/docker/garage/garage.toml"
 ENV_SRC="${PROJECT_ROOT}/docker/garage/.env"
 REMOTE_COMPOSE="${GARAGE_PROJECT_DIR}/compose.yml"
+REMOTE_GARAGE_TOML="${GARAGE_PROJECT_DIR}/garage.toml"
 REMOTE_ENV="${GARAGE_PROJECT_DIR}/.env"
 IMAGE="dxflrs/garage:v1.0.1"
 
@@ -53,6 +55,10 @@ fi
 
 if [[ ! -f "${COMPOSE_SRC}" ]]; then
   fail "Compose file not found at ${COMPOSE_SRC}"
+fi
+
+if [[ ! -f "${GARAGE_TOML_SRC}" ]]; then
+  fail "garage.toml not found at ${GARAGE_TOML_SRC}"
 fi
 
 if [[ ! -f "${ENV_SRC}" ]]; then
@@ -90,7 +96,17 @@ else
   ok "[DRY-RUN] Would copy ${COMPOSE_SRC} → ${REMOTE_COMPOSE}"
 fi
 
-# --- Step 4: Copy .env to LXC (if exists) ---
+# --- Step 4: Copy garage.toml to LXC ---
+info "Copying garage.toml to LXC..."
+if ! ${DRY_RUN}; then
+  ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" \
+    "pct push ${LXC_ID} ${GARAGE_TOML_SRC} ${REMOTE_GARAGE_TOML}"
+  ok "garage.toml copied"
+else
+  ok "[DRY-RUN] Would copy ${GARAGE_TOML_SRC} → ${REMOTE_GARAGE_TOML}"
+fi
+
+# --- Step 5: Copy .env to LXC (if exists) ---
 if [[ -f "${ENV_SRC}" ]]; then
   info "Copying .env to LXC..."
   if ! ${DRY_RUN}; then
@@ -105,7 +121,7 @@ else
   warn "  Create it from docker/garage/.env.example and re-run this script"
 fi
 
-# --- Step 5: Pull image ahead of time ---
+# --- Step 6: Pull image ahead of time ---
 info "Pre-pulling Docker image (${IMAGE})..."
 if ! ${DRY_RUN}; then
   ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" \
@@ -115,7 +131,7 @@ else
   ok "[DRY-RUN] Would pull image ${IMAGE}"
 fi
 
-# --- Step 6: Instructions for Arcane UI ---
+# --- Step 7: Instructions for Arcane UI ---
 cat <<INSTRUCTIONS
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

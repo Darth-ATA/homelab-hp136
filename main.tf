@@ -7,9 +7,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket                      = "homelab-terraform-state"
-    key                         = "terraform.tfstate"
-    region                      = "garage"
+    bucket = "homelab-terraform-state"
+    key    = "terraform.tfstate"
+    region = "garage"
     endpoints = {
       s3 = "http://192.168.1.142:3900"
     }
