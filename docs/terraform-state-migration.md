@@ -143,7 +143,7 @@ Both commands should succeed and show the same resources as before.
 | 1 | `terraform init` | Updates backend, no migration prompt (already migrated) | |
 | 2 | `terraform state list` | Shows all ~26 managed resources | |
 | 3 | `terraform plan` | No changes (infrastructure unchanged) | |
-| 4 | Lock test: run two `terraform apply` simultaneously | Second one fails with lock error | |
+| 4 | Lock test: run two `terraform apply` simultaneously | Second one fails with etag conflict error (S3 conditional PUT) — no distributed advisory lock, but writes are serialized at the storage level | |
 | 5 | `docker restart garage` then `terraform plan` | Works, state intact | |
 | 6 | Stop Garage, then `terraform plan` | Clear error about endpoint unreachable | |
 
@@ -196,11 +196,17 @@ ssh -i ~/.ssh/homelab_key root@192.168.1.134 \
 - Verify Garage is running: `docker ps` on LXC 101
 - Check port 3900 is accessible from your workstation
 
-### State lock issues
+### State locking notes
+
+The S3 backend uses **etag-based conditional PUT** for write consistency — not distributed advisory locking. This means:
+
+- **Single operator**: Works fine. Terraform reads the state, applies changes, and writes it back with a conditional PUT that fails if the etag changed (another write happened concurrently).
+- **Concurrent applies**: The second apply will fail with an etag conflict error, not a classic "lock" error. State corruption is prevented, but there's no advisory lock queue.
+- **If concurrent applies become a concern**: Add a `dynamodb_table` entry pointing to a DynamoDB-compatible service (Garage does not support DynamoDB). For the single-operator homelab, this is acceptable risk.
 
 ```bash
-# Force unlock (only if you're sure no apply is running)
-terraform force-unlock <lock-id>
+# If terraform reports a state conflict:
+terraform plan  # Retry — the conflict is transient
 ```
 
 ### "Bucket does not exist" error
