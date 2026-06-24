@@ -1,0 +1,31 @@
+# Reference compose file for Garage S3-compatible object storage
+#
+# This is a REFERENCE COPY. The actual deployment uses Arcane on LXC 101.
+# To deploy: copy this file to /root/docker/arcane/data/projects/garage/ on LXC 101,
+# add the project via Arcane UI (http://192.168.1.142:3552), and configure
+# docker/garage/.env with credentials.
+#
+# See docs/terraform-state-migration.md for the full deployment guide.
+
+services:
+  garage:
+    image: dxflrs/garage:v1.0.1
+    container_name: garage
+    environment:
+      - GARAGE_S3_REGION=garage
+      - GARAGE_ADMIN_TOKEN=${GARAGE_ADMIN_TOKEN:?err}
+      - GARAGE_METRICS_TOKEN=${GARAGE_METRICS_TOKEN:?err}
+    ports:
+      - "3900:3900"
+    volumes:
+      - garage-data:/var/lib/garage
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3900/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  garage-data:
