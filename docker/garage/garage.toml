@@ -11,14 +11,16 @@ db_engine = "lmdb"
 
 replication_mode = "none"
 
-[rpc]
-bind_addr = "0.0.0.0:3901"
-public_addr = "192.168.1.142:3901"
+rpc_bind_addr = "0.0.0.0:3901"
+rpc_public_addr = "192.168.1.142:3901"
+rpc_secret = "1799bccfd7411eddcf9ebd316bc1f5287ad12a68094e1c6ac6abde7e6feae1ec"
+
+bootstrap_peers = []
 
 [s3_api]
-bind_addr = "0.0.0.0:3900"
+api_bind_addr = "0.0.0.0:3900"
+s3_region = "garage"
 root_domain = ".s3.garage.localhost"
-region = "garage"
 
 [s3_web]
 bind_addr = "0.0.0.0:3902"
