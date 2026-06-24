@@ -244,20 +244,44 @@ fi
 # ──────────────────────────────────────────────
 # STEP 2: Copy files to LXC
 # ──────────────────────────────────────────────
+# NOTE: pct push reads from the Proxmox host's filesystem, NOT from the client.
+# We must SCP to the host first, then pct push from /tmp.
+PROX_TMP="/tmp/garage-deploy-$$"
 info "Creating project directory..."
 ${DRY_RUN} || lxc_exec "mkdir -p ${REMOTE_PATH}"
 
-info "Copying compose.yaml..."
-${DRY_RUN} || ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" \
-  "pct push ${LXC_ID} ${COMPOSE_SRC} ${REMOTE_PATH}/compose.yaml"
+info "Staging files on Proxmox host..."
+${DRY_RUN} || ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" "mkdir -p ${PROX_TMP}"
 
-info "Copying garage.toml..."
-${DRY_RUN} || ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" \
-  "pct push ${LXC_ID} ${GARAGE_TOML_SRC} ${REMOTE_PATH}/garage.toml"
+if ! ${DRY_RUN}; then
+  scp "${SSH_OPTS[@]}" "${COMPOSE_SRC}" "root@${PROXMOX_HOST}:${PROX_TMP}/compose.yaml" >/dev/null 2>&1
+  scp "${SSH_OPTS[@]}" "${GARAGE_TOML_SRC}" "root@${PROXMOX_HOST}:${PROX_TMP}/garage.toml" >/dev/null 2>&1
+  scp "${SSH_OPTS[@]}" "${LOCAL_ENV}" "root@${PROXMOX_HOST}:${PROX_TMP}/.env" >/dev/null 2>&1
+fi
 
-info "Copying .env..."
-${DRY_RUN} || ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" \
-  "pct push ${LXC_ID} ${LOCAL_ENV} ${REMOTE_PATH}/.env"
+info "Copying compose.yaml to LXC..."
+if ! ${DRY_RUN}; then
+  ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" \
+    "pct push ${LXC_ID} ${PROX_TMP}/compose.yaml ${REMOTE_PATH}/compose.yaml" || \
+    fail "Failed to copy compose.yaml"
+fi
+
+info "Copying garage.toml to LXC..."
+if ! ${DRY_RUN}; then
+  ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" \
+    "pct push ${LXC_ID} ${PROX_TMP}/garage.toml ${REMOTE_PATH}/garage.toml" || \
+    fail "Failed to copy garage.toml"
+fi
+
+info "Copying .env to LXC..."
+if ! ${DRY_RUN}; then
+  ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" \
+    "pct push ${LXC_ID} ${PROX_TMP}/.env ${REMOTE_PATH}/.env" || \
+    fail "Failed to copy .env"
+fi
+
+# Clean up staging directory
+${DRY_RUN} || ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" "rm -rf ${PROX_TMP}" >/dev/null 2>&1
 
 ok "Files copied to ${REMOTE_PATH}"
 
