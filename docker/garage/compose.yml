@@ -1,36 +1,41 @@
-# Reference compose file for Garage S3-compatible object storage
+# Reference compose file for Garage v2.3.0 S3-compatible object storage
 #
 # This is a REFERENCE COPY. The actual deployment uses Arcane on LXC 101.
-# To deploy: copy this file to /root/docker/arcane/data/projects/garage/ on LXC 101,
-# add the project via Arcane UI (http://192.168.1.142:3552), and configure
-# docker/garage/.env with credentials.
+# To deploy: copy compose.yml (as compose.yaml), garage.toml, and .env to
+# /root/docker/arcane/data/projects/garage/ on LXC 101.
 #
-# See docs/terraform-state-migration.md for the full deployment guide.
+# Garage v2.3.0 uses --single-node for automatic cluster layout setup
+# and --default-bucket for automatic bucket + key creation.
 
 services:
   garage:
-    image: dxflrs/garage:v1.0.1
+    image: dxflrs/garage:v2.3.0
     container_name: garage
+    # --single-node: auto-configures the cluster layout (no manual layout assign/apply)
+    # --default-bucket: creates bucket + access key from env vars (implies --default-access-key)
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
     environment:
-      # These env vars are referenced by garage.toml via ${VAR} expansion at runtime.
-      # They must remain in the container environment for config resolution.
       - GARAGE_ADMIN_TOKEN=${GARAGE_ADMIN_TOKEN:?err}
       - GARAGE_METRICS_TOKEN=${GARAGE_METRICS_TOKEN:?err}
+      - GARAGE_DEFAULT_BUCKET=homelab-terraform-state
+      - GARAGE_DEFAULT_ACCESS_KEY=${AWS_ACCESS_KEY_ID:?err}
+      - GARAGE_DEFAULT_SECRET_KEY=${AWS_SECRET_ACCESS_KEY:?err}
     ports:
       - "3900:3900"   # S3 API
       - "3901:3901"   # RPC (cluster/internal)
-      - "3902:3902"   # Web UI
+      - "3902:3902"   # Web serving (optional)
       - "3903:3903"   # Admin API
     volumes:
       - ./garage.toml:/etc/garage.toml:ro
       - garage-data:/var/lib/garage
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3900/health"]
+      # Uses the garage CLI to check server status (no curl needed)
+      test: ["CMD", "/garage", "status"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
 
 volumes:
   garage-data:
