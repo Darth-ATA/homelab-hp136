@@ -93,6 +93,23 @@ copy_file "${ENV_SRC}"       "${REMOTE_PATH}/.env"
 ok "Files copied to ${REMOTE_PATH}"
 
 # ============================================================
+# STEP 2b: Replace rpc_secret placeholder with real secret
+# ============================================================
+info "Applying GARAGE_RPC_SECRET to garage.toml..."
+if ! ${DRY_RUN}; then
+  # Read secret from local .env and inject via heredoc-style SSH
+  source "${ENV_SRC}" 2>/dev/null || true
+  if [[ -n "${GARAGE_RPC_SECRET:-}" ]]; then
+    ssh "${SSH_OPTS[@]}" "root@${PROXMOX_HOST}" \
+      "pct exec ${LXC_ID} -- sed -i 's/__RPC_SECRET__/${GARAGE_RPC_SECRET}/' ${REMOTE_PATH}/garage.toml"
+    ok "rpc_secret applied"
+  else
+    warn "GARAGE_RPC_SECRET not found in .env — skipping placeholder replacement"
+    warn "  Garage may fail to start without a valid rpc_secret"
+  fi
+fi
+
+# ============================================================
 # STEP 3: Register project in Arcane SQLite DB
 # ============================================================
 info "Registering project in Arcane..."

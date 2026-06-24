@@ -14,7 +14,8 @@ replication_factor = 1
 
 rpc_bind_addr = "0.0.0.0:3901"
 rpc_public_addr = "192.168.1.142:3901"
-# Replace via deploy-garage.sh: sed 's/__RPC_SECRET__/$GARAGE_RPC_SECRET/'
+# Replaced at deploy time via sed in deploy-garage.sh
+# Do NOT put the actual secret here — use GARAGE_RPC_SECRET in .env
 rpc_secret = "__RPC_SECRET__"
 
 bootstrap_peers = []
