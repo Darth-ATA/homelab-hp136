@@ -160,7 +160,8 @@ list_files() {
 }
 
 resolve_files() {
-    local -a files=()
+    local -a files
+    files=()
 
     if [[ "${DEPLOY_ALL:-false}" == "true" ]]; then
         for f in "$LOCAL_DIR"/*.yaml; do
@@ -174,7 +175,8 @@ resolve_files() {
         files=("${DEFAULT_FILES[@]}")
     fi
 
-    local -a resolved=()
+    local -a resolved
+    resolved=()
     for f in "${files[@]}"; do
         if [[ ! -f "$LOCAL_DIR/$f" ]]; then
             log_warn "File not found, skipping: $f"
@@ -195,7 +197,8 @@ resolve_files() {
 # Deploy
 #-------------------------------------------------------------------------------
 copy_to_proxmox() {
-    local -a files=("$@")
+    local -a files
+    files=("$@")
     log_info "[1/4] Copying ${#files[@]} file(s) to Proxmox host..."
 
     ssh_cmd mkdir -p /tmp/ha-deploy
@@ -226,7 +229,8 @@ start_http_server() {
 }
 
 push_files_to_vm() {
-    local -a files=("$@")
+    local -a files
+    files=("$@")
     log_info "[3/4] Pushing ${#files[@]} file(s) to VM $VM_ID..."
 
     for f in "${files[@]}"; do
@@ -273,10 +277,11 @@ cleanup() {
 # Main
 #-------------------------------------------------------------------------------
 main() {
-    local -a deploy_files=()
     SKIP_RESTART=false
     DEPLOY_ALL=false
 
+    # Collect file arguments (if any)
+    local file_args=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --all)
@@ -299,7 +304,7 @@ main() {
                 usage 1
                 ;;
             *)
-                deploy_files+=("$1")
+                file_args="${file_args} $1"
                 shift
                 ;;
         esac
@@ -315,10 +320,22 @@ main() {
 
     validate_prerequisites
 
-    local -a files=()
+    # Resolve files to deploy (use temp file to avoid array+set -u issues)
+    local tmpfile
+    tmpfile=$(mktemp) || { log_error "Failed to create temp file"; exit 1; }
+    if [[ -z "$file_args" ]]; then
+        resolve_files > "$tmpfile"
+    else
+        # shellcheck disable=SC2086
+        resolve_files $file_args > "$tmpfile"
+    fi
+
+    local files=()
     while IFS= read -r line; do
         files+=("$line")
-    done < <(resolve_files "${deploy_files[@]}")
+    done < "$tmpfile"
+    rm -f "$tmpfile"
+
     echo "Deploying: ${files[*]}"
     echo ""
 
