@@ -8,7 +8,19 @@ Integración del precio horario de la luz en Home Assistant usando el custom com
 
 **Por qué ha-pvpc-next**: Usa [`python-holidays`](https://github.com/dr-prodigy/python-holidays), que se actualiza dinámicamente. No expira.
 
-## Instalación
+## Quick path (scripted)
+
+```bash
+# Desde el repo, conéctate al Proxmox host y ejecuta:
+./scripts/setup-pvpc.sh
+```
+
+Esto instala el componente, el card, reinicia HA y verifica los sensores.
+Deja 3 pasos manuales (ver post-setup).
+
+Para opciones: `./scripts/setup-pvpc.sh --help`
+
+## Instalación manual
 
 ### 1. Descargar el componente
 
@@ -191,6 +203,14 @@ Esto llama al servicio `pvpc_next.update` que fuerza al coordinator a refrescar 
 ```bash
 cat /tmp/script.py | ssh proxmox-host "qm guest exec 100 --pass-stdin -- sh -c 'docker exec -i homeassistant sh -c \"cat > /tmp/script.py && python3 /tmp/script.py\"'"
 ```
+
+## Post-Setup (manual)
+
+Estos pasos solo pueden hacerse desde la UI de HA porque el storage mode de HA 2026.6 ignora configuraciones por YAML/JSON:
+
+1. **Crear config entry**: *Settings → Devices & Services → Add Integration → PVPC Next*. Configurar tarifa `2.0TD`, potencia `3450W`.
+2. **Registrar resource del card**: *Settings → Dashboards → Resources → Add Resource*. URL: `/local/community/pvpc-hourly-pricing-card/pvpc-hourly-pricing-card.js`.
+3. **Agregar card al dashboard**: Editar dashboard → *Add Card → Custom: PVPC Hourly Pricing*.
 
 ## Referencias
 
