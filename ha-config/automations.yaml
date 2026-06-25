@@ -270,13 +270,13 @@
 - id: 'lavadora_inicio_001'
   alias: "Lavadora - Inicio de ciclo"
   description: >
-    Detecta arranque por consumo > 50W sostenido 30s.
+    Detecta arranque por consumo > 15W sostenido 30s.
     Si no es hora barata dentro de 08-22, apaga el enchufe y marca apagada_por_automatizacion.
     Si es hora barata, lo deja correr.
   triggers:
   - trigger: numeric_state
     entity_id: sensor.lavadero_sonoff_s60zbtpf_lavadora_potencia
-    above: 50
+    above: 15
     for:
       seconds: 30
   conditions:
