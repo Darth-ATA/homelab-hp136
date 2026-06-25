@@ -1,116 +1,111 @@
 # =============================================================================
 # CIRCADIANA: LUZ DE DESPACHO
 # Ajusta temperatura de color y brillo según la hora del día.
-# Ventana al oeste (268°): el sol de la tarde compensa luz artificial,
-# por eso bajamos brillo entre 12-17h cuando el sol está alto.
-# color_temp_kelvin: 4500=neutral, 4000=ligero calido, 3000=calido,
-# 2700=calido bajo, 2200=muy calido, 2000=minimo calido.
-# Entity IDs: light.ventilador_de_techo_despacho_main_light
+# Horario laboral (08:00-21:00): brillo al 100%, temperatura varía.
+# Post-laboral (21:00-23:00): 2200K/40%. Noche profunda (23:00+): 2000K/20%.
+# Entity IDs: light.ventilador_de_techo_despacho_main_light, light.innr_rb_272_t
 # =============================================================================
 - id: '1749052800001'
   alias: 'Circadiana: Luz despacho'
-  description: 'Ajusta temperatura de color (Kelvin directo) y brillo segun hora del dia. Maniana: 4500K/80%. Tarde sol oeste: 4000K/60%. Noche: 2200K/25%.'
+  description: 'Ajusta temperatura de color y brillo. Horario laboral (08-21): 100% brillo. Noche: 2200K/40%. Madrugada: 2000K/20%. Luces: despacho + innr RB 272 T.'
   triggers:
   - minutes: /15
     trigger: time_pattern
   conditions:
-  - condition: state
-    entity_id: light.ventilador_de_techo_despacho_main_light
-    state:
-    - 'on'
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: light.ventilador_de_techo_despacho_main_light
+      state: 'on'
+    - condition: state
+      entity_id: light.innr_rb_272_t
+      state: 'on'
   actions:
   - choose:
     - conditions:
       - condition: time
         before: 06:00:00
       sequence:
-      - action: light.turn_off
-        target:
+      - if:
+        - condition: state
           entity_id: light.ventilador_de_techo_despacho_main_light
-        data: {}
+          state: 'on'
+        then:
+        - action: light.turn_off
+          target:
+            entity_id: light.ventilador_de_techo_despacho_main_light
+          data: {}
+      - if:
+        - condition: state
+          entity_id: light.innr_rb_272_t
+          state: 'on'
+        then:
+        - action: light.turn_off
+          target:
+            entity_id: light.innr_rb_272_t
+          data: {}
     - conditions:
       - condition: time
         after: 06:00:00
         before: 08:00:00
       sequence:
-      - action: light.turn_on
-        metadata: {}
+      - action: script.apply_circadian
         data:
-          brightness_pct: 50
-          color_temp_kelvin: 2700
-        target:
-          entity_id: light.ventilador_de_techo_despacho_main_light
+          brightness: 80
+          color_temp: 3000
     - conditions:
       - condition: time
         after: 08:00:00
         before: '12:00:00'
       sequence:
-      - action: light.turn_on
-        metadata: {}
+      - action: script.apply_circadian
         data:
-          brightness_pct: 80
-          color_temp_kelvin: 4500
-        target:
-          entity_id: light.ventilador_de_techo_despacho_main_light
+          brightness: 100
+          color_temp: 4500
     - conditions:
       - condition: time
         after: '12:00:00'
         before: '17:00:00'
       sequence:
-      - action: light.turn_on
-        metadata: {}
+      - action: script.apply_circadian
         data:
-          brightness_pct: 60
-          color_temp_kelvin: 4000
-        target:
-          entity_id: light.ventilador_de_techo_despacho_main_light
+          brightness: 100
+          color_temp: 4000
     - conditions:
       - condition: time
         after: '17:00:00'
         before: '19:00:00'
       sequence:
-      - action: light.turn_on
-        metadata: {}
+      - action: script.apply_circadian
         data:
-          brightness_pct: 70
-          color_temp_kelvin: 3000
-        target:
-          entity_id: light.ventilador_de_techo_despacho_main_light
+          brightness: 100
+          color_temp: 3500
     - conditions:
       - condition: time
         after: '19:00:00'
         before: '21:00:00'
       sequence:
-      - action: light.turn_on
-        metadata: {}
+      - action: script.apply_circadian
         data:
-          brightness_pct: 40
-          color_temp_kelvin: 2700
-        target:
-          entity_id: light.ventilador_de_techo_despacho_main_light
+          brightness: 100
+          color_temp: 3000
     - conditions:
       - condition: time
         after: '21:00:00'
         before: '23:00:00'
       sequence:
-      - action: light.turn_on
-        metadata: {}
+      - action: script.apply_circadian
         data:
-          brightness_pct: 25
-          color_temp_kelvin: 2200
-        target:
-          entity_id: light.ventilador_de_techo_despacho_main_light
+          brightness: 40
+          color_temp: 2200
     - conditions:
       - condition: time
         after: '23:00:00'
       sequence:
-      - action: light.turn_on
-        metadata: {}
+      - action: script.apply_circadian
         data:
-          brightness_pct: 15
-          color_temp_kelvin: 2000
-        target:
-          entity_id: light.ventilador_de_techo_despacho_main_light
+          brightness: 20
+          color_temp: 2000
   mode: single
 
 # =============================================================================
