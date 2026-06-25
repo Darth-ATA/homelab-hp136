@@ -245,3 +245,194 @@
       message: Termo activado.
     action: notify.mobile_app_alejandros_iphone
   mode: single
+
+# =============================================================================
+# LAVADORA: Automatización inteligente por PVPC
+# =============================================================================
+#
+# Flujo:
+#   1. Se detecta inicio por pico de consumo > 50W sostenido 30s
+#   2. Si no es hora barata dentro 08-22 → apaga enchufe, marca apagada
+#   3. Llega la hora barata → enciende enchufe automáticamente
+#   4. Termina el ciclo (consumo < 10W x 5 min) → notificación al móvil
+#   5. Usuario marca "Ya tendí" → resetea todo
+#
+# Reglas:
+#   - Restricción 08-22: la lavadora solo arranca SI está en hora barata
+#   - Si ya está funcionando, NO se toca el enchufe (que termine el ciclo)
+#   - Si llega la hora barata y estaba apagada por la automación, se enciende
+#   - Si arranca manualmente en hora barata, se deja correr
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Detectar inicio de ciclo
+# -----------------------------------------------------------------------------
+- id: 'lavadora_inicio_001'
+  alias: "Lavadora - Inicio de ciclo"
+  description: >
+    Detecta arranque por consumo > 50W sostenido 30s.
+    Si no es hora barata dentro de 08-22, apaga el enchufe y marca apagada_por_automatizacion.
+    Si es hora barata, lo deja correr.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.lavadero_sonoff_s60zbtpf_lavadora_potencia
+    above: 50
+    for:
+      seconds: 30
+  conditions:
+  - condition: state
+    entity_id: input_boolean.lavadora_automatizacion_activa
+    state: 'off'
+  actions:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.lavadora_automatizacion_activa
+  - delay:
+      seconds: 5
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ now().hour >= 8 and now().hour < 22 }}"
+      sequence:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: binary_sensor.lavadora_en_hora_barata
+            state: 'on'
+          sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.lavadora_apagada_por_automatizacion
+        - conditions:
+          - condition: state
+            entity_id: binary_sensor.lavadora_en_hora_barata
+            state: 'off'
+          sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.lavadora_apagada_por_automatizacion
+    - conditions:
+      - condition: template
+        value_template: "{{ now().hour >= 22 or now().hour < 8 }}"
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.lavadora_apagada_por_automatizacion
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Encender cuando llega la hora más barata
+# -----------------------------------------------------------------------------
+- id: 'lavadora_hora_barata_001'
+  alias: "Lavadora - Encender en hora barata"
+  description: >
+    Cada hora en punto, si es la hora más barata del día entre 08-22
+    y la lavadora fue apagada por la automatización, enciende el enchufe.
+  triggers:
+  - trigger: template
+    value_template: >
+      {{ now().minute == 0
+         and now().hour == states('sensor.lavadora_hora_mas_barata') | int(-1)
+         and now().hour >= 8 and now().hour < 22 }}
+  conditions:
+  - condition: state
+    entity_id: input_boolean.lavadora_automatizacion_activa
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.lavadora_apagada_por_automatizacion
+    state: 'on'
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.lavadora_apagada_por_automatizacion
+  - action: notify.mobile_app_alejandros_iphone
+    data:
+      title: "⚡ Lavadora - Hora barata"
+      message: "Llegó la hora más barata. Enciendo la lavadora."
+      data:
+        tag: lavadora_hora_barata
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Fin de ciclo
+# -----------------------------------------------------------------------------
+- id: 'lavadora_fin_ciclo_001'
+  alias: "Lavadora - Fin de ciclo"
+  description: >
+    Cuando el consumo baja a < 10W por 5 minutos y la lavadora estaba corriendo
+    (no apagada por la automatización), notifica al móvil.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.lavadero_sonoff_s60zbtpf_lavadora_potencia
+    below: 10
+    for:
+      minutes: 5
+  conditions:
+  - condition: state
+    entity_id: input_boolean.lavadora_automatizacion_activa
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.lavadora_apagada_por_automatizacion
+    state: 'off'
+  actions:
+  - action: notify.mobile_app_alejandros_iphone
+    data:
+      title: "🧺 Lavadora - Ciclo terminado"
+      message: "La lavadora terminó. Ya podés tender la ropa."
+      data:
+        tag: lavadora_fin
+        actions:
+        - action: LAVADORA_TENDIDA
+          title: "Ya tendí"
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Manejar acción "Ya tendí" desde la notificación
+# -----------------------------------------------------------------------------
+- id: 'lavadora_notificacion_tendida_001'
+  alias: "Lavadora - Responder 'Ya tendí'"
+  description: "Cuando el usuario toca 'Ya tendí' en la notificación, marca el input_boolean."
+  triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: LAVADORA_TENDIDA
+  actions:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.lavadora_tendida
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Reset completo
+# -----------------------------------------------------------------------------
+- id: 'lavadora_reset_001'
+  alias: "Lavadora - Reset por tendido"
+  description: "Resetea todos los flags de la automatización cuando el usuario marca que ya tendió."
+  triggers:
+  - trigger: state
+    entity_id: input_boolean.lavadora_tendida
+    to: 'on'
+  actions:
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.lavadora_automatizacion_activa
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.lavadora_apagada_por_automatizacion
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.lavadora_tendida
+  mode: single
