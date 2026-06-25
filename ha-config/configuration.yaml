@@ -8,3 +8,49 @@ frontend:
 automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
+
+# =============================================================================
+# LAVADORA: Template sensors para automatización con PVPC
+# =============================================================================
+template:
+  - sensor:
+      - name: "Lavadora - Hora más barata"
+        unique_id: "lavadora_hora_mas_barata"
+        state: >
+          {% set ns = namespace(min_hour=-1, min_price=999) %}
+          {% for h in range(8, 22) %}
+            {% set p = state_attr('sensor.esios_current_price', 'price_%02dh' | format(h)) %}
+            {% if p is not none and p|float > 0 and p|float < ns.min_price %}
+              {% set ns.min_price = p|float %}
+              {% set ns.min_hour = h %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.min_hour }}
+        availability: "{{ state_attr('sensor.esios_current_price', 'price_08h') is not none }}"
+        icon: "mdi:clock-outline"
+        unit_of_measurement: "h"
+
+  - binary_sensor:
+      - name: "Lavadora - En hora barata"
+        unique_id: "lavadora_hora_barata_ahora"
+        state: >
+          {% set cheapest = states('sensor.lavadora_hora_mas_barata') %}
+          {% if cheapest not in ['unknown', 'unavailable', 'none', '-1'] %}
+            {{ now().hour >= 8 and now().hour < 22 and now().hour == cheapest | int(-1) }}
+          {% else %}
+            false
+          {% endif %}
+
+# =============================================================================
+# LAVADORA: Helpers para la automatización
+# =============================================================================
+input_boolean:
+  lavadora_automatizacion_activa:
+    name: "Lavadora - Automatización activa"
+    icon: "mdi:washing-machine"
+  lavadora_apagada_por_automatizacion:
+    name: "Lavadora - Apagada por automatización"
+    icon: "mdi:power-plug-off"
+  lavadora_tendida:
+    name: "Lavadora - Ropa tendida"
+    icon: "mdi:hanger"
