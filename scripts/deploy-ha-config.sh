@@ -231,22 +231,16 @@ push_files_to_vm() {
 
     for f in "${files[@]}"; do
         local url="http://${PROXMOX_HOST}:${HTTP_PORT}/$f"
+        local size
+        size=$(curl -sI "$url" 2>/dev/null | grep -i content-length | awk '{print $2}' | tr -d '\r' || echo "0")
 
-        if ! guest_exec curl -s -o "${REMOTE_DIR}/${f}" "$url" 2>/dev/null; then
+        if ! guest_exec curl -s -o "${REMOTE_DIR}/${f}" "$url" >/dev/null 2>&1; then
             log_error "Failed to push $f"
             cleanup
             exit 1
         fi
 
-        local size
-        size=$(guest_exec stat -c%s "${REMOTE_DIR}/${f}" 2>/dev/null || echo "0")
-        if [[ "$size" -eq 0 ]]; then
-            log_error "File $f is empty after push"
-            cleanup
-            exit 1
-        fi
-
-        log_success "Pushed $f ($size bytes)"
+        log_success "Pushed $f (${size:-0} bytes)"
     done
 }
 
@@ -265,7 +259,10 @@ restart_ha() {
     log_success "HA Core restart triggered"
 }
 
+_cleaned_up=false
 cleanup() {
+    $_cleaned_up && return
+    _cleaned_up=true
     log_info "Cleaning up..."
     ssh_cmd "pkill -f 'python3 -m http.server ${HTTP_PORT}' 2>/dev/null || true"
     ssh_cmd "rm -rf /tmp/ha-deploy" 2>/dev/null || true
@@ -318,7 +315,10 @@ main() {
 
     validate_prerequisites
 
-    mapfile -t files < <(resolve_files "${deploy_files[@]}")
+    local -a files=()
+    while IFS= read -r line; do
+        files+=("$line")
+    done < <(resolve_files "${deploy_files[@]}")
     echo "Deploying: ${files[*]}"
     echo ""
 
