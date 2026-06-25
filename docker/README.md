@@ -22,6 +22,7 @@ Arcane runs at `http://192.168.1.142:3552` and manages individual compose files 
 # ├── prowlarr/
 # ├── deluge/
 # ├── bazarr/
+# ├── flaresolverr/
 # ├── jellyfin/
 # ├── npm/
 # ├── garage/
@@ -41,6 +42,7 @@ Arcane runs at `http://192.168.1.142:3552` and manages individual compose files 
 | Sonarr | `sonarr` | 8989 | TV shows automation | Arcane |
 | Lidarr | `lidarr` | 8686 | Music collection manager | Arcane |
 | **Bazarr** | `bazarr` | 6767 | Subtitle management | Arcane |
+| FlareSolverr | `flaresolverr` | 8191 | Cloudflare bypass proxy for Prowlarr indexers | Arcane |
 | Jellyfin | `jellyfin` | 8096, 8920 | Media server | Arcane |
 | **Garage** | `garage` | 3900, 3901, 3902, 3903 | S3-compatible object storage (Terraform state backend) | Arcane |
 
@@ -109,6 +111,7 @@ cd /root/docker/arcane && docker compose up -d
 - **Sonarr**: http://192.168.1.142:8989
 - **Lidarr**: http://192.168.1.142:8686
 - **Bazarr**: http://192.168.1.142:6767
+- **FlareSolverr**: http://192.168.1.142:8191 (API endpoint: `http://192.168.1.142:8191/v1`)
 - **Jellyfin**: http://192.168.1.142:8096
 - **Vaultwarden**: https://vw.hp136.duckdns.org (LXC 104, proxied via NPM)
 - **NPM Admin**: http://192.168.1.142:81
