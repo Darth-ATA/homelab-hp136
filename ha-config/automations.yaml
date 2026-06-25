@@ -1,15 +1,13 @@
 # =============================================================================
 # CIRCADIANA: LUZ DE DESPACHO
 # Ajusta temperatura de color y brillo según la hora del día.
-# Ventana al oeste (268°): el sol de la tarde compensa luz artificial,
-# por eso bajamos brillo entre 12-17h cuando el sol está alto.
-# color_temp_kelvin: 4500=neutral, 4000=ligero calido, 3000=calido,
-# 2700=calido bajo, 2200=muy calido, 2000=minimo calido.
+# Horario laboral (08:00-21:00): brillo al 100%, temperatura varía.
+# Post-laboral (21:00-23:00): 2200K/40%. Noche profunda (23:00+): 2000K/20%.
 # Entity IDs: light.ventilador_de_techo_despacho_main_light, light.innr_rb_272_t
 # =============================================================================
 - id: '1749052800001'
   alias: 'Circadiana: Luz despacho'
-  description: 'Ajusta temperatura de color (Kelvin directo) y brillo segun hora del dia. Maniana: 4500K/80%. Tarde sol oeste: 4000K/60%. Noche: 2200K/25%. Luces: despacho + innr RB 272 T.'
+  description: 'Ajusta temperatura de color y brillo. Horario laboral (08-21): 100% brillo. Noche: 2200K/40%. Madrugada: 2000K/20%. Luces: despacho + innr RB 272 T.'
   triggers:
   - minutes: /15
     trigger: time_pattern
@@ -53,8 +51,8 @@
       sequence:
       - action: script.apply_circadian
         data:
-          brightness: 50
-          color_temp: 2700
+          brightness: 80
+          color_temp: 3000
     - conditions:
       - condition: time
         after: 08:00:00
@@ -62,7 +60,7 @@
       sequence:
       - action: script.apply_circadian
         data:
-          brightness: 80
+          brightness: 100
           color_temp: 4500
     - conditions:
       - condition: time
@@ -71,7 +69,7 @@
       sequence:
       - action: script.apply_circadian
         data:
-          brightness: 60
+          brightness: 100
           color_temp: 4000
     - conditions:
       - condition: time
@@ -80,8 +78,8 @@
       sequence:
       - action: script.apply_circadian
         data:
-          brightness: 70
-          color_temp: 3000
+          brightness: 100
+          color_temp: 3500
     - conditions:
       - condition: time
         after: '19:00:00'
@@ -89,8 +87,8 @@
       sequence:
       - action: script.apply_circadian
         data:
-          brightness: 40
-          color_temp: 2700
+          brightness: 100
+          color_temp: 3000
     - conditions:
       - condition: time
         after: '21:00:00'
@@ -98,7 +96,7 @@
       sequence:
       - action: script.apply_circadian
         data:
-          brightness: 25
+          brightness: 40
           color_temp: 2200
     - conditions:
       - condition: time
@@ -106,7 +104,7 @@
       sequence:
       - action: script.apply_circadian
         data:
-          brightness: 15
+          brightness: 20
           color_temp: 2000
   mode: single
 
