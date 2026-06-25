@@ -1,0 +1,54 @@
+# =============================================================================
+# SCRIPTS COMPARTIDOS
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# apply_circadian
+# Aplica brillo y temperatura de color a todas las luces de la circadiana
+# que estén encendidas. Itera sobre la lista y verifica estado una por una
+# para no prender luces apagadas.
+# -----------------------------------------------------------------------------
+apply_circadian:
+  alias: "Aplicar valores circadianos"
+  description: "Aplica brillo y temperatura de color a todas las luces circadianas que estén encendidas"
+  fields:
+    brightness:
+      description: "Brillo en porcentaje (0-100)"
+      example: 80
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+    color_temp:
+      description: "Temperatura de color en Kelvin"
+      example: 4500
+      required: true
+      selector:
+        number:
+          min: 2000
+          max: 6500
+          unit_of_measurement: "K"
+  sequence:
+    - variables:
+        lights:
+          - light.ventilador_de_techo_despacho_main_light
+          - light.innr_rb_272_t
+    - repeat:
+        while:
+          - condition: template
+            value_template: "{{ repeat.index <= 2 }}"
+        sequence:
+          - variables:
+              entity: "{{ lights[repeat.index - 1] }}"
+          - if:
+              - condition: template
+                value_template: "{{ is_state(entity, 'on') }}"
+            then:
+              - action: light.turn_on
+                target:
+                  entity_id: "{{ entity }}"
+                data:
+                  brightness_pct: "{{ brightness }}"
+                  color_temp_kelvin: "{{ color_temp }}"
