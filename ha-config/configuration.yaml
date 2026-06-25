@@ -54,3 +54,6 @@ input_boolean:
   lavadora_tendida:
     name: "Lavadora - Ropa tendida"
     icon: "mdi:hanger"
+  lavadora_ciclo_terminado:
+    name: "Lavadora - Ciclo terminado"
+    icon: "mdi:check-circle-outline"

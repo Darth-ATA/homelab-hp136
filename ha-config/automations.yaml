@@ -381,16 +381,18 @@
   - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.lavadora_apagada_por_automatizacion
-  - action: notify.send_message
+  - action: notify.alejandros_iphone
     data:
-      title: "⚡ Lavadora - Hora barata"
-      message: "Llegó la hora más barata. Enciendo la lavadora."
+      title: "\u26A1 Lavadora - Hora barata"
+      message: "Lleg\u00F3 la hora m\u00E1s barata. Enciendo la lavadora."
       data:
         tag: lavadora_hora_barata
-    target:
-      entity_id:
-        - notify.alejandros_iphone
-        - notify.miriam_iphone
+  - action: notify.miriam_iphone
+    data:
+      title: "\u26A1 Lavadora - Hora barata"
+      message: "Lleg\u00F3 la hora m\u00E1s barata. Enciendo la lavadora."
+      data:
+        tag: lavadora_hora_barata
   mode: single
 
 # -----------------------------------------------------------------------------
@@ -415,19 +417,24 @@
     entity_id: input_boolean.lavadora_apagada_por_automatizacion
     state: 'off'
   actions:
-  - action: notify.send_message
+  - action: notify.alejandros_iphone
     data:
-      title: "🧺 Lavadora - Ciclo terminado"
-      message: "La lavadora terminó. Ya podés tender la ropa."
+      title: "\U0001F9FA Lavadora - Ciclo terminado"
+      message: "La lavadora termin\u00F3. Ya pod\u00E9s tender la ropa."
       data:
         tag: lavadora_fin
         actions:
         - action: LAVADORA_TENDIDA
-          title: "Ya tendí"
+          title: "Ya tend\u00ED"
+  - action: notify.miriam_iphone
+    data:
+      title: "\U0001F9FA Lavadora - Ciclo terminado"
+      message: "La lavadora termin\u00F3. Ya pod\u00E9s tender la ropa."
+      data:
+        tag: lavadora_fin
+  - action: input_boolean.turn_on
     target:
-      entity_id:
-        - notify.alejandros_iphone
-        - notify.miriam_iphone
+      entity_id: input_boolean.lavadora_ciclo_terminado
   mode: single
 
 # -----------------------------------------------------------------------------
@@ -467,4 +474,41 @@
   - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.lavadora_tendida
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.lavadora_ciclo_terminado
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Recordatorio de tendido cada 5 minutos
+# -----------------------------------------------------------------------------
+- id: 'lavadora_recordatorio_001'
+  alias: "Lavadora - Recordatorio de tendido"
+  description: "Cada 5 minutos recuerda tender la ropa si el ciclo terminó y nadie marcó 'Ya tendí'."
+  triggers:
+  - trigger: time_pattern
+    minutes: /5
+  conditions:
+  - condition: state
+    entity_id: input_boolean.lavadora_ciclo_terminado
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.lavadora_tendida
+    state: 'off'
+  actions:
+  - action: notify.alejandros_iphone
+    data:
+      title: "\u23F0 Lavadora - Recordatorio"
+      message: "La lavadora termin\u00F3 hace rato. No te olvides de tender la ropa."
+      data:
+        tag: lavadora_recordatorio
+        actions:
+        - action: LAVADORA_TENDIDA
+          title: "Ya tend\u00ED"
+  - action: notify.miriam_iphone
+    data:
+      title: "\u23F0 Lavadora - Recordatorio"
+      message: "La lavadora termin\u00F3 hace rato. No te olvides de tender la ropa."
+      data:
+        tag: lavadora_recordatorio
   mode: single
