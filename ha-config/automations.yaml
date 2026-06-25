@@ -306,6 +306,14 @@
           - action: input_boolean.turn_off
             target:
               entity_id: input_boolean.lavadora_apagada_por_automatizacion
+          - action: notify.send_message
+            data:
+              title: "🫧 Lavadora"
+              message: "Arrancó en hora barata. Ciclo en curso 💪"
+            target:
+              entity_id:
+                - notify.alejandros_iphone
+                - notify.miriam_iphone
         - conditions:
           - condition: state
             entity_id: binary_sensor.lavadora_en_hora_barata
@@ -317,6 +325,14 @@
           - action: input_boolean.turn_on
             target:
               entity_id: input_boolean.lavadora_apagada_por_automatizacion
+          - action: notify.send_message
+            data:
+              title: "🫧 Lavadora"
+              message: "Arrancó pero no es hora barata. Enchufe apagado. Esperando hora más barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
+            target:
+              entity_id:
+                - notify.alejandros_iphone
+                - notify.miriam_iphone
     - conditions:
       - condition: template
         value_template: "{{ now().hour >= 22 or now().hour < 8 }}"
@@ -327,6 +343,14 @@
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.lavadora_apagada_por_automatizacion
+      - action: notify.send_message
+        data:
+          title: "🫧 Lavadora"
+          message: "Arrancó pero está fuera del horario 08-22. Enchufe apagado."
+        target:
+          entity_id:
+            - notify.alejandros_iphone
+            - notify.miriam_iphone
   mode: single
 
 # -----------------------------------------------------------------------------
@@ -357,12 +381,16 @@
   - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.lavadora_apagada_por_automatizacion
-  - action: notify.mobile_app_alejandros_iphone
+  - action: notify.send_message
     data:
       title: "⚡ Lavadora - Hora barata"
       message: "Llegó la hora más barata. Enciendo la lavadora."
       data:
         tag: lavadora_hora_barata
+    target:
+      entity_id:
+        - notify.alejandros_iphone
+        - notify.miriam_iphone
   mode: single
 
 # -----------------------------------------------------------------------------
@@ -387,7 +415,7 @@
     entity_id: input_boolean.lavadora_apagada_por_automatizacion
     state: 'off'
   actions:
-  - action: notify.mobile_app_alejandros_iphone
+  - action: notify.send_message
     data:
       title: "🧺 Lavadora - Ciclo terminado"
       message: "La lavadora terminó. Ya podés tender la ropa."
@@ -396,6 +424,10 @@
         actions:
         - action: LAVADORA_TENDIDA
           title: "Ya tendí"
+    target:
+      entity_id:
+        - notify.alejandros_iphone
+        - notify.miriam_iphone
   mode: single
 
 # -----------------------------------------------------------------------------
