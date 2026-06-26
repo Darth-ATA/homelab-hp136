@@ -567,10 +567,14 @@
         - condition: template
           value_template: "{{ target == 'ventilation_recommended' }}"
         sequence:
-        - action: notify.mobile_app_alejandros_iphone
+        - action: notify.send_message
           data:
             title: "🌬️ Ventilación"
             message: "Abre las ventanas — está más fresco fuera que dentro."
+          target:
+            entity_id:
+              - notify.mobile_app_alejandros_iphone
+              - notify.mobile_app_miriam_iphone
         - action: persistent_notification.create
           data:
             title: "🌬️ Ventilación"
@@ -580,10 +584,14 @@
         - condition: template
           value_template: "{{ target == 'close_windows' }}"
         sequence:
-        - action: notify.mobile_app_alejandros_iphone
+        - action: notify.send_message
           data:
             title: "🌬️ Ventilación"
             message: "Cierra las ventanas — está más caliente fuera que dentro."
+          target:
+            entity_id:
+              - notify.mobile_app_alejandros_iphone
+              - notify.mobile_app_miriam_iphone
         - action: persistent_notification.create
           data:
             title: "🌬️ Ventilación"
