@@ -764,8 +764,83 @@
       - condition: template
         value_template: "{{ wait.trigger is not none and wait.trigger.event.data.action == 'NIGHT_PURGE_SKIP_TODAY' }}"
       sequence:
-      - action: input_boolean.turn_on
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.night_purge_skip_today
+  mode: single
+
+# =============================================================================
+# NIGHT PURGE: Cierre matutino
+# Cuando hace más calor fuera que dentro después de las 7h y las ventanas
+# están abiertas, notifica para cerrar.
+# =============================================================================
+- id: '1768000000004'
+  alias: 'Night purge: Cierre matutino'
+  description: 'Cuando hace más calor fuera que dentro después de las 7h y las ventanas están abiertas, notifica para cerrar. Accionable: botón para marcar cerradas.'
+  triggers:
+  - trigger: time_pattern
+    minutes: /15
+  conditions:
+  - condition: state
+    entity_id: input_boolean.modo_ventilacion_nocturna
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.ventanas_abiertas
+    state: 'on'
+  - condition: or
+    conditions:
+    - condition: time
+      after: '07:00:00'
+      before: '08:00:00'
+    - condition: time
+      after: '08:00:00'
+      before: '09:00:00'
+    - condition: time
+      after: '09:00:00'
+      before: '10:00:00'
+  - condition: template
+    value_template: >
+      {{ states('sensor.meter_pro_co2_9540_temperatura') not in ['unavailable', 'unknown', 'none']
+         and states('sensor.indoor_outdoor_meter_1c24_temperatura') not in ['unavailable', 'unknown', 'none'] }}
+  - condition: template
+    value_template: >
+      {{ states('sensor.indoor_outdoor_meter_1c24_temperatura') | float(-999)
+         >= states('sensor.meter_pro_co2_9540_temperatura') | float(-999) }}
+  actions:
+  - action: notify.send_message
+    data:
+      title: "☀️ Cierre matutino"
+      message: "Cierra las ventanas. Ya está más caliente fuera que dentro. Es hora de mantener el fresco."
+      data:
+        tag: night_purge_closing
+    target:
+      entity_id:
+        - notify.mobile_app_alejandros_iphone
+        - notify.mobile_app_miriam_iphone
+  - action: notify.mobile_app_alejandros_iphone
+    data:
+      title: "☀️ Cierre matutino"
+      message: "Cierra las ventanas. Ya está más caliente fuera que dentro. Es hora de mantener el fresco."
+      data:
+        tag: night_purge_closing
+        actions:
+        - action: NIGHT_PURGE_CLOSED
+          title: "Ya he cerrado"
+  - wait_for_trigger:
+    - event_type: mobile_app_notification_action
+      event_data:
+        action: NIGHT_PURGE_CLOSED
+      trigger: event
+    timeout:
+      minutes: 15
+    continue_on_timeout: true
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ wait.trigger is not none and wait.trigger.event.data.action == 'NIGHT_PURGE_CLOSED' }}"
+      sequence:
+      - action: input_boolean.turn_off
         target:
-          entity_id: input_boolean.night_purge_skip_today
+          entity_id: input_boolean.ventanas_abiertas
   mode: single
 
