@@ -317,6 +317,11 @@
               entity_id:
                 - notify.mobile_app_alejandros_iphone
                 - notify.mobile_app_miriam_iphone
+          - action: persistent_notification.create
+            data:
+              notification_id: lavadora_inicio_hora_barata
+              title: "🫧 Lavadora"
+              message: "Arrancó en hora barata. Ciclo en curso 💪"
         - conditions:
           - condition: state
             entity_id: binary_sensor.lavadora_en_hora_barata
@@ -336,6 +341,11 @@
               entity_id:
                 - notify.mobile_app_alejandros_iphone
                 - notify.mobile_app_miriam_iphone
+          - action: persistent_notification.create
+            data:
+              notification_id: lavadora_inicio_no_hora_barata
+              title: "🫧 Lavadora"
+              message: "Arrancó pero no es hora barata. Enchufe apagado. Esperando hora más barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
     - conditions:
       - condition: template
         value_template: "{{ now().hour >= 22 or now().hour < 8 }}"
@@ -354,6 +364,11 @@
           entity_id:
             - notify.mobile_app_alejandros_iphone
             - notify.mobile_app_miriam_iphone
+      - action: persistent_notification.create
+        data:
+          notification_id: lavadora_inicio_fuera_horario
+          title: "🫧 Lavadora"
+          message: "Arrancó pero está fuera del horario 08-22. Enchufe apagado."
   mode: single
 
 # -----------------------------------------------------------------------------
@@ -396,6 +411,11 @@
       message: "Lleg\u00F3 la hora m\u00E1s barata. Enciendo la lavadora."
       data:
         tag: lavadora_hora_barata
+  - action: persistent_notification.create
+    data:
+      notification_id: lavadora_hora_barata
+      title: "\u26A1 Lavadora - Hora barata"
+      message: "Lleg\u00F3 la hora m\u00E1s barata. Enciendo la lavadora."
   mode: single
 
 # -----------------------------------------------------------------------------
@@ -435,6 +455,11 @@
       message: "La lavadora termin\u00F3. Ya pod\u00E9s tender la ropa."
       data:
         tag: lavadora_fin
+  - action: persistent_notification.create
+    data:
+      notification_id: lavadora_fin_ciclo
+      title: "\U0001F9FA Lavadora - Ciclo terminado"
+      message: "La lavadora termin\u00F3. Ya pod\u00E9s tender la ropa."
   - action: input_boolean.turn_on
     target:
       entity_id: input_boolean.lavadora_ciclo_terminado
@@ -517,6 +542,11 @@
       message: "La lavadora termin\u00F3 hace rato. No te olvides de tender la ropa."
       data:
         tag: lavadora_recordatorio
+  - action: persistent_notification.create
+    data:
+      notification_id: lavadora_recordatorio
+      title: "\u23F0 Lavadora - Recordatorio"
+      message: "La lavadora termin\u00F3 hace rato. No te olvides de tender la ropa."
   mode: single
 
 # =============================================================================
