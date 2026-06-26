@@ -740,6 +740,17 @@
           title: "Ya he abierto"
         - action: NIGHT_PURGE_SKIP_TODAY
           title: "Ignorar por hoy"
+  - action: notify.mobile_app_miriam_iphone
+    data:
+      title: "🌙 Ventilación nocturna"
+      message: "Abre las ventanas. Está más fresco fuera que dentro y es buena hora para ventilar la casa."
+      data:
+        tag: night_purge_opening
+        actions:
+        - action: NIGHT_PURGE_OPENED
+          title: "Ya he abierto"
+        - action: NIGHT_PURGE_SKIP_TODAY
+          title: "Ignorar por hoy"
   - wait_for_trigger:
     - event_type: mobile_app_notification_action
       event_data:
@@ -764,9 +775,9 @@
       - condition: template
         value_template: "{{ wait.trigger is not none and wait.trigger.event.data.action == 'NIGHT_PURGE_SKIP_TODAY' }}"
       sequence:
-  - action: input_boolean.turn_on
-    target:
-      entity_id: input_boolean.night_purge_skip_today
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.night_purge_skip_today
   mode: single
 
 # =============================================================================
@@ -818,6 +829,15 @@
         - notify.mobile_app_alejandros_iphone
         - notify.mobile_app_miriam_iphone
   - action: notify.mobile_app_alejandros_iphone
+    data:
+      title: "☀️ Cierre matutino"
+      message: "Cierra las ventanas. Ya está más caliente fuera que dentro. Es hora de mantener el fresco."
+      data:
+        tag: night_purge_closing
+        actions:
+        - action: NIGHT_PURGE_CLOSED
+          title: "Ya he cerrado"
+  - action: notify.mobile_app_miriam_iphone
     data:
       title: "☀️ Cierre matutino"
       message: "Cierra las ventanas. Ya está más caliente fuera que dentro. Es hora de mantener el fresco."
