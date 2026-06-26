@@ -751,8 +751,6 @@
     data:
       title: "🌙 Ventilación nocturna"
       message: "Abre las ventanas. Está más fresco fuera que dentro y es buena hora para ventilar la casa."
-      data:
-        tag: night_purge_opening
     target:
       entity_id:
         - notify.mobile_app_alejandros_iphone
@@ -862,8 +860,6 @@
     data:
       title: "☀️ Cierre matutino"
       message: "Cierra las ventanas. Ya está más caliente fuera que dentro. Es hora de mantener el fresco."
-      data:
-        tag: night_purge_closing
     target:
       entity_id:
         - notify.mobile_app_alejandros_iphone
