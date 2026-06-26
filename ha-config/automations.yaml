@@ -515,3 +515,78 @@
       data:
         tag: lavadora_recordatorio
   mode: single
+
+# =============================================================================
+# VENTILACIÓN: Notificaciones para abrir/cerrar ventanas
+# Compara temperatura interior vs exterior y notifica al usuario.
+# Máquina de estados (input_select.ventilation_state) evita notificaciones duplicadas.
+# Solo notifica en transiciones de estado. Sin acciones en los botones.
+# =============================================================================
+- id: '1768000000001'
+  alias: 'Ventilación: Notificaciones ventanas'
+  description: 'Compara temperatura interior y exterior para recomendar abrir/cerrar ventanas. Máquina de estados evita notificaciones duplicadas.'
+  triggers:
+  - trigger: state
+    entity_id: sensor.switchbot_indoor_temperature
+  - trigger: state
+    entity_id: sensor.switchbot_outdoor_temperature
+  actions:
+  - variables:
+      indoor: "{{ states('sensor.switchbot_indoor_temperature') }}"
+      outdoor: "{{ states('sensor.switchbot_outdoor_temperature') }}"
+      cur: >-
+        {% set s = states('input_select.ventilation_state') %}
+        {% if s in ['normal','ventilation_recommended','close_windows'] %}{{ s }}
+        {% else %}normal{% endif %}
+      ibad: "{{ indoor in ['unavailable','unknown','none'] }}"
+      obad: "{{ outdoor in ['unavailable','unknown','none'] }}"
+      numeric: "{{ (indoor | float(-999)) != -999 and (outdoor | float(-999)) != -999 }}"
+      delta: "{{ (outdoor | float(-999)) - (indoor | float(-999)) }}"
+      target: >-
+        {% if ibad and obad %}normal
+        {% elif not ibad and not obad and numeric
+          and ( (cur == 'normal' and delta <= -1.0) or
+                (cur == 'ventilation_recommended' and delta >= 1.0) or
+                (cur == 'close_windows' and delta <= -1.0) )
+        %}
+          {% if delta <= -1.0 %}ventilation_recommended
+          {% elif delta >= 1.0 %}close_windows
+          {% endif %}
+        {% else %}{{ cur }}{% endif %}
+  - if:
+    - condition: template
+      value_template: "{{ target != cur }}"
+    then:
+    - action: input_select.select_option
+      target:
+        entity_id: input_select.ventilation_state
+      data:
+        option: "{{ target }}"
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: "{{ target == 'ventilation_recommended' }}"
+        sequence:
+        - action: notify.alejandros_iphone
+          data:
+            title: "🌬️ Ventilación"
+            message: "Abre las ventanas — está más fresco fuera que dentro."
+        - action: persistent_notification.create
+          data:
+            title: "🌬️ Ventilación"
+            message: "Abre las ventanas — está más fresco fuera que dentro."
+            notification_id: ventilation_recommended
+      - conditions:
+        - condition: template
+          value_template: "{{ target == 'close_windows' }}"
+        sequence:
+        - action: notify.alejandros_iphone
+          data:
+            title: "🌬️ Ventilación"
+            message: "Cierra las ventanas — está más caliente fuera que dentro."
+        - action: persistent_notification.create
+          data:
+            title: "🌬️ Ventilación"
+            message: "Cierra las ventanas — está más caliente fuera que dentro."
+            notification_id: close_windows
+  mode: single
