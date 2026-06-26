@@ -698,15 +698,43 @@
     state: 'off'
   - condition: or
     conditions:
-    - condition: time
-      after: '21:00:00'
-      before: '22:00:00'
-    - condition: time
-      after: '22:00:00'
-      before: '23:00:00'
-    - condition: time
-      after: '23:00:00'
-      before: '00:00:00'
+    - condition: and
+      conditions:
+      - condition: or
+        conditions:
+        - condition: time
+          after: '21:00:00'
+          before: '22:00:00'
+        - condition: time
+          after: '22:00:00'
+          before: '23:00:00'
+        - condition: time
+          after: '23:00:00'
+          before: '23:59:00'
+      - condition: time
+        weekday:
+        - mon
+        - tue
+        - wed
+        - thu
+        - fri
+    - condition: and
+      conditions:
+      - condition: or
+        conditions:
+        - condition: time
+          after: '21:00:00'
+          before: '22:00:00'
+        - condition: time
+          after: '22:00:00'
+          before: '23:00:00'
+        - condition: time
+          after: '23:00:00'
+          before: '23:59:00'
+      - condition: time
+        weekday:
+        - sat
+        - sun
   - condition: template
     value_template: >
       {{ states('sensor.meter_pro_co2_9540_temperatura') not in ['unavailable', 'unknown', 'none']
@@ -719,12 +747,13 @@
       {{ states('sensor.indoor_outdoor_meter_1c24_temperatura') | float(-999)
          < states('sensor.meter_pro_co2_9540_temperatura') | float(-999) }}
   actions:
+  - variables:
+      outdoor_temp: "{{ states('sensor.indoor_outdoor_meter_1c24_temperatura') | int }}"
+      indoor_temp: "{{ states('sensor.meter_pro_co2_9540_temperatura') | int }}"
   - action: notify.send_message
     data:
       title: "🌙 Ventilación nocturna"
-      message: "Abre las ventanas. Está más fresco fuera que dentro y es buena hora para ventilar la casa."
-      data:
-        tag: night_purge_opening
+      message: "Abre las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — está más fresco fuera y es buena hora para ventilar la casa."
     target:
       entity_id:
         - notify.mobile_app_alejandros_iphone
@@ -732,7 +761,18 @@
   - action: notify.mobile_app_alejandros_iphone
     data:
       title: "🌙 Ventilación nocturna"
-      message: "Abre las ventanas. Está más fresco fuera que dentro y es buena hora para ventilar la casa."
+      message: "Abre las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — está más fresco fuera y es buena hora para ventilar la casa."
+      data:
+        tag: night_purge_opening
+        actions:
+        - action: NIGHT_PURGE_OPENED
+          title: "Ya he abierto"
+        - action: NIGHT_PURGE_SKIP_TODAY
+          title: "Ignorar por hoy"
+  - action: notify.mobile_app_miriam_iphone
+    data:
+      title: "🌙 Ventilación nocturna"
+      message: "Abre las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — está más fresco fuera y es buena hora para ventilar la casa."
       data:
         tag: night_purge_opening
         actions:
@@ -764,9 +804,9 @@
       - condition: template
         value_template: "{{ wait.trigger is not none and wait.trigger.event.data.action == 'NIGHT_PURGE_SKIP_TODAY' }}"
       sequence:
-  - action: input_boolean.turn_on
-    target:
-      entity_id: input_boolean.night_purge_skip_today
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.night_purge_skip_today
   mode: single
 
 # =============================================================================
@@ -776,7 +816,7 @@
 # =============================================================================
 - id: '1768000000004'
   alias: 'Night purge: Cierre matutino'
-  description: 'Cuando hace más calor fuera que dentro después de las 7h y las ventanas están abiertas, notifica para cerrar. Accionable: botón para marcar cerradas.'
+  description: 'Cuando hace más calor fuera que dentro y las ventanas están abiertas, notifica para cerrar. Laborables 08-10h, findes 10-12h. Accionable: botón para marcar cerradas.'
   triggers:
   - trigger: time_pattern
     minutes: /15
@@ -789,15 +829,27 @@
     state: 'on'
   - condition: or
     conditions:
-    - condition: time
-      after: '07:00:00'
-      before: '08:00:00'
-    - condition: time
-      after: '08:00:00'
-      before: '09:00:00'
-    - condition: time
-      after: '09:00:00'
-      before: '10:00:00'
+    - condition: and
+      conditions:
+      - condition: time
+        after: '08:00:00'
+        before: '10:00:00'
+      - condition: time
+        weekday:
+        - mon
+        - tue
+        - wed
+        - thu
+        - fri
+    - condition: and
+      conditions:
+      - condition: time
+        after: '10:00:00'
+        before: '12:00:00'
+      - condition: time
+        weekday:
+        - sat
+        - sun
   - condition: template
     value_template: >
       {{ states('sensor.meter_pro_co2_9540_temperatura') not in ['unavailable', 'unknown', 'none']
@@ -807,12 +859,13 @@
       {{ states('sensor.indoor_outdoor_meter_1c24_temperatura') | float(-999)
          >= states('sensor.meter_pro_co2_9540_temperatura') | float(-999) }}
   actions:
+  - variables:
+      outdoor_temp: "{{ states('sensor.indoor_outdoor_meter_1c24_temperatura') | int }}"
+      indoor_temp: "{{ states('sensor.meter_pro_co2_9540_temperatura') | int }}"
   - action: notify.send_message
     data:
       title: "☀️ Cierre matutino"
-      message: "Cierra las ventanas. Ya está más caliente fuera que dentro. Es hora de mantener el fresco."
-      data:
-        tag: night_purge_closing
+      message: "Cierra las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — ya está más caliente fuera. Es hora de mantener el fresco."
     target:
       entity_id:
         - notify.mobile_app_alejandros_iphone
@@ -820,7 +873,16 @@
   - action: notify.mobile_app_alejandros_iphone
     data:
       title: "☀️ Cierre matutino"
-      message: "Cierra las ventanas. Ya está más caliente fuera que dentro. Es hora de mantener el fresco."
+      message: "Cierra las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — ya está más caliente fuera. Es hora de mantener el fresco."
+      data:
+        tag: night_purge_closing
+        actions:
+        - action: NIGHT_PURGE_CLOSED
+          title: "Ya he cerrado"
+  - action: notify.mobile_app_miriam_iphone
+    data:
+      title: "☀️ Cierre matutino"
+      message: "Cierra las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — ya está más caliente fuera. Es hora de mantener el fresco."
       data:
         tag: night_purge_closing
         actions:
