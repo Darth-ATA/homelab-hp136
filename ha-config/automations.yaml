@@ -674,3 +674,98 @@
             message: "La calidad del aire ha mejorado. Ya puedes cerrar las ventanas."
             notification_id: air_quality_normal
   mode: single
+
+# =============================================================================
+# NIGHT PURGE: Apertura nocturna
+# Cuando hace más fresco fuera que dentro y >24°C después de las 21h,
+# notifica para abrir ventanas con botones accionables.
+# =============================================================================
+- id: '1768000000003'
+  alias: 'Night purge: Apertura nocturna'
+  description: 'Cuando hace más fresco fuera que dentro y >24°C después de las 21h, notifica para abrir ventanas. Accionable: botones para marcar abiertas o ignorar.'
+  triggers:
+  - trigger: time_pattern
+    minutes: /15
+  conditions:
+  - condition: state
+    entity_id: input_boolean.modo_ventilacion_nocturna
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.night_purge_skip_today
+    state: 'off'
+  - condition: state
+    entity_id: input_boolean.ventanas_abiertas
+    state: 'off'
+  - condition: or
+    conditions:
+    - condition: time
+      after: '21:00:00'
+      before: '22:00:00'
+    - condition: time
+      after: '22:00:00'
+      before: '23:00:00'
+    - condition: time
+      after: '23:00:00'
+      before: '00:00:00'
+  - condition: template
+    value_template: >
+      {{ states('sensor.meter_pro_co2_9540_temperatura') not in ['unavailable', 'unknown', 'none']
+         and states('sensor.indoor_outdoor_meter_1c24_temperatura') not in ['unavailable', 'unknown', 'none'] }}
+  - condition: numeric_state
+    entity_id: sensor.meter_pro_co2_9540_temperatura
+    above: 24
+  - condition: template
+    value_template: >
+      {{ states('sensor.indoor_outdoor_meter_1c24_temperatura') | float(-999)
+         < states('sensor.meter_pro_co2_9540_temperatura') | float(-999) }}
+  actions:
+  - action: notify.send_message
+    data:
+      title: "🌙 Ventilación nocturna"
+      message: "Abre las ventanas. Está más fresco fuera que dentro y es buena hora para ventilar la casa."
+      data:
+        tag: night_purge_opening
+    target:
+      entity_id:
+        - notify.mobile_app_alejandros_iphone
+        - notify.mobile_app_miriam_iphone
+  - action: notify.mobile_app_alejandros_iphone
+    data:
+      title: "🌙 Ventilación nocturna"
+      message: "Abre las ventanas. Está más fresco fuera que dentro y es buena hora para ventilar la casa."
+      data:
+        tag: night_purge_opening
+        actions:
+        - action: NIGHT_PURGE_OPENED
+          title: "Ya he abierto"
+        - action: NIGHT_PURGE_SKIP_TODAY
+          title: "Ignorar por hoy"
+  - wait_for_trigger:
+    - event_type: mobile_app_notification_action
+      event_data:
+        action: NIGHT_PURGE_OPENED
+      trigger: event
+    - event_type: mobile_app_notification_action
+      event_data:
+        action: NIGHT_PURGE_SKIP_TODAY
+      trigger: event
+    timeout:
+      minutes: 15
+    continue_on_timeout: true
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ wait.trigger is not none and wait.trigger.event.data.action == 'NIGHT_PURGE_OPENED' }}"
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.ventanas_abiertas
+    - conditions:
+      - condition: template
+        value_template: "{{ wait.trigger is not none and wait.trigger.event.data.action == 'NIGHT_PURGE_SKIP_TODAY' }}"
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.night_purge_skip_today
+  mode: single
+
