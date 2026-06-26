@@ -59,6 +59,19 @@ input_boolean:
     icon: "mdi:check-circle-outline"
 
 # =============================================================================
+# NIGHT PURGE: Estado para ventilación nocturna inteligente
+# =============================================================================
+  modo_ventilacion_nocturna:
+    name: "Night purge - Modo activo"
+    icon: "mdi:weather-night"
+  ventanas_abiertas:
+    name: "Night purge - Ventanas abiertas"
+    icon: "mdi:window-open"
+  night_purge_skip_today:
+    name: "Night purge - Saltar hoy"
+    icon: "mdi:cancel"
+
+# =============================================================================
 # VENTILACIÓN: Estado para notificaciones de ventanas
 # =============================================================================
 input_select:
