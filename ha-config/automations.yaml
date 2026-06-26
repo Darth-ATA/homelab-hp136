@@ -123,7 +123,7 @@
   - trigger: time_pattern
     minutes: /15
   - trigger: state
-    entity_id: sensor.switchbot_indoor_temperature
+    entity_id: sensor.meter_pro_co2_9540_temperatura
     for:
       minutes: 5
   conditions:
@@ -134,7 +134,7 @@
   - choose:
     - conditions:
       - condition: template
-        value_template: "{{ states('sensor.switchbot_indoor_temperature') in ['unavailable', 'unknown', 'none'] }}"
+        value_template: "{{ states('sensor.meter_pro_co2_9540_temperatura') in ['unavailable', 'unknown', 'none'] }}"
       sequence:
       - action: system_log.write
         data:
@@ -142,7 +142,7 @@
           level: warning
     - conditions:
       - condition: numeric_state
-        entity_id: sensor.switchbot_indoor_temperature
+        entity_id: sensor.meter_pro_co2_9540_temperatura
         below: 24
       sequence:
       - action: fan.turn_off
@@ -160,7 +160,7 @@
           percentage: 25
     - conditions:
       - condition: numeric_state
-        entity_id: sensor.switchbot_indoor_temperature
+        entity_id: sensor.meter_pro_co2_9540_temperatura
         above: 29
       sequence:
       - action: fan.set_percentage
@@ -170,7 +170,7 @@
           percentage: 100
     - conditions:
       - condition: numeric_state
-        entity_id: sensor.switchbot_indoor_temperature
+        entity_id: sensor.meter_pro_co2_9540_temperatura
         above: 27
         below: 30
       sequence:
@@ -181,7 +181,7 @@
           percentage: 75
     - conditions:
       - condition: numeric_state
-        entity_id: sensor.switchbot_indoor_temperature
+        entity_id: sensor.meter_pro_co2_9540_temperatura
         above: 25
         below: 28
       sequence:
@@ -192,7 +192,7 @@
           percentage: 50
     - conditions:
       - condition: numeric_state
-        entity_id: sensor.switchbot_indoor_temperature
+        entity_id: sensor.meter_pro_co2_9540_temperatura
         above: 23
         below: 26
       sequence:
@@ -527,13 +527,13 @@
   description: 'Compara temperatura interior y exterior para recomendar abrir/cerrar ventanas. Máquina de estados evita notificaciones duplicadas.'
   triggers:
   - trigger: state
-    entity_id: sensor.switchbot_indoor_temperature
+    entity_id: sensor.meter_pro_co2_9540_temperatura
   - trigger: state
-    entity_id: sensor.switchbot_outdoor_temperature
+    entity_id: sensor.indoor_outdoor_meter_1c24_temperatura
   actions:
   - variables:
-      indoor: "{{ states('sensor.switchbot_indoor_temperature') }}"
-      outdoor: "{{ states('sensor.switchbot_outdoor_temperature') }}"
+      indoor: "{{ states('sensor.meter_pro_co2_9540_temperatura') }}"
+      outdoor: "{{ states('sensor.indoor_outdoor_meter_1c24_temperatura') }}"
       cur: >-
         {% set s = states('input_select.ventilation_state') %}
         {% if s in ['normal','ventilation_recommended','close_windows'] %}{{ s }}
