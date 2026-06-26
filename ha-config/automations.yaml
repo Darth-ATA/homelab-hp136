@@ -315,7 +315,7 @@
               message: "Arrancó en hora barata. Ciclo en curso 💪"
             target:
               entity_id:
-                - notify.alejandros_iphone
+                - notify.mobile_app_alejandros_iphone
                 - notify.miriam_iphone
         - conditions:
           - condition: state
@@ -334,7 +334,7 @@
               message: "Arrancó pero no es hora barata. Enchufe apagado. Esperando hora más barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
             target:
               entity_id:
-                - notify.alejandros_iphone
+                - notify.mobile_app_alejandros_iphone
                 - notify.miriam_iphone
     - conditions:
       - condition: template
@@ -352,7 +352,7 @@
           message: "Arrancó pero está fuera del horario 08-22. Enchufe apagado."
         target:
           entity_id:
-            - notify.alejandros_iphone
+            - notify.mobile_app_alejandros_iphone
             - notify.miriam_iphone
   mode: single
 
@@ -384,7 +384,7 @@
   - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.lavadora_apagada_por_automatizacion
-  - action: notify.alejandros_iphone
+  - action: notify.mobile_app_alejandros_iphone
     data:
       title: "\u26A1 Lavadora - Hora barata"
       message: "Lleg\u00F3 la hora m\u00E1s barata. Enciendo la lavadora."
@@ -420,7 +420,7 @@
     entity_id: input_boolean.lavadora_apagada_por_automatizacion
     state: 'off'
   actions:
-  - action: notify.alejandros_iphone
+  - action: notify.mobile_app_alejandros_iphone
     data:
       title: "\U0001F9FA Lavadora - Ciclo terminado"
       message: "La lavadora termin\u00F3. Ya pod\u00E9s tender la ropa."
@@ -499,7 +499,7 @@
     entity_id: input_boolean.lavadora_tendida
     state: 'off'
   actions:
-  - action: notify.alejandros_iphone
+  - action: notify.mobile_app_alejandros_iphone
     data:
       title: "\u23F0 Lavadora - Recordatorio"
       message: "La lavadora termin\u00F3 hace rato. No te olvides de tender la ropa."
@@ -567,7 +567,7 @@
         - condition: template
           value_template: "{{ target == 'ventilation_recommended' }}"
         sequence:
-        - action: notify.alejandros_iphone
+        - action: notify.mobile_app_alejandros_iphone
           data:
             title: "🌬️ Ventilación"
             message: "Abre las ventanas — está más fresco fuera que dentro."
@@ -580,7 +580,7 @@
         - condition: template
           value_template: "{{ target == 'close_windows' }}"
         sequence:
-        - action: notify.alejandros_iphone
+        - action: notify.mobile_app_alejandros_iphone
           data:
             title: "🌬️ Ventilación"
             message: "Cierra las ventanas — está más caliente fuera que dentro."
