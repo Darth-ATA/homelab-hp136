@@ -787,7 +787,7 @@
 # =============================================================================
 - id: '1768000000004'
   alias: 'Night purge: Cierre matutino'
-  description: 'Cuando hace más calor fuera que dentro después de las 7h y las ventanas están abiertas, notifica para cerrar. Accionable: botón para marcar cerradas.'
+  description: 'Cuando hace más calor fuera que dentro y las ventanas están abiertas, notifica para cerrar. Laborables 08-10h, findes 10-12h. Accionable: botón para marcar cerradas.'
   triggers:
   - trigger: time_pattern
     minutes: /15
@@ -800,15 +800,27 @@
     state: 'on'
   - condition: or
     conditions:
-    - condition: time
-      after: '07:00:00'
-      before: '08:00:00'
-    - condition: time
-      after: '08:00:00'
-      before: '09:00:00'
-    - condition: time
-      after: '09:00:00'
-      before: '10:00:00'
+    - condition: and
+      conditions:
+      - condition: time
+        after: '08:00:00'
+        before: '10:00:00'
+      - condition: time
+        weekday:
+        - mon
+        - tue
+        - wed
+        - thu
+        - fri
+    - condition: and
+      conditions:
+      - condition: time
+        after: '10:00:00'
+        before: '12:00:00'
+      - condition: time
+        weekday:
+        - sat
+        - sun
   - condition: template
     value_template: >
       {{ states('sensor.meter_pro_co2_9540_temperatura') not in ['unavailable', 'unknown', 'none']
