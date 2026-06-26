@@ -70,3 +70,14 @@ input_select:
       - close_windows
     initial: normal
     icon: "mdi:window-open-variant"
+
+# =============================================================================
+# CALIDAD DEL AIRE: Estado para notificaciones de CO₂
+# =============================================================================
+  air_quality_state:
+    name: "Calidad de aire - Estado"
+    options:
+      - normal
+      - bad
+    initial: normal
+    icon: "mdi:air-filter"

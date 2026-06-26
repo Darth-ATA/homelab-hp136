@@ -598,3 +598,79 @@
             message: "Cierra las ventanas — está más caliente fuera que dentro."
             notification_id: close_windows
   mode: single
+
+# =============================================================================
+# CALIDAD DEL AIRE: Notificaciones de CO₂
+# Monitorea la concentración de CO₂ y notifica cuando está alta o se recupera.
+# Máquina de estados (input_select.air_quality_state) evita notificaciones duplicadas.
+# Estados: normal (CO₂ < 800 ppm), bad (CO₂ > 1000 ppm). Transición con 5 min de histéresis.
+# =============================================================================
+- id: '1768000000002'
+  alias: 'Calidad de aire: Notificaciones'
+  description: 'Monitorea la concentración de CO₂ en el despacho. Estado normal → bad al superar 1000 ppm durante 5 min. Estado bad → normal al bajar de 800 ppm durante 5 min.'
+  triggers:
+  - trigger: state
+    entity_id: sensor.meter_pro_co2_9540_dioxido_de_carbono
+    for:
+      minutes: 5
+  actions:
+  - variables:
+      co2: "{{ states('sensor.meter_pro_co2_9540_dioxido_de_carbono') }}"
+      cur: >-
+        {% set s = states('input_select.air_quality_state') %}
+        {% if s in ['normal', 'bad'] %}{{ s }}{% else %}normal{% endif %}
+      co2bad: "{{ co2 in ['unavailable', 'unknown', 'none'] }}"
+      target: >-
+        {% if co2bad %}{{ cur }}
+        {% elif (co2 | float(-999)) > 1000 and cur == 'normal' %}bad
+        {% elif (co2 | float(-999)) < 800 and cur == 'bad' %}normal
+        {% else %}{{ cur }}{% endif %}
+  - if:
+    - condition: template
+      value_template: "{{ target != cur }}"
+    then:
+    - action: input_select.select_option
+      target:
+        entity_id: input_select.air_quality_state
+      data:
+        option: "{{ target }}"
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: "{{ target == 'bad' }}"
+        sequence:
+        - action: notify.send_message
+          data:
+            title: "🌬️ Calidad del aire"
+            message: "La concentración de CO₂ es alta. Abre las ventanas para ventilar."
+            data:
+              tag: air_quality_bad
+          target:
+            entity_id:
+              - notify.mobile_app_alejandros_iphone
+              - notify.miriam_iphone
+        - action: persistent_notification.create
+          data:
+            title: "🌬️ Calidad del aire"
+            message: "La concentración de CO₂ es alta. Abre las ventanas para ventilar."
+            notification_id: air_quality_bad
+      - conditions:
+        - condition: template
+          value_template: "{{ target == 'normal' }}"
+        sequence:
+        - action: notify.send_message
+          data:
+            title: "🌬️ Calidad del aire"
+            message: "La calidad del aire ha mejorado. Ya puedes cerrar las ventanas."
+            data:
+              tag: air_quality_normal
+          target:
+            entity_id:
+              - notify.mobile_app_alejandros_iphone
+              - notify.miriam_iphone
+        - action: persistent_notification.create
+          data:
+            title: "🌬️ Calidad del aire"
+            message: "La calidad del aire ha mejorado. Ya puedes cerrar las ventanas."
+            notification_id: air_quality_normal
+  mode: single
