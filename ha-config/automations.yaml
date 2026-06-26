@@ -316,7 +316,7 @@
             target:
               entity_id:
                 - notify.mobile_app_alejandros_iphone
-                - notify.miriam_iphone
+                - notify.mobile_app_miriam_iphone
         - conditions:
           - condition: state
             entity_id: binary_sensor.lavadora_en_hora_barata
@@ -335,7 +335,7 @@
             target:
               entity_id:
                 - notify.mobile_app_alejandros_iphone
-                - notify.miriam_iphone
+                - notify.mobile_app_miriam_iphone
     - conditions:
       - condition: template
         value_template: "{{ now().hour >= 22 or now().hour < 8 }}"
@@ -353,7 +353,7 @@
         target:
           entity_id:
             - notify.mobile_app_alejandros_iphone
-            - notify.miriam_iphone
+            - notify.mobile_app_miriam_iphone
   mode: single
 
 # -----------------------------------------------------------------------------
@@ -390,7 +390,7 @@
       message: "Lleg\u00F3 la hora m\u00E1s barata. Enciendo la lavadora."
       data:
         tag: lavadora_hora_barata
-  - action: notify.miriam_iphone
+  - action: notify.mobile_app_miriam_iphone
     data:
       title: "\u26A1 Lavadora - Hora barata"
       message: "Lleg\u00F3 la hora m\u00E1s barata. Enciendo la lavadora."
@@ -429,7 +429,7 @@
         actions:
         - action: LAVADORA_TENDIDA
           title: "Ya tend\u00ED"
-  - action: notify.miriam_iphone
+  - action: notify.mobile_app_miriam_iphone
     data:
       title: "\U0001F9FA Lavadora - Ciclo terminado"
       message: "La lavadora termin\u00F3. Ya pod\u00E9s tender la ropa."
@@ -438,6 +438,9 @@
   - action: input_boolean.turn_on
     target:
       entity_id: input_boolean.lavadora_ciclo_terminado
+  - action: switch.turn_off
+    target:
+      entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
   mode: single
 
 # -----------------------------------------------------------------------------
@@ -508,7 +511,7 @@
         actions:
         - action: LAVADORA_TENDIDA
           title: "Ya tend\u00ED"
-  - action: notify.miriam_iphone
+  - action: notify.mobile_app_miriam_iphone
     data:
       title: "\u23F0 Lavadora - Recordatorio"
       message: "La lavadora termin\u00F3 hace rato. No te olvides de tender la ropa."
@@ -648,7 +651,7 @@
           target:
             entity_id:
               - notify.mobile_app_alejandros_iphone
-              - notify.miriam_iphone
+              - notify.mobile_app_miriam_iphone
         - action: persistent_notification.create
           data:
             title: "🌬️ Calidad del aire"
@@ -667,7 +670,7 @@
           target:
             entity_id:
               - notify.mobile_app_alejandros_iphone
-              - notify.miriam_iphone
+              - notify.mobile_app_miriam_iphone
         - action: persistent_notification.create
           data:
             title: "🌬️ Calidad del aire"
