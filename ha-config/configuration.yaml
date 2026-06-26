@@ -57,3 +57,16 @@ input_boolean:
   lavadora_ciclo_terminado:
     name: "Lavadora - Ciclo terminado"
     icon: "mdi:check-circle-outline"
+
+# =============================================================================
+# VENTILACIÓN: Estado para notificaciones de ventanas
+# =============================================================================
+input_select:
+  ventilation_state:
+    name: "Ventilación - Estado"
+    options:
+      - normal
+      - ventilation_recommended
+      - close_windows
+    initial: normal
+    icon: "mdi:window-open-variant"
