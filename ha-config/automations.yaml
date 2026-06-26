@@ -109,48 +109,49 @@
   mode: single
 
 # =============================================================================
-# CIRCADIANA: VENTILADOR DESPACHO
-# Ajusta velocidad del ventilador según hora del día + elevación solar.
-# Sin sensor de temperatura interior, usamos el sol como proxy:
-# - Elevación solar > 35° = sol alto = más calor → más velocidad
-# - Ventana al oeste (268°) → las tardes (12-18h) son el periodo más cálido
-#
-# REQUIERE: sensor de temperatura opcional (descomentar seccion si existe).
-# Si agregas un sensor (Aqara/Zigbee, Shelly, ESPHome):
-#   - Condicion: numeric_state entity_id: sensor.temperatura_despacho above: 25
-#   - Reemplaza la logica de hora+sol por temp real
-#
-# Entity IDs: ble_adv expone el fan como fan.ventilador_de_techo_despacho_main_fan.
-# Si tu integracion usa number.xxx_speed (1-6) en vez de fan, reemplazar por:
-#   action: number.set_value
-#   data:
-#     value: 4
+# CIRCADIANA: VENTILADOR DESPACHO (TEMPERATURA)
+# Ajusta velocidad del ventilador según temperatura interior real.
+# Usa sensor Switchbot en lugar de elevación solar como proxy.
+# NUNCA enciende el ventilador automáticamente — solo ajusta si ya está encendido.
+# Bandas: <24°C OFF | 24-26 25% | 26-28 50% | 28-30 75% | ≥30 100%
+# Horario silencioso [23:00, 08:00): tope al 25%.
 # =============================================================================
-- id: '1749052800002'
-  alias: 'Circadiana: Ventilador despacho'
-  description: Ajusta velocidad del ventilador segun hora y elevacion solar. Sin sensor interior, usa sol como proxy de calor.
+- id: '1768000000000'
+  alias: 'Circadiana: Ventilador despacho (temp)'
+  description: 'Ajusta velocidad del ventilador según temperatura interior. Nunca enciende el ventilador automáticamente.'
   triggers:
-  - minutes: /15
-    trigger: time_pattern
+  - trigger: time_pattern
+    minutes: /15
+  - trigger: state
+    entity_id: sensor.switchbot_indoor_temperature
+    for:
+      minutes: 5
   conditions:
   - condition: state
     entity_id: fan.ventilador_de_techo_despacho_main_fan
-    state:
-    - 'on'
+    state: 'on'
   actions:
   - choose:
     - conditions:
-      - condition: time
-        before: 08:00:00
+      - condition: template
+        value_template: "{{ states('sensor.switchbot_indoor_temperature') in ['unavailable', 'unknown', 'none'] }}"
+      sequence:
+      - action: system_log.write
+        data:
+          message: "Fan control: indoor temperature sensor not available"
+          level: warning
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.switchbot_indoor_temperature
+        below: 24
       sequence:
       - action: fan.turn_off
         target:
           entity_id: fan.ventilador_de_techo_despacho_main_fan
-        data: {}
     - conditions:
       - condition: time
-        after: 08:00:00
-        before: '12:00:00'
+        after: '23:00:00'
+        before: '08:00:00'
       sequence:
       - action: fan.set_percentage
         target:
@@ -158,31 +159,31 @@
         data:
           percentage: 25
     - conditions:
-      - condition: time
-        after: '12:00:00'
-        before: '18:00:00'
+      - condition: numeric_state
+        entity_id: sensor.switchbot_indoor_temperature
+        above: 29
       sequence:
-      - if:
-        - condition: numeric_state
-          entity_id: sun.sun
-          attribute: elevation
-          above: 35
-        then:
-        - action: fan.set_percentage
-          target:
-            entity_id: fan.ventilador_de_techo_despacho_main_fan
-          data:
-            percentage: 75
-        else:
-        - action: fan.set_percentage
-          target:
-            entity_id: fan.ventilador_de_techo_despacho_main_fan
-          data:
-            percentage: 50
+      - action: fan.set_percentage
+        target:
+          entity_id: fan.ventilador_de_techo_despacho_main_fan
+        data:
+          percentage: 100
     - conditions:
-      - condition: time
-        after: '18:00:00'
-        before: '21:00:00'
+      - condition: numeric_state
+        entity_id: sensor.switchbot_indoor_temperature
+        above: 27
+        below: 30
+      sequence:
+      - action: fan.set_percentage
+        target:
+          entity_id: fan.ventilador_de_techo_despacho_main_fan
+        data:
+          percentage: 75
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.switchbot_indoor_temperature
+        above: 25
+        below: 28
       sequence:
       - action: fan.set_percentage
         target:
@@ -190,8 +191,10 @@
         data:
           percentage: 50
     - conditions:
-      - condition: time
-        after: '21:00:00'
+      - condition: numeric_state
+        entity_id: sensor.switchbot_indoor_temperature
+        above: 23
+        below: 26
       sequence:
       - action: fan.set_percentage
         target:
