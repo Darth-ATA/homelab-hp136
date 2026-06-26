@@ -747,10 +747,13 @@
       {{ states('sensor.indoor_outdoor_meter_1c24_temperatura') | float(-999)
          < states('sensor.meter_pro_co2_9540_temperatura') | float(-999) }}
   actions:
+  - variables:
+      outdoor_temp: "{{ states('sensor.indoor_outdoor_meter_1c24_temperatura') | int }}"
+      indoor_temp: "{{ states('sensor.meter_pro_co2_9540_temperatura') | int }}"
   - action: notify.send_message
     data:
       title: "🌙 Ventilación nocturna"
-      message: "Abre las ventanas. Está más fresco fuera que dentro y es buena hora para ventilar la casa."
+      message: "Abre las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — está más fresco fuera y es buena hora para ventilar la casa."
     target:
       entity_id:
         - notify.mobile_app_alejandros_iphone
@@ -758,7 +761,7 @@
   - action: notify.mobile_app_alejandros_iphone
     data:
       title: "🌙 Ventilación nocturna"
-      message: "Abre las ventanas. Está más fresco fuera que dentro y es buena hora para ventilar la casa."
+      message: "Abre las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — está más fresco fuera y es buena hora para ventilar la casa."
       data:
         tag: night_purge_opening
         actions:
@@ -769,7 +772,7 @@
   - action: notify.mobile_app_miriam_iphone
     data:
       title: "🌙 Ventilación nocturna"
-      message: "Abre las ventanas. Está más fresco fuera que dentro y es buena hora para ventilar la casa."
+      message: "Abre las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — está más fresco fuera y es buena hora para ventilar la casa."
       data:
         tag: night_purge_opening
         actions:
@@ -856,10 +859,13 @@
       {{ states('sensor.indoor_outdoor_meter_1c24_temperatura') | float(-999)
          >= states('sensor.meter_pro_co2_9540_temperatura') | float(-999) }}
   actions:
+  - variables:
+      outdoor_temp: "{{ states('sensor.indoor_outdoor_meter_1c24_temperatura') | int }}"
+      indoor_temp: "{{ states('sensor.meter_pro_co2_9540_temperatura') | int }}"
   - action: notify.send_message
     data:
       title: "☀️ Cierre matutino"
-      message: "Cierra las ventanas. Ya está más caliente fuera que dentro. Es hora de mantener el fresco."
+      message: "Cierra las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — ya está más caliente fuera. Es hora de mantener el fresco."
     target:
       entity_id:
         - notify.mobile_app_alejandros_iphone
@@ -867,7 +873,7 @@
   - action: notify.mobile_app_alejandros_iphone
     data:
       title: "☀️ Cierre matutino"
-      message: "Cierra las ventanas. Ya está más caliente fuera que dentro. Es hora de mantener el fresco."
+      message: "Cierra las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — ya está más caliente fuera. Es hora de mantener el fresco."
       data:
         tag: night_purge_closing
         actions:
@@ -876,7 +882,7 @@
   - action: notify.mobile_app_miriam_iphone
     data:
       title: "☀️ Cierre matutino"
-      message: "Cierra las ventanas. Ya está más caliente fuera que dentro. Es hora de mantener el fresco."
+      message: "Cierra las ventanas. Fuera: {{ outdoor_temp }}°C, Dentro: {{ indoor_temp }}°C — ya está más caliente fuera. Es hora de mantener el fresco."
       data:
         tag: night_purge_closing
         actions:
