@@ -185,6 +185,49 @@ Content not available on configured public indexers
 
 ---
 
+## Issue 7: Torrentio Returns Results for Wrong Show (e.g., Dark instead of Akane-banashi)
+
+### Symptoms
+- Interactive Search in Sonarr returns results from Torrentio
+- All results show metadata from a different show (e.g., Dark) regardless of what you're searching for
+- Movie search returns Fight Club results regardless of the movie
+
+### Cause
+The Torrentio Cardigann definition file in Prowlarr (`/config/Definitions/Custom/torrentio.yml`) has **hardcoded IMDB IDs** instead of dynamic Go template variables:
+
+```yaml
+# ❌ WRONG — hardcoded, always returns Dark S1E1
+path: ".../stream/series/tt5753856:1:1.json"
+```
+
+Prowlarr has both a simple static definition and a dynamic template-based one. The static one was in the active definition directory while the dynamic one sat unused.
+
+### Solution
+Replace the static definition with the dynamic template version:
+
+```bash
+# Inside Prowlarr container
+docker exec prowlarr bash -c 'cp /config/custom/torrentio.yml /config/Definitions/Custom/torrentio.yml'
+docker restart prowlarr
+```
+
+The dynamic version uses Go template variables that Prowlarr populates with the actual IMDB ID, season, and episode from Sonarr:
+
+```yaml
+# ✅ CORRECT — uses dynamic IMDB ID from Sonarr
+path: ".../stream/series/tt{{ .Query.IMDBID }}:{{ .Query.Season }}:{{ .Query.Ep }}.json"
+```
+
+### Prevention (future deploys)
+The compose file mounts `./custom/` to `/config/Definitions/Custom/` so the dynamic definition is always deployed in the right place.
+
+### Verify
+1. Go to Sonarr → any series → Interactive Search
+2. Results should now match the selected series, not Dark/Fight Club
+3. Check Prowlarr logs for torrentio requests with correct IMDB IDs
+
+---
+
 ## Quick Diagnostic Commands
 
 ### Check Container Status
@@ -222,9 +265,10 @@ ssh root@192.168.1.134 "pct exec 101 -- docker exec sonarr curl -s -H 'X-Api-Key
 - `docker/sonarr/compose.yml`
 - `docker/radarr/compose.yml`
 - `docker/prowlarr/compose.yml`
+- `docker/prowlarr/custom/torrentio.yml` (dynamic Cardigann definition)
 - `docker/deluge/compose.yml`
 - `docker/jellyfin/compose.yml`
-- Prowlarr config: `/config/custom/torrentio.yml` (inside container 101)
+- Prowlarr Cardigann definitions: `/config/Definitions/Custom/` (inside container)
 
 ## References
 - Prowlarr Indexers: https://github.com/dreulavelle/Prowlarr-Indexers
