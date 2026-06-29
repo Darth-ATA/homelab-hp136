@@ -14,6 +14,7 @@ terraform {
     force_path_style            = true
     skip_credentials_validation = true
     skip_region_validation      = true
+    profile                     = "garage"
   }
 }
 
