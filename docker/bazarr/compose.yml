@@ -9,9 +9,7 @@ services:
     volumes:
       - /root/docker/bazarr/config:/config
       - /root/docker/bazarr/custom-cont-init.d:/custom-cont-init.d:ro
-      - /data/media:/media
-      - /data/media/tv:/tv
-      - /data/media/movies:/movies
+      - /data:/data
     ports:
       - "6767:6767"
     restart: unless-stopped
