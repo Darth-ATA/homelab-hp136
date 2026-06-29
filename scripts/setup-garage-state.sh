@@ -36,11 +36,13 @@ REMOTE_ENV="/root/docker/arcane/data/projects/garage/.env"
 # --- Flags ---
 DRY_RUN=false
 ROTATE=false
+FIX_CREDS=false
 for arg in "$@"; do
   case "${arg}" in
     --dry-run)      DRY_RUN=true ;;
     --rotate-creds) ROTATE=true ;;
-    *) echo "Usage: $0 [--dry-run] [--rotate-creds]"; exit 1 ;;
+    --fix-creds)    FIX_CREDS=true ;;
+    *) echo "Usage: $0 [--dry-run] [--rotate-creds] [--fix-creds]"; exit 1 ;;
   esac
 done
 
@@ -62,6 +64,108 @@ garage_exec() {
 gen_alnum() {
   python3 -c "import secrets; print(secrets.token_urlsafe(${1:-32}).replace('-','').replace('_','')[:${1:-32}])" 2>/dev/null || \
   echo "rotated_$(uuidgen | tr -d '-')"
+}
+
+# --- AWS Credentials Sync ---
+AWS_CREDENTIALS="${HOME}/.aws/credentials"
+
+check_local_aws_creds() {
+  local -r expected_key="$1"
+  local -r expected_secret="$2"
+
+  if [[ ! -f "${AWS_CREDENTIALS}" ]]; then
+    warn "Local AWS credentials file not found at ${AWS_CREDENTIALS}"
+    return 1
+  fi
+
+  local local_key=""
+  local local_secret=""
+
+  # Check default profile first, then garage profile
+  if grep -q '^\[default\]' "${AWS_CREDENTIALS}" 2>/dev/null; then
+    local_key=$(awk '/^\[default\]/{found=1; next} /^\[/{found=0} found && /^aws_access_key_id/{print $3; exit}' "${AWS_CREDENTIALS}" 2>/dev/null || true)
+    local_secret=$(awk '/^\[default\]/{found=1; next} /^\[/{found=0} found && /^aws_secret_access_key/{print $3; exit}' "${AWS_CREDENTIALS}" 2>/dev/null || true)
+  fi
+
+  if [[ "${local_key}" == "${expected_key}" ]] && [[ "${local_secret}" == "${expected_secret}" ]]; then
+    ok "Local ~/.aws/credentials [default] matches Garage"
+    return 0
+  fi
+
+  # If default didn't match, check garage profile
+  if grep -q '^\[garage\]' "${AWS_CREDENTIALS}" 2>/dev/null; then
+    local gk gs
+    gk=$(awk '/^\[garage\]/{found=1; next} /^\[/{found=0} found && /^aws_access_key_id/{print $3; exit}' "${AWS_CREDENTIALS}" 2>/dev/null || true)
+    gs=$(awk '/^\[garage\]/{found=1; next} /^\[/{found=0} found && /^aws_secret_access_key/{print $3; exit}' "${AWS_CREDENTIALS}" 2>/dev/null || true)
+    if [[ "${gk}" == "${expected_key}" ]] && [[ "${gs}" == "${expected_secret}" ]]; then
+      warn "Local ~/.aws/credentials [garage] profile matches Garage, but [default] does NOT"
+      info "Run with --fix-creds to sync [default] from [garage]"
+      info "   Or: source <(grep -E '^AWS_' ${REMOTE_ENV}) && terraform init -migrate-state"
+      return 2
+    fi
+  fi
+
+  # Check if current creds are an old Garage key (starts with GK or AKIA)
+  if [[ "${local_key}" =~ ^(GK|AKIA) ]] || [[ "${local_secret}" =~ ^[A-Za-z0-9] ]]; then
+    warn "Local ~/.aws/credentials [default] has WRONG credentials"
+    info "Expected: AWS_ACCESS_KEY_ID=${expected_key}"
+    info "Current:  AWS_ACCESS_KEY_ID=${local_key:-<not set>}"
+    info "Run with --fix-creds to update automatically"
+  else
+    warn "Local ~/.aws/credentials [default] not set or has unexpected format"
+  fi
+
+  return 2
+}
+
+fix_local_aws_creds() {
+  local -r expected_key="$1"
+  local -r expected_secret="$2"
+  local -r aws_dir
+  aws_dir=$(dirname "${AWS_CREDENTIALS}")
+
+  if ${DRY_RUN}; then
+    info "[DRY-RUN] Would update ${AWS_CREDENTIALS}:"
+    info "  [default]"
+    info "  aws_access_key_id = ${expected_key}"
+    info "  aws_secret_access_key = ${expected_secret}"
+    return 0
+  fi
+
+  mkdir -p "${aws_dir}"
+
+  if [[ -f "${AWS_CREDENTIALS}" ]]; then
+    # Update default profile in-place
+    if grep -q '^\[default\]' "${AWS_CREDENTIALS}" 2>/dev/null; then
+      # Update existing [default] block
+      local tmpfile
+      tmpfile=$(mktemp)
+      awk -v key="${expected_key}" -v secret="${expected_secret}" '
+        /^\[default\]/ { print; def=1; next }
+        def && /^aws_access_key_id/ { print "aws_access_key_id = " key; def=0; next }
+        def && /^aws_secret_access_key/ { print "aws_secret_access_key = " secret; def=0; next }
+        !def { print }
+        def { def=0 }
+      ' "${AWS_CREDENTIALS}" > "${tmpfile}" && mv "${tmpfile}" "${AWS_CREDENTIALS}"
+    else
+      # Prepend new [default] block
+      printf "[default]\naws_access_key_id = %s\naws_secret_access_key = %s\n\n" \
+        "${expected_key}" "${expected_secret}" \
+        | cat - "${AWS_CREDENTIALS}" > "${AWS_CREDENTIALS}.tmp" \
+        && mv "${AWS_CREDENTIALS}.tmp" "${AWS_CREDENTIALS}"
+    fi
+  else
+    cat > "${AWS_CREDENTIALS}" <<EOF
+[default]
+aws_access_key_id = ${expected_key}
+aws_secret_access_key = ${expected_secret}
+EOF
+  fi
+
+  chmod 600 "${AWS_CREDENTIALS}"
+  ok "Local ~/.aws/credentials updated with correct Garage credentials"
+
+  info "Verify with: terraform plan"
 }
 
 # --- Pre-flight ---
@@ -113,6 +217,22 @@ if [[ "${KEY_EXISTS}" -gt 0 ]]; then
     echo "    AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID}"
     echo "    AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}"
     echo ""
+  fi
+
+  # --- Check local ~/.aws/credentials ---
+  if [[ -n "${ACCESS_KEY_ID:-}" ]] && [[ -n "${SECRET_ACCESS_KEY:-}" ]]; then
+    CREDS_MATCH=0
+    check_local_aws_creds "${ACCESS_KEY_ID}" "${SECRET_ACCESS_KEY}" || CREDS_MATCH=$?
+
+    if [[ "${CREDS_MATCH}" -eq 2 ]]; then
+      if ${FIX_CREDS}; then
+        fix_local_aws_creds "${ACCESS_KEY_ID}" "${SECRET_ACCESS_KEY}"
+      else
+        echo ""
+        info "HINT: Run with --fix-creds to update ~/.aws/credentials automatically"
+        echo ""
+      fi
+    fi
   fi
 else
   warn "Key '${KEY_NAME}' NOT found"
@@ -174,15 +294,15 @@ if ${ROTATE} && ! ${DRY_RUN}; then
   lxc_exec "sed -i 's/^AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=${NEW_SECRET_KEY}/' ${REMOTE_ENV}"
   ok "Remote .env updated"
 
+  # Sync local ~/.aws/credentials
+  fix_local_aws_creds "${NEW_ACCESS_KEY}" "${NEW_SECRET_KEY}"
+
   echo ""
   echo "  New credentials:"
   echo "    AWS_ACCESS_KEY_ID=${NEW_ACCESS_KEY}"
   echo "    AWS_SECRET_ACCESS_KEY=${NEW_SECRET_KEY}"
   echo ""
-  echo "  ⚠️  If you rotate credentials, re-run:"
-  echo "     source ${LOCAL_ENV}"
-  echo "     terraform init -migrate-state"
-  echo "     (or you'll get AccessDenied on next terraform plan/apply)"
+  info "Credentials synced to ~/.aws/credentials"
 fi
 
 echo ""

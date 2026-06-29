@@ -77,6 +77,41 @@ EOL
 terraform init
 ```
 
+### 2b. Terraform State Backend (Garage S3)
+
+State is stored in [Garage](https://garagehq.deuxfleurs.fr/) (S3-compatible object storage) running on LXC 101 at `http://192.168.1.142:3900`.
+
+**If `terraform plan` fails with `AccessDenied` or `key doesn't exist`:**
+
+1. The Garage `.env` on LXC 101 has the **source of truth** credentials:
+   ```bash
+   ssh root@192.168.1.134 "pct exec 101 -- cat /root/docker/arcane/data/projects/garage/.env"
+   ```
+2. Sync the credentials to your local `~/.aws/credentials`:
+   ```bash
+   ./scripts/setup-garage-state.sh --fix-creds
+   ```
+3. Verify:
+   ```bash
+   terraform plan
+   ```
+
+The `setup-garage-state.sh` script handles:
+- **Default mode** (`--fix-creds`): Sync Garage credentials to `~/.aws/credentials`
+- **Rotation** (`--rotate-creds`): Generate new keys, update `.env` + `~/.aws/credentials`
+- **Rotation also** warns if `~/.aws/credentials` [default] profile doesn't match Garage
+
+```bash
+# Quick verify
+./scripts/setup-garage-state.sh
+
+# Fix local credentials
+./scripts/setup-garage-state.sh --fix-creds
+
+# Rotate keys (if compromised)
+./scripts/setup-garage-state.sh --rotate-creds
+```
+
 ### 3. Create a new container:
 
 - Copy `new-container-example.tf` to a new file or edit it
