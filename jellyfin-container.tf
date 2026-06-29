@@ -89,8 +89,8 @@ resource "proxmox_virtual_environment_container" "jellyfin" {
 }
 
 # ZFS dataset for media (shared between LXC 101 and LXC 105)
-# NOTE: Created once via `zfs create rpool/data/media` on Proxmox host
-# Terraform does not manage the dataset lifecycle directly.
+# NOTE: Created once via `zfs create rpool/data/media` on Proxmox host.
+# Dataset properties (recordsize, atime) are managed by Terraform in zfs-datasets.tf.
 # Mount points are added via null_resource + local-exec.
 
 # Mount point: LXC 105 media bind mount
