@@ -1,5 +1,20 @@
 # Project Rules for AI Agents
 
+## Terraform-First Infrastructure
+
+**ALL infrastructure and operational configuration MUST be managed via Terraform whenever possible.** This is not optional.
+
+Use `null_resource` + `local-exec` with SSH (the established codebase pattern) for operations the `bpg/proxmox` provider doesn't natively support. Before ANY operational change, ask: "Can I express this as Terraform?" If yes, do it.
+
+### Examples of Terraform-managed operations in this codebase:
+- Mount points (media, jellyfin)
+- Bluetooth USB passthrough  
+- ZFS dataset tuning
+- Cron jobs (docker prune)
+- Docker prune scheduling
+
+Only fall back to scripts or manual steps when Terraform is genuinely impractical.
+
 ## SSH Access to Proxmox
 
 When connecting to Proxmox host via SSH, always use the pre-configured SSH key:

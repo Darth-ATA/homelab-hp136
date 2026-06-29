@@ -36,15 +36,44 @@ This skill provides context-specific guidance for the homelab-hp136 project.
 
 > **Note:** All services are defined as Arcane projects under `/root/docker/arcane/data/projects/`. Do NOT use raw `docker compose` — use the Arcane UI at http://192.168.1.142:3552.
 
-## Terraform Management
+## Terraform Management — Terraform-First Infrastructure
 
-All containers and VMs ARE managed by Terraform. The `bpg/proxmox` provider (v0.76.0+) handles them correctly.
+**ALL infrastructure and operational configuration MUST be managed via Terraform whenever possible.** This is a hard rule, not a suggestion.
 
-Terraform manages:
+### What Terraform manages
+
+**Provisioning-level:**
 - Firewall configuration (security groups, rules)
 - All LXC containers (create, modify, update)
 - VM configuration (Home Assistant)
 - Backup jobs
+
+**Post-provisioning (via `null_resource` + `local-exec` with SSH):**
+- Mount points (media, jellyfin)
+- Bluetooth USB passthrough
+- ZFS dataset tuning
+- Cron jobs and scheduled tasks
+- Docker prune scheduling
+- Any system configuration or operational maintenance
+
+### Established pattern for Terraform-managed operations
+
+Use `null_resource` with `local-exec` + SSH for everything the `bpg/proxmox` provider can't do natively:
+
+```hcl
+resource "null_resource" "example_operation" {
+  triggers = {
+    container_id = 101
+    description  = "what this does"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 101 -- <command>'"
+  }
+}
+```
+
+**Before implementing any operational change**, the agent MUST ask: "Can I express this as a Terraform resource?" If yes, use this pattern. Only fall back to standalone scripts or manual steps when Terraform is genuinely impractical.
 
 To import a new container after hardware change:
 ```bash
@@ -184,9 +213,10 @@ terraform apply
 
 ## Agent Rules — Operational Fixes
 
-When resolving an operational problem (disk full, hardlinks broken, service crash, config migration), the agent MUST leave the repo in a better state for future rebuilds:
+**Terraform-first is the default.** When resolving an operational problem (disk full, hardlinks broken, service crash, config migration), the agent MUST:
 
-1. **Create a script** if the fix involves manual steps that would be needed again (API calls, config changes, path migrations). Save to `scripts/` with a clear name and usage comment.
+0. **Use Terraform** if the fix involves any ongoing/scheduled operation — `null_resource` + `local-exec` via SSH. This is the FIRST option, not the last.
+1. **Create a script** only as fallback when Terraform is genuinely impractical. Save to `scripts/` with a clear name and usage comment.
 2. **Update the skill** (`homelab-proxmox`) if the fix reveals infrastructure knowledge agents should have from the start.
 3. **Update docs** in `docs/` or `docker/README.md` if the fix changes setup procedures, paths, or storage layout.
 4. **Commit everything** in the same PR as the fix — docs and scripts are part of the deliverable, not an afterthought.
