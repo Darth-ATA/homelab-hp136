@@ -135,6 +135,31 @@ Add proxy hosts in NPM (http://192.168.1.142:81):
 ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker ps --format 'table {{.Names}}\t{{.Ports}}'"
 ```
 
+## Docker Image Cleanup
+
+Unused Docker images (old versions from Arcane updates) accumulate over time. A cron job runs every 2 weeks to clean them.
+
+**Cron schedule:** `0 3 */14 * *` (3 AM, every 14th day)
+**Filter:** Removes images older than 72 hours (`--filter until=72h`) so the last 3 days are kept for rollback.
+
+### Managed via Terraform
+
+The cron job is configured via `null_resource "docker_prune_cron"` in `docker-container.tf`. It runs on `terraform apply` and creates `/etc/cron.d/docker-prune` inside LXC 101.
+
+### Manual Prune
+
+To run an immediate cleanup (remove ALL unused images, regardless of age):
+
+```bash
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker image prune -a --force"
+```
+
+### Check Current Disk Usage
+
+```bash
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker system df"
+```
+
 ## Notes
 
 - All services are on the `arrsuite` Docker network (or default bridge)

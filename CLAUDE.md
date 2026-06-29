@@ -70,6 +70,24 @@ terraform apply
 - `docs/bluetooth-ceiling-fan-setup.md` - FanLamp Pro BLE setup guide
 - `scripts/` - Utility scripts (deploy, backup, monitoring)
 
+## Core Principles
+
+### Terraform-First Infrastructure
+
+**ALL infrastructure and operational configuration MUST be managed via Terraform whenever possible.** This includes:
+
+- Container/VM provisioning, firewall rules, backups (already managed)
+- Post-provisioning setup: mount points, cron jobs, system configuration (via `null_resource` + `local-exec` with SSH)
+- Operational maintenance: cleanup tasks, scheduled jobs, service configuration
+
+The project follows a `null_resource` + `local-exec` pattern via SSH for operations that the `bpg/proxmox` provider doesn't natively support. See existing examples in:
+- `docker-container.tf` — media mount point, docker prune cron
+- `home_vm.tf` — bluetooth USB passthrough
+- `zfs-datasets.tf` — ZFS dataset tuning
+- `jellyfin-container.tf` — Jellyfin mount point
+
+**Before implementing any operational change**, ask: "Can I express this as a Terraform resource?" If yes, use a `null_resource` with `local-exec` (consistent with the codebase pattern). Only fall back to scripts or manual steps when Terraform is genuinely impractical.
+
 ## Important Notes
 
 1. **NEVER commit credentials** - terraform.tfvars and .env files are gitignored

@@ -100,3 +100,16 @@ resource "null_resource" "docker_media_mount_point" {
     command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct set 101 -mp0 /rpool/data/media,mp=/data/media'"
   }
 }
+
+# Docker image prune cron job: removes unused Docker images older than 72h every 2 weeks
+# Keeps the last 3 days of images available for rollback while preventing image bloat
+resource "null_resource" "docker_prune_cron" {
+  triggers = {
+    container_id = 101
+    cron_spec    = "docker image prune -a --filter until=72h every 14 days"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 101 -- sh -c \"echo \\\"0 3 */14 * * root docker image prune -a --filter until=72h --force\\\" > /etc/cron.d/docker-prune && chmod 644 /etc/cron.d/docker-prune\"'"
+  }
+}
