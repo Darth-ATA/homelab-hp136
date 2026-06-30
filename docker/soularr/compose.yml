@@ -1,0 +1,22 @@
+services:
+  soularr:
+    image: mrusse08/soularr:latest
+    container_name: soularr
+    hostname: soularr
+    user: "1000:1000"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+      - SCRIPT_INTERVAL=300
+      - WEBUI_ENABLED=true
+    ports:
+      - "8265:8265"
+    volumes:
+      - /root/docker/soularr/config:/data
+      - /data/soulseek/downloads:/downloads
+    restart: unless-stopped
+
+networks:
+  default:
+    name: soularrnet
