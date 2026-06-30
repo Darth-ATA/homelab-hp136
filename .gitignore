@@ -26,6 +26,8 @@ docker/garage/.env
 .githooks/
 docker/.env
 docker/qbittorrent/.env
+docker/slskd/.env
+docker/soularr/.env
 
 # Proxmox /root/.env with Telegram secrets (deployed manually via scp)
 /root/.env

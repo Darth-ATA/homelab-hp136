@@ -1,0 +1,21 @@
+services:
+  slskd:
+    image: ghcr.io/slskd/slskd:latest
+    container_name: slskd
+    hostname: slskd
+    user: "1000:1000"
+    environment:
+      - TZ=Europe/Madrid
+      - SLSKD_REMOTE_CONFIGURATION=false
+      - SLSKD_API_KEY=${SLSKD_API_KEY}
+    ports:
+      - "5030:5030"    # Web UI (HTTP)
+      - "50300:50300"  # Soulseek P2P
+    volumes:
+      - /root/docker/slskd/config:/app
+      - /data:/data
+    restart: unless-stopped
+
+networks:
+  default:
+    name: soularrnet

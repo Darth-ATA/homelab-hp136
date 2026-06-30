@@ -1,0 +1,36 @@
+###############################################################################
+# slskd configuration
+# See: https://github.com/slskd/slskd/blob/master/docs/config.md
+# Full example: https://github.com/slskd/slskd/blob/master/config/slskd.example.yml
+###############################################################################
+
+soulseek:
+  username: "SOULSEEK_USER_GOES_HERE"    # Set in docker/slskd/.env
+  password: "SOULSEEK_PASS_GOES_HERE"    # Set in docker/slskd/.env
+  listen_port: 50300
+
+directories:
+  downloads: /data/soulseek/downloads
+  incomplete: /data/soulseek/incomplete
+
+web:
+  authentication:
+    disabled: false
+    username: slskd
+    password: slskd
+    jwt:
+      ttl: 604800000  # 7 days
+  # Primary API key set via SLSKD_API_KEY environment variable
+  # Additional keys can be added here if needed:
+  # api_keys:
+  #   soularr:
+  #     key: "your-16-to-255-char-key"
+  #     role: administrator
+  #     cidr: 0.0.0.0/0,::/0
+
+retention:
+  searches: 10080       # 7 days
+  downloads:
+    succeeded: 1440     # 1 day
+    errored: 20160      # 2 weeks
+    cancelled: 30       # 30 minutes

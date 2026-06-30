@@ -25,6 +25,8 @@ Arcane runs at `http://192.168.1.142:3552` and manages individual compose files 
 # ├── flaresolverr/
 # ├── jellyfin/
 # ├── npm/
+# ├── slskd/
+# ├── soularr/
 # ├── garage/
 # ├── vaultwarden/ (inactive — migrated to LXC 104)
 # └── qbittorrent/ (inactive — Deluge is the active torrent client)
@@ -45,6 +47,8 @@ Arcane runs at `http://192.168.1.142:3552` and manages individual compose files 
 | FlareSolverr | `flaresolverr` | 8191 | Cloudflare bypass proxy for Prowlarr indexers | Arcane |
 | Jellyfin | `jellyfin` | 8096, 8920 | Media server | Arcane |
 | **Garage** | `garage` | 3900, 3901, 3902, 3903 | S3-compatible object storage (Terraform state backend) | Arcane |
+| **slskd** | `slskd` | 5030, 50300 | Soulseek P2P daemon for music downloads | Arcane |
+| **soularr** | `soularr` | 8265 | Lidarr ↔ slskd bridge — searches Soulseek for wanted albums | Arcane |
 
 ## Configured but Not Deployed
 
@@ -66,6 +70,9 @@ These services have compose files on the host but are NOT running:
 │   ├── movies/
 │   ├── tv/
 │   └── music/
+├── soulseek/                       # slskd downloads (Lidarr imports from here)
+│   ├── incomplete/
+│   └── downloads/
 └── media/                          # Organized media (*arr hardlinks here)
     ├── movies/
     ├── tv/
@@ -113,6 +120,8 @@ cd /root/docker/arcane && docker compose up -d
 - **Bazarr**: http://192.168.1.142:6767
 - **FlareSolverr**: http://192.168.1.142:8191 (API endpoint: `http://192.168.1.142:8191/v1`)
 - **Jellyfin**: http://192.168.1.142:8096
+- **slskd**: http://192.168.1.142:5030 (login: `slskd` / `slskd`)
+- **soularr**: http://192.168.1.142:8265
 - **Vaultwarden**: https://vw.hp136.duckdns.org (LXC 104, proxied via NPM)
 - **NPM Admin**: http://192.168.1.142:81
 - **Arcane**: http://192.168.1.142:3552
@@ -162,7 +171,8 @@ ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker system df"
 
 ## Notes
 
-- All services are on the `arrsuite` Docker network (or default bridge)
+- Most services are on the `arrsuite` Docker network (or default bridge)
+- slskd and soularr share a dedicated `soularrnet` network — soularr resolves slskd by hostname
 - Media storage uses `/data` single mount point from Proxmox host
 - **Deluge** (not qBittorrent) is the active torrent client — no VPN
 - After creating accounts in any service, disable signups
