@@ -50,6 +50,8 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | Garage (Web UI) | `http://192.168.1.142:3902` | Garage web interface |
 | Garage (Admin API) | `http://192.168.1.142:3903` | Garage admin API |
 | Jellyfin | `http://192.168.1.145:8096` | LXC 105 (native, Ubuntu 24.04, iGPU passthrough) |
+| Navidrome | `http://192.168.1.142:4533` | Docker (managed via Arcane) — Subsonic/MPD-compatible music streaming |
+| | `https://music.hp136.duckdns.org` | Proxied via NPM with SSL (wildcard cert) |
 
 ## DNS Configuration
 
@@ -73,6 +75,8 @@ Proxy hosts configured in NPM (http://192.168.1.142:81):
 | Domain | Forward To | Port | Websockets |
 |--------|------------|------|------------|
 | `homeassistant.local` / `homeassistant.home` | `192.168.1.100` | 8123 | ✅ Enabled |
+| `navidrome.local` | `192.168.1.142` | 4533 | ❌ |
+| `music.hp136.duckdns.org` | `192.168.1.142` | 4533 | ❌ |
 
 ## How to Recreate Static IPs
 

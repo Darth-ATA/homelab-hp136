@@ -26,8 +26,8 @@ This skill provides context-specific guidance for the homelab-hp136 project.
 
 ## Docker Stack (LXC 101)
 
-9 running services, managed via **Arcane** (`/root/docker/arcane/`):
-- **Media**: Sonarr, Radarr, Lidarr, Prowlarr, Deluge, Bazarr
+10 running services, managed via **Arcane** (`/root/docker/arcane/`):
+- **Media**: Sonarr, Radarr, Lidarr, Prowlarr, Deluge, Bazarr, Navidrome
 - **Proxy**: nginx-proxy-manager (ports 80, 443, 81)
 - **Other**: Arcane (orchestrator), Vaultwarden (password manager)
 - **Configured (not running)**: Frigate, Immich, qBittorrent
