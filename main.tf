@@ -7,9 +7,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "homelab-terraform-state"
-    key    = "terraform.tfstate"
-    region = "garage"
+    bucket                      = "homelab-terraform-state"
+    key                         = "terraform.tfstate"
+    region                      = "garage"
     endpoint                    = "http://192.168.1.142:3900"
     force_path_style            = true
     skip_credentials_validation = true
