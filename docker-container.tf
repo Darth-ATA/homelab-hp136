@@ -101,6 +101,32 @@ resource "null_resource" "docker_media_mount_point" {
   }
 }
 
+# Mount point: LXC 101 torrents bind mount (dedicated ZFS dataset)
+# Moves /data/torrents from subvol-101-disk-1 to dedicated rpool/data/torrents dataset
+resource "null_resource" "docker_torrents_mount_point" {
+  triggers = {
+    container_id = 101
+    mount_spec   = "/rpool/data/torrents,mp=/data/torrents"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct set 101 -mp1 /rpool/data/torrents,mp=/data/torrents'"
+  }
+}
+
+# Mount point: LXC 101 soulseek bind mount (dedicated ZFS dataset)
+# Moves /data/soulseek from subvol-101-disk-1 to dedicated rpool/data/soulseek dataset
+resource "null_resource" "docker_soulseek_mount_point" {
+  triggers = {
+    container_id = 101
+    mount_spec   = "/rpool/data/soulseek,mp=/data/soulseek"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct set 101 -mp2 /rpool/data/soulseek,mp=/data/soulseek'"
+  }
+}
+
 # Docker image prune cron job: removes unused Docker images older than 72h every 2 weeks
 # Keeps the last 3 days of images available for rollback while preventing image bloat
 resource "null_resource" "docker_prune_cron" {
