@@ -52,6 +52,10 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | Jellyfin | `http://192.168.1.145:8096` | LXC 105 (native, Ubuntu 24.04, iGPU passthrough) |
 | Navidrome | `http://192.168.1.142:4533` | Docker (managed via Arcane) — Subsonic/MPD-compatible music streaming |
 | | `https://music.hp136.duckdns.org` | Proxied via NPM with SSL (wildcard cert) |
+| slskd | `http://192.168.1.142:5030` | Docker (managed via Arcane) — Soulseek P2P music discovery |
+| | `http://192.168.1.142:50300` | slskd DHT/listening port |
+| Soularr | `http://192.168.1.142:8265` | Docker (managed via Arcane) — syncs Soulseek downloads to Lidarr |
+| Flaresolverr | `http://192.168.1.142:8191` | Docker (managed via Arcane) — Cloudflare bypass proxy for Prowlarr |
 
 ## DNS Configuration
 
@@ -70,13 +74,25 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 
 ## Nginx Proxy Manager Configuration
 
-Proxy hosts configured in NPM (http://192.168.1.142:81):
+All domains use the wildcard SSL certificate `*.hp136.duckdns.org` (Let's Encrypt, via NPM). Proxy hosts configured in NPM (http://192.168.1.142:81):
 
-| Domain | Forward To | Port | Websockets |
-|--------|------------|------|------------|
-| `homeassistant.local` / `homeassistant.home` | `192.168.1.100` | 8123 | ✅ Enabled |
-| `navidrome.local` | `192.168.1.142` | 4533 | ❌ |
-| `music.hp136.duckdns.org` | `192.168.1.142` | 4533 | ❌ |
+| Domain | Forward To | Port | Notes |
+|--------|------------|------|-------|
+| `homeassistant.local` / `homeassistant.home` | `192.168.1.100` | 8123 | Websockets ✅ |
+| `ha.hp136.duckdns.org` | `192.168.1.100` | 8123 | Home Assistant |
+| `agh.hp136.duckdns.org` | `192.168.1.2` | 80 | AdGuard admin |
+| `arcan.hp136.duckdns.org` | `192.168.1.142` | 3552 | Arcane orchestrator |
+| `npm.hp136.duckdns.org` | `192.168.1.142` | 81 | NPM admin panel |
+| `vw.hp136.duckdns.org` | `192.168.1.144` | 8000 | Vaultwarden |
+| `music.hp136.duckdns.org` | `192.168.1.142` | 4533 | Navidrome |
+| `son.hp136.duckdns.org` | `192.168.1.142` | 8989 | Sonarr |
+| `rad.hp136.duckdns.org` | `192.168.1.142` | 7878 | Radarr |
+| `lidarr.hp136.duckdns.org` | `192.168.1.142` | 8686 | Lidarr |
+| `prowlarr.hp136.duckdns.org` | `192.168.1.142` | 9696 | Prowlarr |
+| `bazarr.hp136.duckdns.org` | `192.168.1.142` | 6767 | Bazarr |
+| `deluge.hp136.duckdns.org` | `192.168.1.142` | 8112 | Deluge |
+| `jelly.hp136.duckdns.org` | `192.168.1.145` | 8096 | Jellyfin |
+| `frigate.hp136.duckdns.org` | `192.168.1.142` | 5000 | ⚠️ Not deployed — configured for future use |
 
 ## How to Recreate Static IPs
 

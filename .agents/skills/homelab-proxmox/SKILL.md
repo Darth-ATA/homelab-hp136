@@ -26,10 +26,10 @@ This skill provides context-specific guidance for the homelab-hp136 project.
 
 ## Docker Stack (LXC 101)
 
-10 running services, managed via **Arcane** (`/root/docker/arcane/`):
-- **Media**: Sonarr, Radarr, Lidarr, Prowlarr, Deluge, Bazarr, Navidrome
+13 running services, managed via **Arcane** (`/root/docker/arcane/`):
+- **Media**: Sonarr, Radarr, Lidarr, Prowlarr, Deluge, Bazarr, Navidrome, slskd, soularr
 - **Proxy**: nginx-proxy-manager (ports 80, 443, 81)
-- **Other**: Arcane (orchestrator), Vaultwarden (password manager)
+- **Other**: Arcane (orchestrator), Vaultwarden (password manager), garage (S3 storage)
 - **Configured (not running)**: Frigate, Immich, qBittorrent
 
 > **Note:** Jellyfin was migrated to a **dedicated LXC 105** (native, not Docker). See infra table above.
@@ -88,8 +88,8 @@ terraform apply
 
 | Storage    | Type  | Used   | Purpose              |
 |------------|-------|--------|----------------------|
-| local      | dir   | ~31%   | Backups, ISOs, templates |
-| local-zfs  | zfs   | ~114GB | Container disks (incl. 150GB docker + media) |
+| local      | dir   | ~22GB    | Backups, ISOs, templates |
+| local-zfs  | zfs   | ~67GB    | Container disks (incl. 150GB docker + media) |
 
 **Important**: Backups MUST use `local` (dir-type). ZFS pools do NOT support backup content type.
 
@@ -97,24 +97,31 @@ terraform apply
 
 ### ZFS Datasets
 
-Media is stored on a **dedicated ZFS dataset** (`rpool/data/media`) shared between LXC 101 and LXC 105:
+Media, torrents, and Soulseek downloads each live on their own ZFS dataset:
 
 | Dataset | Size | Mount Point | Used By |
 |---------|------|-------------|---------|
 | `rpool/data/media` | ~75G | `/rpool/data/media` | Bind-mounted to LXC 101 (`/data/media`) and LXC 105 (`/media`) |
+| `rpool/data/torrents` | ~81G | `/rpool/data/torrents` | Bind-mounted to LXC 101 (`/data/torrents`), Deluge downloads |
+| `rpool/data/soulseek` | ~18G | `/rpool/data/soulseek` | Bind-mounted to LXC 101 (`/data/soulseek`), slskd downloads |
 
 ### LXC 101 Directory Structure
 
 ```
-/data/                         # Bind mount: rpool/data/media → /data/media (rw)
-├── media/                     # Organized media (*arr hardlinks here)
-│   ├── movies/
-│   ├── tv/
-│   └── music/
-/data/torrents/                # Deluge downloads (inside subvol)
+/data/media/                    # Bind mount: rpool/data/media → /data/media (rw)
+├── movies/                     # Radarr managed
+├── tv/                         # Sonarr managed
+└── music/                      # Lidarr managed, served by Navidrome
+
+/data/torrents/                 # Separate ZFS dataset rpool/data/torrents
 ├── movies/
 ├── tv/
 └── music/
+
+/data/soulseek/                 # Separate ZFS dataset rpool/data/soulseek
+├── downloads/                  # slskd downloads
+├── incomplete/                 # slskd incomplete
+└── failed_imports/             # soularr moves failed imports here
 ```
 
 ### LXC 105 (Jellyfin) Directory Structure
@@ -128,20 +135,24 @@ Media is stored on a **dedicated ZFS dataset** (`rpool/data/media`) shared betwe
 
 ### Docker Volumes — Single Mount Rule (CRITICAL)
 
-All *arr containers MUST mount `/data:/data` as a **single volume**. Do NOT use separate mounts:
+All *arr containers MUST mount `/data:/data` as a **single volume** for hardlink support. Do NOT use separate mounts:
 
 ```yaml
-# ✅ CORRECT — hardlinks work
 volumes:
   - /data:/data
-
-# ❌ WRONG — hardlinks break with "Cross-device link" (EXDEV)
-volumes:
-  - /data/media/movies:/movies
-  - /data/torrents:/downloads
 ```
 
-**Why:** Docker creates a separate mount point inside the container for each bind mount. Even when source directories share the same ZFS subvol on the host, inside the Docker container they appear as different filesystems. The `link()` syscall returns EXDEV ("Cross-device link") when trying to hardlink across mount points.
+**EXCEPTION — Lidarr + soularr pipeline**: Lidarr also needs an explicit bind mount for soulseek downloads because `/data/soulseek/` is a **separate ZFS dataset** and Docker's default `rprivate` mount propagation does NOT expose submounts:
+
+```yaml
+# lidarr compose.yaml
+volumes:
+  - /root/docker/lidarr/config:/config
+  - /data:/data
+  - /data/soulseek/downloads:/data/soulseek/downloads  # needed for soularr pipeline
+```
+
+**Why:** Docker containers only see mount points that existed at container creation time. ZFS datasets mounted later under `/data/` are invisible inside the container. The explicit bind mount ensures Lidarr can read files downloaded by slskd/soularr.
 
 ### *Arr Root Folder Paths
 
@@ -165,7 +176,7 @@ Updating only the RootFolders endpoint is NOT sufficient.
 
 - **Schedule**: HA at 21:00, docker at 03:00, tailscale at 03:45, adguard at 04:00, vaultwarden at 04:15, jellyfin at 04:30 (staggered off-peak)
 - **Storage**: All backups use `local` (dir). DO NOT use `local-zfs` — it does NOT support backup content type.
-- **Docker excludes**: `/data` (media + torrents) excluded from CT 101 backup to save space
+- **Docker excludes**: `/data/media`, `/data/torrents`, and `/data/soulseek` are all excluded from CT 101 backup (separate datasets, backup independently or not needed). Backup size dropped from ~50GB to ~4.6GB (91% reduction).
 - **Retention**: HA keeps last 5; containers keep daily + monthly
 - **Cleanup**: `/usr/local/bin/cleanup-backups.sh` via cron at 1:00 AM
 
@@ -180,6 +191,7 @@ Updating only the RootFolders endpoint is NOT sufficient.
 - `main.tf` - Provider configuration
 - `firewall.tf` - Firewall rules
 - `docker-container.tf` - Docker LXC config
+- `zfs-datasets.tf` - ZFS dataset creation and tuning
 - `jellyfin-container.tf` - Jellyfin LXC 105 config
 - `adguard-container.tf` - AdGuard config
 - `tailscale-container.tf` - Tailscale config
@@ -204,6 +216,11 @@ qm list
 
 # Docker inside LXC
 pct exec 101 -- docker ps
+
+# Pipeline health checks
+pct exec 101 -- curl -s http://localhost:8265  # soularr web UI
+pct exec 101 -- curl -s http://localhost:5030  # slskd
+pct exec 101 -- docker exec lidarr curl -s localhost:8686/ping
 
 # Run Terraform
 cd /Users/alejandrotorresaguilera/homelab-terraform
