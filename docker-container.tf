@@ -139,3 +139,17 @@ resource "null_resource" "docker_prune_cron" {
     command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 101 -- sh -c \"echo \\\"0 3 */14 * * root docker image prune -a --filter until=72h --force\\\" > /etc/cron.d/docker-prune && chmod 644 /etc/cron.d/docker-prune\"'"
   }
 }
+
+# Soularr config: ensure failed_import_denylist=True to prevent infinite re-download loops
+# When failed_import_denylist=False (default), albums that fail Lidarr import are
+# re-downloaded on every soularr run, creating infinite copies (observed: 55 copies of one album)
+resource "null_resource" "soularr_failed_import_denylist" {
+  triggers = {
+    container_id = 101
+    setting      = "failed_import_denylist = True"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 101 -- sed -i \"s/^failed_import_denylist = .*/failed_import_denylist = True/\" /root/docker/soularr/config/config.ini'"
+  }
+}
