@@ -150,10 +150,30 @@ main() {
 
     # Get disk usage percentage, used, and total
     local usage_str used_str total_str
+    local zfs_fs zfs_quota
 
-    usage_str=$(df "$BACKUP_STORAGE" | awk 'NR==2 {gsub(/%/,""); print $5}') || true
-    used_str=$(df -h "$BACKUP_STORAGE" | awk 'NR==2 {print $3}') || true
-    total_str=$(df -h "$BACKUP_STORAGE" | awk 'NR==2 {print $2}') || true
+    # ZFS-aware usage check: if the path is on a ZFS dataset with a quota,
+    # use the quota as the reference instead of df (which shows used/available
+    # at the pool level, not quota-relative).
+    zfs_fs=$(df --output=source "$BACKUP_STORAGE" 2>/dev/null | tail -1) || zfs_fs=""
+    zfs_quota=""
+    if [[ -n "$zfs_fs" ]] && command -v zfs &>/dev/null; then
+        zfs_quota=$(zfs get -Hp quota "$zfs_fs" 2>/dev/null | awk '{print $3}') || zfs_quota=""
+    fi
+
+    if [[ -n "$zfs_quota" && "$zfs_quota" != "0" && "$zfs_quota" != "none" ]]; then
+        # ZFS dataset with quota: calculate percentage from quota
+        local zfs_used
+        zfs_used=$(zfs get -Hp used "$zfs_fs" 2>/dev/null | awk '{print $3}') || zfs_used=0
+        usage_str=$(( zfs_used * 100 / zfs_quota ))
+        used_str=$(numfmt --to=iec "$zfs_used" 2>/dev/null || echo "$((zfs_used / 1073741824))G")
+        total_str=$(numfmt --to=iec "$zfs_quota" 2>/dev/null || echo "$((zfs_quota / 1073741824))G")
+    else
+        # Fallback to df for non-ZFS or no-quota datasets
+        usage_str=$(df "$BACKUP_STORAGE" | awk 'NR==2 {gsub(/%/,""); print $5}') || true
+        used_str=$(df -h "$BACKUP_STORAGE" | awk 'NR==2 {print $3}') || true
+        total_str=$(df -h "$BACKUP_STORAGE" | awk 'NR==2 {print $2}') || true
+    fi
 
     if [[ -z "$usage_str" ]]; then
         log_error "Failed to get disk usage for $BACKUP_STORAGE"
