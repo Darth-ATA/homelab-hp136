@@ -16,9 +16,9 @@ resource "proxmox_backup_job" "home_assistant" {
 
   mailnotification = "failure"
 
-  # Keep last 3-5 backups
+  # Keep last 3 backups (reduced from 5 to stay within 23G local storage)
   prune_backups = {
-    keep-last = "5"
+    keep-last = "3"
   }
 }
 
