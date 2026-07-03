@@ -95,6 +95,9 @@ The project follows a `null_resource` + `local-exec` pattern via SSH for operati
 3. **Container disks are on local-zfs**, backups go to `local` (dir storage)
 4. **Services are managed via Arcane** (`/root/docker/arcane/`) on LXC 101, not raw docker-compose
 5. **Torrent client is Deluge** (not qBittorrent), **no VPN**
+6. **Soularr `failed_import_denylist` must be `True`** — otherwise albums that fail Lidarr import get re-downloaded infinitely. Managed via `null_resource "soularr_failed_import_denylist"` in `docker-container.tf`.
+7. **Deluge cleanup** — Use `del --remove_data <hash>` (not `-r`) to remove torrent + data files from `deluge-console`. `del` without `--remove_data` only removes the torrent metadata from the client.
+8. **MHA S01 already imported** — All 13 episodes have `hasFile=True` in Sonarr. The 26.2GB BD rip torrent was garbage data (Sonarr ignores it).
 
 ## Bluetooth Passthrough (VM 100)
 

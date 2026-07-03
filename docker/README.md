@@ -144,6 +144,40 @@ Add proxy hosts in NPM (http://192.168.1.142:81):
 ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker ps --format 'table {{.Names}}\t{{.Ports}}'"
 ```
 
+## Soularr Configuration
+
+soularr bridges Lidarr with slskd to automatically download wanted albums from Soulseek.
+
+### Critical Setting: `failed_import_denylist`
+
+**`failed_import_denylist = True`** is REQUIRED in `/root/docker/soularr/config/config.ini`.
+
+When `False` (default), albums that fail Lidarr import (e.g. scan errors, mismatched tracks) are re-downloaded on **every** soularr run, creating infinite duplicate copies. This consumed ~190GB of disk space in one incident.
+
+The setting is enforced via Terraform (`null_resource "soularr_failed_import_denylist"` in `docker-container.tf`).
+
+### Config File Location
+
+```
+/root/docker/soularr/config/config.ini
+```
+
+Key settings:
+- `api_key` — Lidarr API key (Settings > General > Security)
+- `failed_import_denylist = True` — prevents re-download loops
+- `use_selected_lidarr_release = True` — prefer Lidarr's tagged release
+- `search_source = missing` — only search for albums Lidarr reports as missing
+
+### Soularr Web UI
+
+Access at http://192.168.1.142:8265 to view recent runs, logs, and queued searches.
+
+### Restart After Config Change
+
+```bash
+ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker restart soularr"
+```
+
 ## Docker Image Cleanup
 
 Unused Docker images (old versions from Arcane updates) accumulate over time. A cron job runs every 2 weeks to clean them.
