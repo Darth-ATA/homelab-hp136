@@ -106,6 +106,55 @@ EOT
   }
 }
 
+# ─── LXC Internet Connectivity Check ───────────────────────────────────────────
+# Monitors internet access FROM inside LXC 101 (Docker host). Catches router-level
+# blocks by EX520v DoS Protection that affect specific container IPs.
+# Uses retry + consecutive-failure threshold to avoid false positives on transients.
+
+locals {
+  check_lxc_internet_hash = filebase64sha256("${path.module}/scripts/check-lxc-internet.sh")
+}
+
+resource "null_resource" "deploy_check_lxc_internet" {
+  triggers = {
+    script_hash = local.check_lxc_internet_hash
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no ${path.module}/scripts/check-lxc-internet.sh root@${var.proxmox_host_ip}:/usr/local/bin/check-lxc-internet.sh && \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'chmod 755 /usr/local/bin/check-lxc-internet.sh'
+EOT
+  }
+}
+
+resource "null_resource" "lxc_internet_check_cron" {
+  triggers = {
+    cron_spec = "check-lxc-internet every 5 minutes"
+    depends_on_script = local.check_lxc_internet_hash
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'bash -s' << 'REMOTE'
+set -e
+# Remove legacy root crontab entry + comment (if migrating from manual setup)
+if crontab -l 2>/dev/null | grep -q "check-lxc-internet\|LXC 101 internet"; then
+  crontab -l 2>/dev/null | grep -v "check-lxc-internet\|LXC 101 internet" | crontab -
+fi
+
+# Write cron.d entry (system-wide, survives reboot)
+cat > /etc/cron.d/lxc-internet-check << 'CRONEOF'
+# LXC 101 internet connectivity check — every 5 minutes
+# Catches EX520v DoS blocks that affect specific container IPs
+*/5 * * * * root /usr/local/bin/check-lxc-internet.sh
+CRONEOF
+chmod 644 /etc/cron.d/lxc-internet-check
+REMOTE
+EOT
+  }
+}
+
 # ─── ZFS Quota on Backup Storage ──────────────────────────────────────────────
 # Sets a 22G quota on rpool/var-lib-vz to cap backup storage before the pool
 # fills up. The monitoring script reads this quota to calculate usage %.
