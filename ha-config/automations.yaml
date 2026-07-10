@@ -274,7 +274,8 @@
   alias: "Lavadora - Inicio de ciclo"
   description: >
     Detecta arranque por consumo > 5W sostenido 30s.
-    Si no es hora barata dentro de 08-22, apaga el enchufe y marca apagada_por_automatizacion.
+    Si no es hora barata dentro de 08-22, busca próxima hora barata:
+    si existe, apaga y espera; si no (últimas horas del día), deja correr.
     Si es hora barata, lo deja correr.
   triggers:
   - trigger: numeric_state
@@ -327,25 +328,54 @@
             entity_id: binary_sensor.lavadora_en_hora_barata
             state: 'off'
           sequence:
-          - action: switch.turn_off
-            target:
-              entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
-          - action: input_boolean.turn_on
-            target:
-              entity_id: input_boolean.lavadora_apagada_por_automatizacion
-          - action: notify.send_message
-            data:
-              title: "🫧 Lavadora"
-              message: "Arrancó pero no es hora barata. Enchufe apagado. Esperando hora más barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
-            target:
-              entity_id:
-                - notify.mobile_app_alejandros_iphone
-                - notify.mobile_app_miriam_iphone
-          - action: persistent_notification.create
-            data:
-              notification_id: lavadora_inicio_no_hora_barata
-              title: "🫧 Lavadora"
-              message: "Arrancó pero no es hora barata. Enchufe apagado. Esperando hora más barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
+          - choose:
+            - conditions:
+              - condition: template
+                value_template: >
+                  {{ states('sensor.lavadora_hora_mas_barata') | int(-1) > now().hour }}
+              sequence:
+              - action: switch.turn_off
+                target:
+                  entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
+              - action: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.lavadora_apagada_por_automatizacion
+              - action: notify.send_message
+                data:
+                  title: "\U0001F9FA Lavadora"
+                  message: "Arranc\u00F3 pero no es hora barata. Enchufe apagado. Esperando pr\u00F3xima hora barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
+                target:
+                  entity_id:
+                    - notify.mobile_app_alejandros_iphone
+                    - notify.mobile_app_miriam_iphone
+              - action: persistent_notification.create
+                data:
+                  notification_id: lavadora_inicio_no_hora_barata
+                  title: "\U0001F9FA Lavadora"
+                  message: "Arranc\u00F3 pero no es hora barata. Enchufe apagado. Esperando pr\u00F3xima hora barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
+            - conditions:
+              - condition: template
+                value_template: "true"
+              sequence:
+              - action: switch.turn_on
+                target:
+                  entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
+              - action: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.lavadora_apagada_por_automatizacion
+              - action: notify.send_message
+                data:
+                  title: "\U0001F9FA Lavadora"
+                  message: "No hay m\u00E1s horas baratas hoy. Arranco la lavadora."
+                target:
+                  entity_id:
+                    - notify.mobile_app_alejandros_iphone
+                    - notify.mobile_app_miriam_iphone
+              - action: persistent_notification.create
+                data:
+                  notification_id: lavadora_inicio_no_hora_barata
+                  title: "\U0001F9FA Lavadora"
+                  message: "No hay m\u00E1s horas baratas hoy. Arranco la lavadora."
     - conditions:
       - condition: template
         value_template: "{{ now().hour >= 22 or now().hour < 8 }}"
@@ -377,7 +407,7 @@
 - id: 'lavadora_hora_barata_001'
   alias: "Lavadora - Encender en hora barata"
   description: >
-    Cada hora en punto, si es la hora más barata del día entre 08-22
+    Cada hora en punto, si es la hora más barata restante entre 08-22
     y la lavadora fue apagada por la automatización, enciende el enchufe.
   triggers:
   - trigger: template
