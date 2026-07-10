@@ -18,7 +18,8 @@ template:
         unique_id: "lavadora_hora_mas_barata"
         state: >
           {% set ns = namespace(min_hour=-1, min_price=999) %}
-          {% for h in range(8, 22) %}
+          {% set start = [now().hour, 8] | max %}
+          {% for h in range(start, 22) %}
             {% set p = state_attr('sensor.esios_current_price', 'price_%02dh' | format(h)) %}
             {% if p is not none and p|float > 0 and p|float < ns.min_price %}
               {% set ns.min_price = p|float %}
