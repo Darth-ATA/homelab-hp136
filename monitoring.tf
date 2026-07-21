@@ -156,18 +156,18 @@ EOT
 }
 
 # ─── ZFS Quota on Backup Storage ──────────────────────────────────────────────
-# Sets a 22G quota on rpool/var-lib-vz to cap backup storage before the pool
+# Sets a 40G quota on rpool/var-lib-vz to cap backup storage before the pool
 # fills up. The monitoring script reads this quota to calculate usage %.
 
 resource "null_resource" "backup_storage_zfs_quota" {
   triggers = {
     dataset = "rpool/var-lib-vz"
-    quota   = "22G"
+    quota   = "40G"
   }
 
   provisioner "local-exec" {
     command = <<EOT
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'zfs set quota=22G rpool/var-lib-vz'
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'zfs set quota=40G rpool/var-lib-vz'
 EOT
   }
 }
