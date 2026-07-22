@@ -29,6 +29,7 @@ All services are accessible via `https://<service>.hp136.duckdns.org`
 | rad | rad.hp136.duckdns.org | 192.168.1.142 | 7878 | Radarr |
 | son | son.hp136.duckdns.org | 192.168.1.142 | 8989 | Sonarr |
 | vw | vw.hp136.duckdns.org | 192.168.1.142 | 8080 | Vaultwarden |
+| darthgain | darthgain.hp136.duckdns.org | 192.168.1.142 | 8000 | DARTH-GAIN web dashboard |
 
 ## SSL Certificate
 
