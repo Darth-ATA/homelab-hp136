@@ -153,3 +153,17 @@ resource "null_resource" "soularr_failed_import_denylist" {
     command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 101 -- sed -i \"s/^failed_import_denylist = .*/failed_import_denylist = True/\" /root/docker/soularr/config/config.ini'"
   }
 }
+
+# Bazarr: set minimum_score to 60 so lower-score subtitles (Spanish, etc.) are accepted
+# Default 90 is too restrictive for many non-English subs; 60 matches common community configs
+# The Bazarr container must be restarted after config change
+resource "null_resource" "bazarr_minimum_score" {
+  triggers = {
+    container_id = 101
+    setting      = "minimum_score = 60"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 101 -- sh -c \"sed -i \\\"s/^  minimum_score: [0-9]*/  minimum_score: 60/\\\" /root/docker/bazarr/config/config/config.yaml && docker restart bazarr\"'"
+  }
+}
