@@ -98,6 +98,11 @@ The project follows a `null_resource` + `local-exec` pattern via SSH for operati
 6. **Soularr `failed_import_denylist` must be `True`** — otherwise albums that fail Lidarr import get re-downloaded infinitely. Managed via `null_resource "soularr_failed_import_denylist"` in `docker-container.tf`.
 7. **Deluge cleanup** — Use `del --remove_data <hash>` (not `-r`) to remove torrent + data files from `deluge-console`. `del` without `--remove_data` only removes the torrent metadata from the client.
 8. **MHA S01 already imported** — All 13 episodes have `hasFile=True` in Sonarr. The 26.2GB BD rip torrent was garbage data (Sonarr ignores it).
+9. **LXC backup lock:mounted** — Bind mounts in LXC containers set `lock: mounted` in config, which PREVENTS vzdump from taking snapshots. Backups fail silently and accumulate forever. If the backup disk fills unexpectedly, check `pct list | grep locked` and see `docs/troubleshooting.md` for the fix.
+10. **Jellyfin LXC 105 NOT managed by Terraform** — The Jellyfin container exists on Proxmox but has NO `.tf` file. A full `terraform apply` will NOT recreate it. If you need to recreate the host, restore from PVE backup first.
+11. **Docker backup job orphaned** — The docker backup job (CT 101) is NOT managed by Terraform due to the `bpg/proxmox exclude-path` bug (see `docs/troubleshooting.md`). It still runs on PVE with its existing schedule.
+12. **CFS lock authkey timeout** — If the web UI returns 401 but SSH works, the pmxcfs SQLite WAL may be bloated. Fix in `docs/troubleshooting.md`.
+13. **docs/troubleshooting.md** — Reference this file for all known Proxmox/Provider bugs and workarounds.
 
 ## Bluetooth Passthrough (VM 100)
 
