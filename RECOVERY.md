@@ -157,6 +157,35 @@ ssh root@192.168.1.134 "/usr/local/bin/cleanup-backups.sh"
 | tailscale | 102 | 192.168.1.102 | VPN network |
 | adguard | 103 | 192.168.1.2 | DNS ad-blocking |
 
+## Silent Backup Failures (LXC lock:mounted)
+
+**When LXC containers have bind mounts** (e.g., CT 101 map `/data` → `/rpool/data/media`), Proxmox sets `lock: mounted` in the container config. This prevents `vzdump` from creating snapshots, causing **silent backup failures**.
+
+**What happens:**
+1. Backup job starts → vzdump sees CT is locked → fails
+2. Failed backup is NOT pruned — it accumulates on disk
+3. Over time, failed backup files fill `local` storage
+4. All subsequent backups are at risk
+
+**Detect:**
+```bash
+ssh root@192.168.1.134 "pct list | grep locked"
+```
+
+**Fix:**
+```bash
+# Remove the lock
+ssh root@192.168.1.134 "sed -i '/^lock: mounted/d' /etc/pve/lxc/<VMID>.conf"
+
+# Run a manual backup with prune to clear failed dumps
+ssh root@192.168.1.134 "vzdump <VMID> --storage local --mode snapshot --prune-backups 'keep-daily=1,keep-monthly=1'"
+
+# If disk is critically full, delete failed backup files manually
+ssh root@192.168.1.134 "rm /var/lib/vz/dump/vzdump-lxc-<VMID>-<date>_*.vma.*"
+```
+
+**Prevention:** Add `lock: mounted` check to post-deploy verification scripts. See `docs/troubleshooting.md` for full details.
+
 ## Prevention Tips
 
 1. **Test backups regularly:** Restore to a test VMID monthly
