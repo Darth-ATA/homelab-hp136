@@ -69,3 +69,18 @@ resource "proxmox_virtual_environment_container" "tailscale" {
     ]
   }
 }
+
+# Force Tailscale to prefer DERP relay for stable connectivity on external WiFi
+# External WiFi networks often block non-standard UDP ports (41641), preventing direct WireGuard handshakes
+# This ensures traffic routes through the Madrid DERP relay (HTTPS-based) instead of flapping between
+# direct (blocked) and relay connections
+resource "null_resource" "tailscale_force_derp" {
+  triggers = {
+    container_id = 102
+    setting      = "force-prefer-derp = mad"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 102 -- tailscale set --force-prefer-derp=mad'"
+  }
+}
