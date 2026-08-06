@@ -5,15 +5,15 @@ variable "proxmox_api_token" {
 }
 
 # Staging flags for the subnet migration (192.168.1.0/24 -> 10.10.10.0/24).
-# Shipped false so the refactor PR is diff-neutral; Apply A (task 4.1) flips
-# stage_dual_stack=true, and the cutover commits flip the rest:
+# stage_dual_stack defaults false for the diff-neutral refactor PR and flips to
+# true at Apply A (staging). The cutover commits flip the rest:
 #   - stage_dual_stack:  host gets 10.10.10.134 alongside 192.168.1.134; docker LXC gets eth1 10.10.10.142
 #   - stage_docker_hold: docker net0 stays on the legacy subnet until the final cutover (Apply C)
 #   - keep_legacy_host_ip: remove the legacy 192.168.1.134 host IP in the final cleanup
 variable "stage_dual_stack" {
-  description = "Stage dual-stack: add 10.10.10 addresses before the cutover (true only during Apply A..C window)"
+  description = "Stage dual-stack: add 10.10.10 addresses before the cutover (true during Apply A..C window)"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "stage_docker_hold" {
