@@ -2,15 +2,23 @@
 
 This document describes the network configuration for the homelab Proxmox host and all services.
 
+## Subnet Contract
+
+- **LAN subnet:** `10.10.10.0/24` (gateway `.1`, DNS `.2` at AdGuard)
+- **Single source of truth:** Terraform `locals.tf` (`subnet_base` + `node_ips` last octets). All `*.tf` IPs, firewall destinations, and this allocation table derive from it — no hardcoded IP literals in Terraform.
+- **Fallback:** if the router ever rejects a 10.x LAN, switch `locals.subnet_base` to `192.168.77` (identical last octets) plus the `main.tf` backend endpoint literal.
+- **DHCP:** router pool is `.150`–`.254` — static homelab IPs (.1–.145) stay out of the pool.
+- **Renumber procedure:** `docs/tailscale-derp-runbook.md`.
+
 ## Proxmox Host
 
 | Property | Value |
 |----------|-------|
 | Hostname | `prxhp136` |
-| IP Address | `192.168.1.134/24` |
-| Gateway | `192.168.1.1` |
-| DNS | `192.168.1.2` (AdGuard) |
-| SSH Access | `ssh -i ~/.ssh/homelab_key root@192.168.1.134` |
+| IP Address | `10.10.10.134/24` |
+| Gateway | `10.10.10.1` |
+| DNS | `10.10.10.2` (AdGuard) |
+| SSH Access | `ssh -i ~/.ssh/homelab_key root@10.10.10.134` |
 
 **Config file:** `/etc/network/interfaces` on Proxmox host
 
@@ -20,79 +28,79 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 
 | Service | Type | ID | IP Address | MAC Address | Hostname | Notes |
 |---------|------|-----|------------|-------------|----------|-------|
-| **Proxmox Host** | Physical | - | 192.168.1.134 | — | `prxhp136` | Proxmox VE management (pve-manager/9.2.3) |
-| **Home Assistant** | VM | 100 | 192.168.1.100 | `02:8D:AB:80:C0:9D` | `haos-17.1` | Home automation |
-| **Docker/NPM/Arcane** | LXC | 101 | 192.168.1.142 | `BC:24:11:C5:96:4F` | `docker` | 2 cores, 6GB RAM, 150GB disk, iGPU passthrough |
-| **Tailscale** | LXC | 102 | 192.168.1.102 | `BC:24:11:CA:68:89` | `tailscale` | VPN |
-| **AdGuard Home** | LXC | 103 | 192.168.1.2 | `BC:24:11:D5:A2:77` | `adguard` | DNS ad-blocking |
-| **Vaultwarden** | LXC | 104 | 192.168.1.144 | `BC:24:11:78:83:C3` | `alpine-vaultwarden` | Password manager |
-| **Jellyfin** | LXC | 105 | 192.168.1.145 | `BC:24:11:46:95:DE` | `jellyfin` | Media server (native, not Docker), iGPU passthrough |
+| **Proxmox Host** | Physical | - | 10.10.10.134 | — | `prxhp136` | Proxmox VE management (pve-manager/9.2.3) |
+| **Home Assistant** | VM | 100 | 10.10.10.100 | `02:8D:AB:80:C0:9D` | `haos-17.1` | Home automation |
+| **Docker/NPM/Arcane** | LXC | 101 | 10.10.10.142 | `BC:24:11:C5:96:4F` | `docker` | 2 cores, 6GB RAM, 150GB disk, iGPU passthrough |
+| **Tailscale** | LXC | 102 | 10.10.10.102 | `BC:24:11:CA:68:89` | `tailscale` | VPN |
+| **AdGuard Home** | LXC | 103 | 10.10.10.2 | `BC:24:11:D5:A2:77` | `adguard` | DNS ad-blocking |
+| **Vaultwarden** | LXC | 104 | 10.10.10.144 | `BC:24:11:78:83:C3` | `alpine-vaultwarden` | Password manager |
+| **Jellyfin** | LXC | 105 | 10.10.10.145 | `BC:24:11:46:95:DE` | `jellyfin` | Media server (native, not Docker), iGPU passthrough |
 
 ## Service Access Points
 
 | Service | URL | Config Location |
 |---------|-----|----------------|
-| Proxmox Web UI | `https://192.168.1.134:8006` | Proxmox host |
-| Home Assistant | `http://192.168.1.100:8123` | VM 100 (HA OS) |
-| Nginx Proxy Manager | `http://192.168.1.142:81` | Docker container in LXC 101 |
-| Arcane | `http://192.168.1.142:3552` | Docker container in LXC 101 (service orchestrator) |
+| Proxmox Web UI | `https://10.10.10.134:8006` | Proxmox host |
+| Home Assistant | `http://10.10.10.100:8123` | VM 100 (HA OS) |
+| Nginx Proxy Manager | `http://10.10.10.142:81` | Docker container in LXC 101 |
+| Arcane | `http://10.10.10.142:3552` | Docker container in LXC 101 (service orchestrator) |
 | Vaultwarden | `https://vw.hp136.duckdns.org` | LXC 104 (Alpine), port 8000 (proxied via NPM) |
-| AdGuard Home | `http://192.168.1.2` | LXC 103 |
-| Tailscale | `http://192.168.1.102` | LXC 102 |
-| Sonarr | `http://192.168.1.142:8989` | Docker (managed via Arcane) |
-| Radarr | `http://192.168.1.142:7878` | Docker (managed via Arcane) |
-| Lidarr | `http://192.168.1.142:8686` | Docker (managed via Arcane) |
-| Prowlarr | `http://192.168.1.142:9696` | Docker (managed via Arcane) |
-| Bazarr | `http://192.168.1.142:6767` | Docker (managed via Arcane) |
-| Deluge | `http://192.168.1.142:8112` | Docker (managed via Arcane) |
-| Garage (S3 API) | `http://192.168.1.142:3900` | Docker container in LXC 101 (managed via Arcane) — Terraform state backend |
-| Garage (RPC) | `http://192.168.1.142:3901` | Garage cluster/internal RPC |
-| Garage (Web UI) | `http://192.168.1.142:3902` | Garage web interface |
-| Garage (Admin API) | `http://192.168.1.142:3903` | Garage admin API |
-| Jellyfin | `http://192.168.1.145:8096` | LXC 105 (native, Ubuntu 24.04, iGPU passthrough) |
-| Navidrome | `http://192.168.1.142:4533` | Docker (managed via Arcane) — Subsonic/MPD-compatible music streaming |
+| AdGuard Home | `http://10.10.10.2` | LXC 103 |
+| Tailscale | `http://10.10.10.102` | LXC 102 |
+| Sonarr | `http://10.10.10.142:8989` | Docker (managed via Arcane) |
+| Radarr | `http://10.10.10.142:7878` | Docker (managed via Arcane) |
+| Lidarr | `http://10.10.10.142:8686` | Docker (managed via Arcane) |
+| Prowlarr | `http://10.10.10.142:9696` | Docker (managed via Arcane) |
+| Bazarr | `http://10.10.10.142:6767` | Docker (managed via Arcane) |
+| Deluge | `http://10.10.10.142:8112` | Docker (managed via Arcane) |
+| Garage (S3 API) | `http://10.10.10.142:3900` | Docker container in LXC 101 (managed via Arcane) — Terraform state backend |
+| Garage (RPC) | `http://10.10.10.142:3901` | Garage cluster/internal RPC |
+| Garage (Web UI) | `http://10.10.10.142:3902` | Garage web interface |
+| Garage (Admin API) | `http://10.10.10.142:3903` | Garage admin API |
+| Jellyfin | `http://10.10.10.145:8096` | LXC 105 (native, Ubuntu 24.04, iGPU passthrough) |
+| Navidrome | `http://10.10.10.142:4533` | Docker (managed via Arcane) — Subsonic/MPD-compatible music streaming |
 | | `https://music.hp136.duckdns.org` | Proxied via NPM with SSL (wildcard cert) |
-| slskd | `http://192.168.1.142:5030` | Docker (managed via Arcane) — Soulseek P2P music discovery |
-| | `http://192.168.1.142:50300` | slskd DHT/listening port |
-| Soularr | `http://192.168.1.142:8265` | Docker (managed via Arcane) — syncs Soulseek downloads to Lidarr |
-| Flaresolverr | `http://192.168.1.142:8191` | Docker (managed via Arcane) — Cloudflare bypass proxy for Prowlarr |
+| slskd | `http://10.10.10.142:5030` | Docker (managed via Arcane) — Soulseek P2P music discovery |
+| | `http://10.10.10.142:50300` | slskd DHT/listening port |
+| Soularr | `http://10.10.10.142:8265` | Docker (managed via Arcane) — syncs Soulseek downloads to Lidarr |
+| Flaresolverr | `http://10.10.10.142:8191` | Docker (managed via Arcane) — Cloudflare bypass proxy for Prowlarr |
 
 ## DNS Configuration
 
-**AdGuard Home** (`192.168.1.2`) manages local DNS records:
+**AdGuard Home** (`10.10.10.2`) manages local DNS records:
 
 | Domain | Points To | Purpose |
 |--------|-----------|---------|
-| `homeassistant.local` | `192.168.1.142` | Proxied via NPM to HA |
-| `homeassistant.home` | `192.168.1.142` | Alternative domain (recommended) |
-| `adguard.local` | `192.168.1.2` | AdGuard admin panel |
-| `adguard.home` | `192.168.1.2` | Alternative domain |
-| `npm.local` | `192.168.1.142` | NPM admin panel |
-| `npm.home` | `192.168.1.142` | Alternative domain |
+| `homeassistant.local` | `10.10.10.142` | Proxied via NPM to HA |
+| `homeassistant.home` | `10.10.10.142` | Alternative domain (recommended) |
+| `adguard.local` | `10.10.10.2` | AdGuard admin panel |
+| `adguard.home` | `10.10.10.2` | Alternative domain |
+| `npm.local` | `10.10.10.142` | NPM admin panel |
+| `npm.home` | `10.10.10.142` | Alternative domain |
 
-**To use:** Set your device's DNS server to `192.168.1.2`
+**To use:** Set your device's DNS server to `10.10.10.2`
 
 ## Nginx Proxy Manager Configuration
 
-All domains use the wildcard SSL certificate `*.hp136.duckdns.org` (Let's Encrypt, via NPM). Proxy hosts configured in NPM (http://192.168.1.142:81):
+All domains use the wildcard SSL certificate `*.hp136.duckdns.org` (Let's Encrypt, via NPM). Proxy hosts configured in NPM (http://10.10.10.142:81):
 
 | Domain | Forward To | Port | Notes |
 |--------|------------|------|-------|
-| `homeassistant.local` / `homeassistant.home` | `192.168.1.100` | 8123 | Websockets ✅ |
-| `ha.hp136.duckdns.org` | `192.168.1.100` | 8123 | Home Assistant |
-| `agh.hp136.duckdns.org` | `192.168.1.2` | 80 | AdGuard admin |
-| `arcan.hp136.duckdns.org` | `192.168.1.142` | 3552 | Arcane orchestrator |
-| `npm.hp136.duckdns.org` | `192.168.1.142` | 81 | NPM admin panel |
-| `vw.hp136.duckdns.org` | `192.168.1.144` | 8000 | Vaultwarden |
-| `music.hp136.duckdns.org` | `192.168.1.142` | 4533 | Navidrome |
-| `son.hp136.duckdns.org` | `192.168.1.142` | 8989 | Sonarr |
-| `rad.hp136.duckdns.org` | `192.168.1.142` | 7878 | Radarr |
-| `lidarr.hp136.duckdns.org` | `192.168.1.142` | 8686 | Lidarr |
-| `prowlarr.hp136.duckdns.org` | `192.168.1.142` | 9696 | Prowlarr |
-| `bazarr.hp136.duckdns.org` | `192.168.1.142` | 6767 | Bazarr |
-| `deluge.hp136.duckdns.org` | `192.168.1.142` | 8112 | Deluge |
-| `jelly.hp136.duckdns.org` | `192.168.1.145` | 8096 | Jellyfin |
-| `frigate.hp136.duckdns.org` | `192.168.1.142` | 5000 | ⚠️ Not deployed — configured for future use |
+| `homeassistant.local` / `homeassistant.home` | `10.10.10.100` | 8123 | Websockets ✅ |
+| `ha.hp136.duckdns.org` | `10.10.10.100` | 8123 | Home Assistant |
+| `agh.hp136.duckdns.org` | `10.10.10.2` | 80 | AdGuard admin |
+| `arcan.hp136.duckdns.org` | `10.10.10.142` | 3552 | Arcane orchestrator |
+| `npm.hp136.duckdns.org` | `10.10.10.142` | 81 | NPM admin panel |
+| `vw.hp136.duckdns.org` | `10.10.10.144` | 8000 | Vaultwarden |
+| `music.hp136.duckdns.org` | `10.10.10.142` | 4533 | Navidrome |
+| `son.hp136.duckdns.org` | `10.10.10.142` | 8989 | Sonarr |
+| `rad.hp136.duckdns.org` | `10.10.10.142` | 7878 | Radarr |
+| `lidarr.hp136.duckdns.org` | `10.10.10.142` | 8686 | Lidarr |
+| `prowlarr.hp136.duckdns.org` | `10.10.10.142` | 9696 | Prowlarr |
+| `bazarr.hp136.duckdns.org` | `10.10.10.142` | 6767 | Bazarr |
+| `deluge.hp136.duckdns.org` | `10.10.10.142` | 8112 | Deluge |
+| `jelly.hp136.duckdns.org` | `10.10.10.145` | 8096 | Jellyfin |
+| `frigate.hp136.duckdns.org` | `10.10.10.142` | 5000 | ⚠️ Not deployed — configured for future use |
 
 ## How to Recreate Static IPs
 
@@ -100,11 +108,11 @@ All domains use the wildcard SSL certificate `*.hp136.duckdns.org` (Let's Encryp
 
 SSH to Proxmox and edit configs:
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134
+ssh -i ~/.ssh/homelab_key root@10.10.10.134
 
 # For each container, edit /etc/pve/lxc/<ID>.conf
 # Replace net0 line with:
-# net0: name=eth0,bridge=vmbr0,hwaddr=<MAC>,firewall=1,ip=<IP>/24,gw=192.168.1.1,type=veth
+# net0: name=eth0,bridge=vmbr0,hwaddr=<MAC>,firewall=1,ip=<IP>/24,gw=10.10.10.1,type=veth
 
 # Restart container
 pct stop <ID> && pct start <ID>
@@ -115,9 +123,9 @@ pct stop <ID> && pct start <ID>
 Inside HA OS (via Proxmox console or SSH):
 ```bash
 ha network update enp6s18 --ipv4-method static \
-  --ipv4-address 192.168.1.100/24 \
-  --ipv4-gateway 192.168.1.1 \
-  --ipv4-nameserver 192.168.1.2
+  --ipv4-address 10.10.10.100/24 \
+  --ipv4-gateway 10.10.10.1 \
+  --ipv4-nameserver 10.10.10.2
 ```
 
 ### Proxmox Host
@@ -126,8 +134,8 @@ Edit `/etc/network/interfaces`:
 ```bash
 auto vmbr0
 iface vmbr0 inet static
-    address 192.168.1.134/24
-    gateway 192.168.1.1
+    address 10.10.10.134/24
+    gateway 10.10.10.1
     bridge-ports nic0
     bridge-stp off
     bridge-fd 0
@@ -135,7 +143,7 @@ iface vmbr0 inet static
 
 ## Router Configuration
 
-Router access: `http://192.168.1.1` (credentials on router sticker)
+Router access: `http://10.10.10.1` (credentials on router sticker)
 
 ### DHCP Settings (requerido para evitar conflictos)
 
@@ -143,10 +151,10 @@ El pool DHCP del router debe **excluir** todas las IPs estáticas del homelab:
 
 | Campo | Valor |
 |-------|-------|
-| Pool inicio | `192.168.1.150` |
-| Pool fin | `192.168.1.254` |
+| Pool inicio | `10.10.10.150` |
+| Pool fin | `10.10.10.254` |
 | Máscara | `255.255.255.0` |
-| Gateway | `192.168.1.1` |
+| Gateway | `10.10.10.1` |
 | Tiempo de concesión | `1440` min (default) |
 
 **IPs estáticas fuera del pool:** `.2` (AdGuard), `.100` (HA), `.102` (Tailscale), `.134` (Proxmox), `.142` (Docker), `.144` (Vaultwarden)
@@ -157,8 +165,8 @@ Los dispositivos deben recibir AdGuard como DNS. **NO apuntar a IPs sin servidor
 
 | Campo | Valor |
 |-------|-------|
-| DNS primario | `192.168.1.2` (AdGuard) |
-| DNS secundario | `192.168.1.2` (o dejarlo vacío) |
+| DNS primario | `10.10.10.2` (AdGuard) |
+| DNS secundario | `10.10.10.2` (o dejarlo vacío) |
 
 ### Troubleshooting — Problema detectado (Mayo 2026)
 
@@ -166,48 +174,48 @@ Los dispositivos deben recibir AdGuard como DNS. **NO apuntar a IPs sin servidor
 
 **Causa raíz:**
 1. El pool DHCP original usaba `.128-254`, pisando IPs estáticas (`.134`, `.142`)
-2. El DNS del router apuntaba a `192.168.1.136` (alarma o cámara IP), que **no tiene servidor DNS** — los dispositivos recibían un DNS que no respondía y fallaban al resolver dominios
+2. El DNS del router apuntaba a `10.10.10.136` (alarma o cámara IP), que **no tiene servidor DNS** — los dispositivos recibían un DNS que no respondía y fallaban al resolver dominios
 
-**Fix:** Ajustar pool DHCP a `.150-254` y DNS a `192.168.1.2`.
+**Fix:** Ajustar pool DHCP a `.150-254` y DNS a `10.10.10.2`.
 
 ## DHCP Range
 
-Reserve `192.168.1.150-254` for DHCP clients on your router to avoid conflicts with static homelab IPs.
+Reserve `10.10.10.150-254` for DHCP clients on your router to avoid conflicts with static homelab IPs.
 
 ## Notes
 
 - All static IPs use `/24` subnet (255.255.255.0)
-- Gateway for all devices: `192.168.1.1` (your router)
-- All devices should use AdGuard (`192.168.1.2`) as DNS server — configure this ON THE ROUTER so DHCP clients receive it automatically
+- Gateway for all devices: `10.10.10.1` (your router)
+- All devices should use AdGuard (`10.10.10.2`) as DNS server — configure this ON THE ROUTER so DHCP clients receive it automatically
 - `.local` domains may conflict with mDNS - prefer using `.home` domains
 
 ## Frigate NVR (NOT deployed)
 
 Frigate is **configured but not currently running** on LXC 101. The compose file and config exist on the host at `/root/docker/frigate/`.
 
-**Why not deployed:** The Dahua camera (192.168.1.108) requires authentication setup and OpenVINO GPU passthrough validation.
+**Why not deployed:** The Dahua camera (10.10.10.108) requires authentication setup and OpenVINO GPU passthrough validation.
 
 **To deploy when ready:**
 
 ```bash
 # 1. Set FRIGATE_RTSP_PASSWORD in docker/.env
 # 2. Install Intel OpenCL runtime:
-ssh root@192.168.1.142 "apt install -y intel-opencl-icd intel-igc-cm && groupadd -g 44 video && usermod -aG video root"
+ssh root@10.10.10.142 "apt install -y intel-opencl-icd intel-igc-cm && groupadd -g 44 video && usermod -aG video root"
 
 # 3. Start Frigate:
-ssh root@192.168.1.134 "pct exec 101 -- docker compose -f /root/docker/frigate/compose.yml up -d"
+ssh root@10.10.10.134 "pct exec 101 -- docker compose -f /root/docker/frigate/compose.yml up -d"
 
 # 4. View logs:
-ssh root@192.168.1.134 "pct exec 101 -- docker logs frigate -f"
+ssh root@10.10.10.134 "pct exec 101 -- docker logs frigate -f"
 ```
 
-**Access when running:** http://192.168.1.142:5000
+**Access when running:** http://10.10.10.142:5000
 
 ### Camera — Dahua IPC-HDW2230T-AS-S2
 
 | Property | Value |
 |----------|-------|
-| IP | `192.168.1.108` |
+| IP | `10.10.10.108` |
 | RTSP port | `554` |
 | Auth | Digest (no Basic) |
 | RTSP path (sub/main) | `/live` |
@@ -217,7 +225,7 @@ ssh root@192.168.1.134 "pct exec 101 -- docker logs frigate -f"
 
 - **Camera IP lock:** The Dahua blocks IPs after 5 failed auth attempts (`General.LockLoginEnable=true`). If Frigate shows auth errors, disable via CGI:
   ```bash
-  curl --digest -u admin:<password> 'http://192.168.1.108/cgi-bin/configManager.cgi?action=setConfig&General.LockLoginEnable=false'
+  curl --digest -u admin:<password> 'http://10.10.10.108/cgi-bin/configManager.cgi?action=setConfig&General.LockLoginEnable=false'
   ```
 - **OpenVINO model shape:** The bundled model expects 300×300 input. If you see a shape broadcast error, verify `model.width: 300`, `model.height: 300` in config.
 - **go2rtc env limitation:** Frigate's bundled go2rtc v1.9.10 does not support `${VAR}` in stream URLs. Use `{{ VAR }}` Jinja2 syntax via `config.yml.j2` which Frigate's Python runtime resolves before passing to go2rtc.

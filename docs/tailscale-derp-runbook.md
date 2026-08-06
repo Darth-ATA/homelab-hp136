@@ -1,6 +1,6 @@
 # Tailscale DERP + Subnet Cutover Runbook
 
-Operational runbook for the subnet migration (`192.168.1.0/24` → `10.10.10.0/24`).
+Operational runbook for the subnet migration (`10.10.10.0/24` → `10.10.10.0/24`).
 Everything here is **manual runtime state** — it intentionally lives OUT of Terraform
 (REQ-NET-005/REQ-NET-008). The broken PR #90 `null_resource` (`tailscale set
 --force-prefer-derp=mad`) was removed in `fix(tailscale): remove invalid flag`
@@ -48,7 +48,7 @@ Run on LXC 102 AFTER infra is on 10.10.10.x AND the new route is approved in the
 
 1. Advertise BOTH routes (old + new):
    ```bash
-   pct exec 102 -- tailscale set --advertise-routes=192.168.1.0/24,10.10.10.0/24
+   pct exec 102 -- tailscale set --advertise-routes=10.10.10.0/24,10.10.10.0/24
    ```
 2. Approve `10.10.10.0/24` in the Tailscale admin console (Access Controls / routes).
 3. Verify new route is accepted: `pct exec 102 -- tailscale status`
@@ -59,7 +59,7 @@ Run on LXC 102 AFTER infra is on 10.10.10.x AND the new route is approved in the
 5. Verify: `pct exec 102 -- tailscale debug prefs` → `AdvertiseRoutes: ["10.10.10.0/24"]`
 6. Original repro: connect from external default-config WiFi and confirm homelab access.
 
-Rollback: re-advertise `192.168.1.0/24`, re-approve in console.
+Rollback: re-advertise `10.10.10.0/24`, re-approve in console.
 
 ---
 

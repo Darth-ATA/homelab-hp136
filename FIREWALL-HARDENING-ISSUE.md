@@ -27,7 +27,7 @@ Follow-up to #3 (Firewall Configuration). Now that the firewall is enabled with 
 ### 3. Define Management IPs
 Add to `terraform.tfvars` or update `variables.tf`:
 ```hcl
-management_ips = ["192.168.1.X/32", "192.168.1.Y/32"]  # Specific device IPs
+management_ips = ["10.10.10.X/32", "10.10.10.Y/32"]  # Specific device IPs
 ```
 
 ### 4. VLAN for IoT Devices (Home Assistant)

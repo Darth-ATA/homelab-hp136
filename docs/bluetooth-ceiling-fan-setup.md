@@ -14,7 +14,7 @@ The N100's built-in Bluetooth cannot be shared between the Proxmox host and a VM
 ### 1. Blacklist btusb on Proxmox Host
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134
+ssh -i ~/.ssh/homelab_key root@10.10.10.134
 
 # Create blacklist config
 echo 'blacklist btusb' > /etc/modprobe.d/blacklist-btusb.conf
@@ -29,7 +29,7 @@ reboot
 After reboot, verify btusb is no longer loaded:
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "lsmod | grep btusb"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "lsmod | grep btusb"
 # Should return nothing (btusb not loaded)
 ```
 
@@ -48,7 +48,7 @@ terraform apply -target=null_resource.bluetooth_usb_passthrough
 Verify the device is attached to the VM:
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "qm config 100 | grep usb"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "qm config 100 | grep usb"
 # Expected: usb1: host=0bda:c821
 ```
 
@@ -57,7 +57,7 @@ ssh -i ~/.ssh/homelab_key root@192.168.1.134 "qm config 100 | grep usb"
 Access the HA VM terminal:
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "qm terminal 100"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "qm terminal 100"
 # Login to HAOS CLI
 ```
 
@@ -112,7 +112,7 @@ hciconfig -a
 ### btusb still loaded after blacklist
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134
+ssh -i ~/.ssh/homelab_key root@10.10.10.134
 lsmod | grep btusb
 # If still loaded, check initramfs was rebuilt
 ls -la /etc/modprobe.d/blacklist-btusb.conf
@@ -123,13 +123,13 @@ update-initramfs -u -k all
 
 ```bash
 # Check qemu config
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "qm config 100 | grep usb"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "qm config 100 | grep usb"
 
 # Rerun terraform if missing
 terraform apply -target=null_resource.bluetooth_usb_passthrough
 
 # Restart the VM from Proxmox UI or CLI
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "qm reboot 100"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "qm reboot 100"
 ```
 
 ### ble_adv not discovering fan

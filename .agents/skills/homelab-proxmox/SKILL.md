@@ -10,19 +10,19 @@ This skill provides context-specific guidance for the homelab-hp136 project.
 ## Project Overview
 
 **Target**: Intel N100 (16GB RAM, 512GB SSD) running Proxmox VE
-**Host**: 192.168.1.134 (prxhp136)
+**Host**: 10.10.10.134 (prxhp136)
 **Goal**: Full IaC to regenerate entire homelab on new hardware
 
 ## Infrastructure
 
 | ID  | Name        | Type          | IP            | Specs                  |
 | --- | ----------- | ------------- | ------------- | ---------------------- |
-| 100 | home_assistant | VM (HAOS)  | 192.168.1.100 | 2 cores, 4GB RAM, 32GB disk |
-| 101 | docker      | LXC           | 192.168.1.142 | 2 cores, **6GB RAM, 150GB disk, iGPU passthrough** |
-| 102 | tailscale   | LXC           | 192.168.1.102 | 1 core, 512MB, 2GB     |
-| 103 | adguard     | LXC           | 192.168.1.2   | 1 core, 512MB, 2GB     |
-| 104 | vaultwarden | LXC           | 192.168.1.144 | 1 core, 512MB, 4GB     |
-| 105 | jellyfin    | LXC           | 192.168.1.145 | 2 cores, 4GB RAM, 16GB disk, iGPU passthrough |
+| 100 | home_assistant | VM (HAOS)  | 10.10.10.100 | 2 cores, 4GB RAM, 32GB disk |
+| 101 | docker      | LXC           | 10.10.10.142 | 2 cores, **6GB RAM, 150GB disk, iGPU passthrough** |
+| 102 | tailscale   | LXC           | 10.10.10.102 | 1 core, 512MB, 2GB     |
+| 103 | adguard     | LXC           | 10.10.10.2   | 1 core, 512MB, 2GB     |
+| 104 | vaultwarden | LXC           | 10.10.10.144 | 1 core, 512MB, 4GB     |
+| 105 | jellyfin    | LXC           | 10.10.10.145 | 2 cores, 4GB RAM, 16GB disk, iGPU passthrough |
 
 ## Docker Stack (LXC 101)
 
@@ -34,7 +34,7 @@ This skill provides context-specific guidance for the homelab-hp136 project.
 
 > **Note:** Jellyfin was migrated to a **dedicated LXC 105** (native, not Docker). See infra table above.
 
-> **Note:** All services are defined as Arcane projects under `/root/docker/arcane/data/projects/`. Do NOT use raw `docker compose` — use the Arcane UI at http://192.168.1.142:3552.
+> **Note:** All services are defined as Arcane projects under `/root/docker/arcane/data/projects/`. Do NOT use raw `docker compose` — use the Arcane UI at http://10.10.10.142:3552.
 
 ## Terraform Management — Terraform-First Infrastructure
 
@@ -183,7 +183,7 @@ Updating only the RootFolders endpoint is NOT sufficient.
 ## Networking
 
 - Static IPs configured in Proxmox (not DHCP)
-- AdGuard at 192.168.1.2 (primary DNS)
+- AdGuard at 10.10.10.2 (primary DNS)
 - All services documented in NETWORK.md
 
 ## Key Files
@@ -206,7 +206,7 @@ Updating only the RootFolders endpoint is NOT sufficient.
 
 ```bash
 # SSH to Proxmox
-ssh -i ~/.ssh/homelab_key root@192.168.1.134
+ssh -i ~/.ssh/homelab_key root@10.10.10.134
 
 # List containers
 pct list
