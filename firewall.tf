@@ -49,7 +49,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "dns" {
     type    = "in"
     action  = "ACCEPT"
     comment = "DNS TCP"
-    dest    = "192.168.1.2"
+    dest    = "${local.subnet_base}.${local.node_ips.adguard}"
     dport   = "53"
     proto   = "tcp"
     source  = local.lan_cidr
@@ -59,7 +59,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "dns" {
     type    = "in"
     action  = "ACCEPT"
     comment = "DNS UDP"
-    dest    = "192.168.1.2"
+    dest    = "${local.subnet_base}.${local.node_ips.adguard}"
     dport   = "53"
     proto   = "udp"
     source  = local.lan_cidr
@@ -75,7 +75,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "web" {
     type    = "in"
     action  = "ACCEPT"
     comment = "HTTP"
-    dest    = "192.168.1.142"
+    dest    = "${local.subnet_base}.${local.node_ips.docker}"
     dport   = "80"
     proto   = "tcp"
     source  = local.lan_cidr
@@ -85,7 +85,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "web" {
     type    = "in"
     action  = "ACCEPT"
     comment = "HTTPS"
-    dest    = "192.168.1.142"
+    dest    = "${local.subnet_base}.${local.node_ips.docker}"
     dport   = "443"
     proto   = "tcp"
     source  = local.lan_cidr
@@ -95,7 +95,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "web" {
     type    = "in"
     action  = "ACCEPT"
     comment = "NPM Admin"
-    dest    = "192.168.1.142"
+    dest    = "${local.subnet_base}.${local.node_ips.docker}"
     dport   = "81"
     proto   = "tcp"
     source  = local.lan_cidr
@@ -111,7 +111,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "home_ass
     type    = "in"
     action  = "ACCEPT"
     comment = "Home Assistant UI"
-    dest    = "192.168.1.100"
+    dest    = "${local.subnet_base}.${local.node_ips.ha}"
     dport   = "8123"
     proto   = "tcp"
     source  = local.lan_cidr
@@ -121,7 +121,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "home_ass
     type    = "in"
     action  = "ACCEPT"
     comment = "mDNS (Zeroconf discovery)"
-    dest    = "192.168.1.100"
+    dest    = "${local.subnet_base}.${local.node_ips.ha}"
     dport   = "5353"
     proto   = "udp"
     source  = local.lan_cidr
@@ -131,7 +131,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "home_ass
     type    = "in"
     action  = "ACCEPT"
     comment = "UPnP (discovery)"
-    dest    = "192.168.1.100"
+    dest    = "${local.subnet_base}.${local.node_ips.ha}"
     dport   = "1900"
     proto   = "udp"
     source  = local.lan_cidr
@@ -147,7 +147,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "tailscal
     type    = "in"
     action  = "ACCEPT"
     comment = "Tailscale UDP"
-    dest    = "192.168.1.102"
+    dest    = "${local.subnet_base}.${local.node_ips.tailscale}"
     dport   = "41641"
     proto   = "udp"
     source  = local.lan_cidr
@@ -163,7 +163,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "vaultwar
     type    = "in"
     action  = "ACCEPT"
     comment = "Vaultwarden HTTP"
-    dest    = "192.168.1.144"
+    dest    = "${local.subnet_base}.${local.node_ips.vaultwarden}"
     dport   = "8000"
     proto   = "tcp"
     source  = local.lan_cidr
@@ -179,7 +179,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "jellyfin
     type    = "in"
     action  = "ACCEPT"
     comment = "Jellyfin HTTP"
-    dest    = "192.168.1.145"
+    dest    = "${local.subnet_base}.${local.node_ips.jellyfin}"
     dport   = "8096"
     proto   = "tcp"
     source  = local.lan_cidr

@@ -7,6 +7,7 @@
 locals {
   subnet_base        = "192.168.1" # ships legacy; flip to "10.10.10" at cutover
   legacy_subnet_base = "192.168.1" # documented exception: docker hold address until Apply C
+  new_subnet_base    = "10.10.10"  # staging target: eth1 (docker) + host dual-stack before the flip
 
   lan_cidr    = "${local.subnet_base}.0/24"
   lan_gateway = "${local.subnet_base}.1"

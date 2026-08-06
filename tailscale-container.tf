@@ -15,8 +15,8 @@ resource "proxmox_virtual_environment_container" "tailscale" {
     hostname = "tailscale"
     ip_config {
       ipv4 {
-        address = "192.168.1.102/24"
-        gateway = "192.168.1.1"
+        address = "${local.subnet_base}.${local.node_ips.tailscale}/24"
+        gateway = local.lan_gateway
       }
     }
   }

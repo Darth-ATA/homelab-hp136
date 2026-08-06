@@ -7,6 +7,16 @@ resource "proxmox_virtual_environment_container" "docker" {
   started      = true
   unprivileged = false
 
+  # Cutover ordering: docker (Garage state host) moves LAST so the state
+  # endpoint stays reachable via eth1 while the other containers renumber.
+  depends_on = [
+    proxmox_virtual_environment_container.adguard,
+    proxmox_virtual_environment_container.tailscale,
+    proxmox_virtual_environment_container.vaultwarden,
+    proxmox_virtual_environment_container.jellyfin,
+    proxmox_virtual_environment_vm.home_assistant,
+  ]
+
   description = "Docker host: media stack + NPM + Arcane (2 cores, 6GB RAM, 150GB disk, iGPU passthrough)"
 
   tags = ["community-script", "os"]
@@ -15,8 +25,21 @@ resource "proxmox_virtual_environment_container" "docker" {
     hostname = "docker"
     ip_config {
       ipv4 {
-        address = "192.168.1.142/24"
-        gateway = "192.168.1.1"
+        address = var.stage_docker_hold ? "${local.legacy_subnet_base}.${local.node_ips.docker}/24" : "${local.subnet_base}.${local.node_ips.docker}/24"
+        gateway = local.lan_gateway
+      }
+    }
+
+    # Staging eth1: dual-homes docker on the NEW subnet (10.10.10.142) so the
+    # Garage state endpoint survives the cutover. Gateway intentionally omitted
+    # (bpg provider: ipv4.gateway optional). Removed together with the net0
+    # switch at Apply C (stage_dual_stack=false).
+    dynamic "ip_config" {
+      for_each = var.stage_dual_stack ? [1] : []
+      content {
+        ipv4 {
+          address = "${local.new_subnet_base}.${local.node_ips.docker}/24"
+        }
       }
     }
   }
@@ -40,6 +63,17 @@ resource "proxmox_virtual_environment_container" "docker" {
     bridge      = "vmbr0"
     mac_address = "BC:24:11:C5:96:4F"
     firewall    = true
+  }
+
+  # Staging eth1 on the NEW subnet (paired positionally with the dynamic
+  # ip_config in initialization). Removed at Apply C alongside the net0 flip.
+  dynamic "network_interface" {
+    for_each = var.stage_dual_stack ? [1] : []
+    content {
+      name     = "eth1"
+      bridge   = "vmbr0"
+      firewall = true
+    }
   }
 
   operating_system {
