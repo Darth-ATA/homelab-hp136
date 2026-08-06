@@ -19,12 +19,12 @@ set -euo pipefail
 
 # Configuration
 LXC_ID="101"
-PROXMOX_HOST="192.168.1.134"
+PROXMOX_HOST="10.10.10.134"
 SSH_KEY="~/.ssh/homelab_key"
 LOCAL_DIR="$(cd "$(dirname "$0")/../docker/arcane" && pwd)"
 REMOTE_DIR="/root/docker/arcane"
 APP_PORT="3552"
-APP_URL="http://192.168.1.142:${APP_PORT}"
+APP_URL="http://10.10.10.142:${APP_PORT}"
 
 # Colors for output
 RED='\033[0;31m'

@@ -1,14 +1,14 @@
 #!/bin/bash
 # check-router-dns.sh — Monitor router DNS configuration
 #
-# Detects when the router's DHCP DNS setting changes away from AdGuard (192.168.1.2).
+# Detects when the router's DHCP DNS setting changes away from AdGuard (10.10.10.2).
 # This has happened twice before (May 2026, Jun 2026) — the DNS was silently
-# set to 192.168.1.136 (a camera with no DNS server), breaking internet for
+# set to 10.10.10.136 (a camera with no DNS server), breaking internet for
 # all new WiFi clients.
 #
 # How it works:
-#   1. Queries the router (192.168.1.1) as a DNS forwarder for google.com
-#   2. If that fails, queries AdGuard directly (192.168.1.2) to distinguish
+#   1. Queries the router (10.10.10.1) as a DNS forwarder for google.com
+#   2. If that fails, queries AdGuard directly (10.10.10.2) to distinguish
 #      "router DNS is misconfigured" from "network is down"
 #   3. Logs results and warns on misconfiguration
 #
@@ -24,8 +24,8 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # ─── Configuration ────────────────────────────────────────────────────────────
 
-ROUTER_DNS="192.168.1.1"
-ADGUARD_DNS="192.168.1.2"
+ROUTER_DNS="10.10.10.1"
+ADGUARD_DNS="10.10.10.2"
 TEST_DOMAIN="google.com"
 LOG_FILE="/var/log/check-router-dns.log"
 
@@ -203,8 +203,8 @@ EOF
 
         log_warn "Router DNS ($ROUTER_DNS) FAILED to resolve $TEST_DOMAIN"
         log_warn "AdGuard ($ADGUARD_DNS) resolves OK → $adguard_result"
-        log_warn "Router DNS is likely set to an incorrect upstream (e.g. 192.168.1.136)"
-        log_warn "Fix: Log into http://192.168.1.1 and set DNS to $ADGUARD_DNS"
+        log_warn "Router DNS is likely set to an incorrect upstream (e.g. 10.10.10.136)"
+        log_warn "Fix: Log into http://10.10.10.1 and set DNS to $ADGUARD_DNS"
         echo "[$(date +'%Y-%m-%d %H:%M:%S')] WARN: Router DNS is BROKEN — AdGuard works but router doesn't forward"
         exit 2
 

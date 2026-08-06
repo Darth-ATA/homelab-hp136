@@ -18,7 +18,7 @@
 #
 # Prerequisites:
 #   - SSH key at ~/.ssh/homelab_key
-#   - Proxmox host at 192.168.1.134
+#   - Proxmox host at 10.10.10.134
 #   - LXC 101 (docker) running
 #   - docker/garage/.env (can be empty — script generates missing values)
 
@@ -27,7 +27,7 @@ set -Eeuo pipefail
 # ──────────────────────────────────────────────
 # CONFIG
 # ──────────────────────────────────────────────
-PROXMOX_HOST="192.168.1.134"
+PROXMOX_HOST="10.10.10.134"
 SSH_KEY="${HOME}/.ssh/homelab_key"
 SSH_OPTS=(-i "${SSH_KEY}" -o StrictHostKeyChecking=no -o ConnectTimeout=5)
 LXC_ID="101"
@@ -403,7 +403,7 @@ if ${WITH_MIGRATE}; then
     source "${LOCAL_ENV}" 2>/dev/null || true
     set +a
 
-    export AWS_ENDPOINT_URL_S3="http://192.168.1.142:3900"
+    export AWS_ENDPOINT_URL_S3="http://10.10.10.142:3900"
     export AWS_S3_FORCE_PATH_STYLE="true"
     export AWS_DEFAULT_REGION="garage"
 
@@ -427,9 +427,9 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  🚀  Garage v2.3.0 deployed to LXC ${LXC_ID}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "  S3 API:      http://192.168.1.142:3900"
-echo "  Admin API:   http://192.168.1.142:3903"
-echo "  Arcane:      http://192.168.1.142:3552 (project 'garage')"
+echo "  S3 API:      http://10.10.10.142:3900"
+echo "  Admin API:   http://10.10.10.142:3903"
+echo "  Arcane:      http://10.10.10.142:3552 (project 'garage')"
 echo "  Bucket:      ${BUCKET}"
 echo "  Key name:    ${KEY_NAME}"
 echo ""
@@ -438,7 +438,7 @@ echo ""
 echo "  Verify health:  ./scripts/deploy-garage.sh --verify"
 echo ""
 echo "  Migrate state:  source ${LOCAL_ENV}"
-echo "                  export AWS_ENDPOINT_URL_S3=http://192.168.1.142:3900"
+echo "                  export AWS_ENDPOINT_URL_S3=http://10.10.10.142:3900"
 echo "                  export AWS_S3_FORCE_PATH_STYLE=true"
 echo "                  export AWS_DEFAULT_REGION=garage"
 echo "                  terraform init -migrate-state"
