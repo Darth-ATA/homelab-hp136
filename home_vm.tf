@@ -91,7 +91,7 @@ resource "null_resource" "bluetooth_usb_passthrough" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'qm set ${var.home_assistant_vm_id} -usb1 host=0bda:c821 >/dev/null 2>&1'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'qm set ${var.home_assistant_vm_id} -usb1 host=0bda:c821 >/dev/null 2>&1'"
   }
 }
 

@@ -97,7 +97,7 @@ resource "null_resource" "docker_media_mount_point" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct set 101 -mp0 /rpool/data/media,mp=/data/media'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'pct set 101 -mp0 /rpool/data/media,mp=/data/media'"
   }
 }
 
@@ -110,7 +110,7 @@ resource "null_resource" "docker_torrents_mount_point" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct set 101 -mp1 /rpool/data/torrents,mp=/data/torrents'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'pct set 101 -mp1 /rpool/data/torrents,mp=/data/torrents'"
   }
 }
 
@@ -123,7 +123,7 @@ resource "null_resource" "docker_soulseek_mount_point" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct set 101 -mp2 /rpool/data/soulseek,mp=/data/soulseek'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'pct set 101 -mp2 /rpool/data/soulseek,mp=/data/soulseek'"
   }
 }
 
@@ -136,7 +136,7 @@ resource "null_resource" "docker_prune_cron" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 101 -- sh -c \"echo \\\"0 3 */14 * * root docker image prune -a --filter until=72h --force\\\" > /etc/cron.d/docker-prune && chmod 644 /etc/cron.d/docker-prune\"'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'pct exec 101 -- sh -c \"echo \\\"0 3 */14 * * root docker image prune -a --filter until=72h --force\\\" > /etc/cron.d/docker-prune && chmod 644 /etc/cron.d/docker-prune\"'"
   }
 }
 
@@ -150,7 +150,7 @@ resource "null_resource" "soularr_failed_import_denylist" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 101 -- sed -i \"s/^failed_import_denylist = .*/failed_import_denylist = True/\" /root/docker/soularr/config/config.ini'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'pct exec 101 -- sed -i \"s/^failed_import_denylist = .*/failed_import_denylist = True/\" /root/docker/soularr/config/config.ini'"
   }
 }
 
@@ -164,6 +164,6 @@ resource "null_resource" "bazarr_minimum_score" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 101 -- sh -c \"sed -i \\\"s/^  minimum_score: [0-9]*/  minimum_score: 60/\\\" /root/docker/bazarr/config/config/config.yaml && docker restart bazarr\"'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'pct exec 101 -- sh -c \"sed -i \\\"s/^  minimum_score: [0-9]*/  minimum_score: 60/\\\" /root/docker/bazarr/config/config/config.yaml && docker restart bazarr\"'"
   }
 }

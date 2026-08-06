@@ -36,7 +36,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "mgmt" {
     comment = "Proxmox UI (future: restrict to management IPs)"
     dport   = "8006"
     proto   = "tcp"
-    dest    = var.proxmox_host_ip
+    dest    = local.host_ip
   }
 }
 
@@ -52,7 +52,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "dns" {
     dest    = "192.168.1.2"
     dport   = "53"
     proto   = "tcp"
-    source  = var.local_network
+    source  = local.lan_cidr
   }
 
   rule {
@@ -62,7 +62,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "dns" {
     dest    = "192.168.1.2"
     dport   = "53"
     proto   = "udp"
-    source  = var.local_network
+    source  = local.lan_cidr
   }
 }
 
@@ -78,7 +78,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "web" {
     dest    = "192.168.1.142"
     dport   = "80"
     proto   = "tcp"
-    source  = var.local_network
+    source  = local.lan_cidr
   }
 
   rule {
@@ -88,7 +88,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "web" {
     dest    = "192.168.1.142"
     dport   = "443"
     proto   = "tcp"
-    source  = var.local_network
+    source  = local.lan_cidr
   }
 
   rule {
@@ -98,7 +98,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "web" {
     dest    = "192.168.1.142"
     dport   = "81"
     proto   = "tcp"
-    source  = var.local_network
+    source  = local.lan_cidr
   }
 }
 
@@ -114,7 +114,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "home_ass
     dest    = "192.168.1.100"
     dport   = "8123"
     proto   = "tcp"
-    source  = var.local_network
+    source  = local.lan_cidr
   }
 
   rule {
@@ -124,7 +124,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "home_ass
     dest    = "192.168.1.100"
     dport   = "5353"
     proto   = "udp"
-    source  = var.local_network
+    source  = local.lan_cidr
   }
 
   rule {
@@ -134,7 +134,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "home_ass
     dest    = "192.168.1.100"
     dport   = "1900"
     proto   = "udp"
-    source  = var.local_network
+    source  = local.lan_cidr
   }
 }
 
@@ -150,7 +150,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "tailscal
     dest    = "192.168.1.102"
     dport   = "41641"
     proto   = "udp"
-    source  = var.local_network
+    source  = local.lan_cidr
   }
 }
 
@@ -166,7 +166,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "vaultwar
     dest    = "192.168.1.144"
     dport   = "8000"
     proto   = "tcp"
-    source  = var.local_network
+    source  = local.lan_cidr
   }
 }
 
@@ -182,7 +182,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "jellyfin
     dest    = "192.168.1.145"
     dport   = "8096"
     proto   = "tcp"
-    source  = var.local_network
+    source  = local.lan_cidr
   }
 }
 

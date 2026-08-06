@@ -81,6 +81,6 @@ resource "null_resource" "tailscale_force_derp" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 102 -- tailscale set --force-prefer-derp=mad'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'pct exec 102 -- tailscale set --force-prefer-derp=mad'"
   }
 }

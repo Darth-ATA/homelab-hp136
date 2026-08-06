@@ -103,6 +103,6 @@ resource "null_resource" "jellyfin_mount_point" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct set 105 -mp0 /rpool/data/media,mp=/media 2>/dev/null; pct exec 105 -- mkdir -p /media'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'pct set 105 -mp0 /rpool/data/media,mp=/media 2>/dev/null; pct exec 105 -- mkdir -p /media'"
   }
 }

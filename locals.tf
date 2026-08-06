@@ -22,4 +22,6 @@ locals {
     jellyfin    = 145
     host        = 134
   }
+
+  host_ip = "${local.subnet_base}.${local.node_ips.host}"
 }
