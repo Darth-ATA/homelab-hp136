@@ -22,7 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "${SCRIPT_DIR}")"
 
 # --- Config ---
-PROXMOX_HOST="192.168.1.134"
+PROXMOX_HOST="10.10.10.134"
 SSH_KEY="${HOME}/.ssh/homelab_key"
 SSH_OPTS=(-i "${SSH_KEY}" -o StrictHostKeyChecking=no)
 LXC_ID="101"

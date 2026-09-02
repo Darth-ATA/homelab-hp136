@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-PROXMOX_HOST="192.168.1.134"
+PROXMOX_HOST="10.10.10.134"
 SSH_KEY="$HOME/.ssh/homelab_key"
 SSH_CMD="ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no root@${PROXMOX_HOST}"
 LXC="101"
@@ -78,8 +78,8 @@ echo "✓ Containers restarted"
 
 echo ""
 echo "✅ Done! Secrets deployed and containers restarted."
-echo "   slskd web UI:  http://192.168.1.142:5030"
-echo "   soularr web UI: http://192.168.1.142:8265"
+echo "   slskd web UI:  http://10.10.10.142:5030"
+echo "   soularr web UI: http://10.10.10.142:8265"
 echo ""
 echo "   Check logs:"
 echo "   ssh -i ~/.ssh/homelab_key root@${PROXMOX_HOST} \"pct exec ${LXC} -- docker logs slskd --tail 30\""

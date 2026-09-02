@@ -25,7 +25,7 @@ set -Eeuo pipefail
 # Configuration
 #-------------------------------------------------------------------------------
 VM_ID="100"
-PROXMOX_HOST="192.168.1.134"
+PROXMOX_HOST="10.10.10.134"
 SSH_KEY="$HOME/.ssh/homelab_key"
 LOCAL_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../ha-config" && pwd -P)"
 REMOTE_DIR="/mnt/data/supervisor/homeassistant"

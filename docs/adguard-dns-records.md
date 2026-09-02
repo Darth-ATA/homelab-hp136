@@ -1,6 +1,6 @@
 # AdGuard Home DNS Records
 
-Access AdGuard at: http://192.168.1.2
+Access AdGuard at: http://10.10.10.2
 
 ## Steps to Add DNS Records:
 
@@ -12,14 +12,14 @@ Access AdGuard at: http://192.168.1.2
 
 | Domain | IP Address | Description |
 |--------|------------|-------------|
-| `homeassistant.local` | `192.168.1.142` | Home Assistant (proxied via NPM) |
-| `adguard.local` | `192.168.1.2` | AdGuard Home admin panel |
-| `npm.local` | `192.168.1.142` | Nginx Proxy Manager admin |
-| `tailscale.local` | `192.168.1.102` | Tailscale (if needed) |
+| `homeassistant.local` | `10.10.10.142` | Home Assistant (proxied via NPM) |
+| `adguard.local` | `10.10.10.2` | AdGuard Home admin panel |
+| `npm.local` | `10.10.10.142` | Nginx Proxy Manager admin |
+| `tailscale.local` | `10.10.10.102` | Tailscale (if needed) |
 
 
 ## Additional Configuration:
 
-Set your router's DNS server to `192.168.1.2` (AdGuard) so all devices use these local DNS records.
+Set your router's DNS server to `10.10.10.2` (AdGuard) so all devices use these local DNS records.
 
-Or manually set DNS on each device to `192.168.1.2`.
+Or manually set DNS on each device to `10.10.10.2`.

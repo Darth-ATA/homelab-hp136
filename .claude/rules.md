@@ -20,11 +20,11 @@ Only fall back to scripts or manual steps when Terraform is genuinely impractica
 When connecting to Proxmox host via SSH, always use the pre-configured SSH key:
 
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 "<command>"
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 "<command>"
 ```
 
 **Proxmox Host Details:**
-- Host: `192.168.1.134`
+- Host: `10.10.10.134`
 - User: `root`
 - SSH Key: `~/.ssh/homelab_key`
 - Node name: `prxhp136`
