@@ -140,6 +140,19 @@ resource "null_resource" "docker_prune_cron" {
   }
 }
 
+# DARTH-GAIN Hevy sync cron: runs daily at 06:00 to sync Hevy workout data
+# for all users who have an API key configured in DARTH-GAIN
+resource "null_resource" "darth_gain_hevy_sync_cron" {
+  triggers = {
+    container_id = 101
+    cron_spec    = "0 6 * * * DARTH_GAIN_DATA_DIR=/data /root/DARTH-GAIN/.venv/bin/python /root/DARTH-GAIN/scripts/cron-sync-all.py"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct exec 101 -- sh -c \"(crontab -u root -l 2>/dev/null | grep -v cron-sync-all.py; echo \\\"0 6 * * * DARTH_GAIN_DATA_DIR=/data /root/DARTH-GAIN/.venv/bin/python /root/DARTH-GAIN/scripts/cron-sync-all.py >> /var/log/darth-gain-sync.log 2>&1\\\") | crontab -u root -\"'"
+  }
+}
+
 # Soularr config: ensure failed_import_denylist=True to prevent infinite re-download loops
 # When failed_import_denylist=False (default), albums that fail Lidarr import are
 # re-downloaded on every soularr run, creating infinite copies (observed: 55 copies of one album)
