@@ -21,34 +21,34 @@ All backups use `local` (dir-type storage) at `/var/lib/vz/dump/`. ZFS pool stor
 
 1. **List available backups:**
    ```bash
-   ssh root@192.168.1.134 "ls -lh /var/lib/vz/dump/vzdump-qemu-100*"
+   ssh root@10.10.10.134 "ls -lh /var/lib/vz/dump/vzdump-qemu-100*"
    ```
 
 2. **Restore VM (will create new VMID):**
    ```bash
-   ssh root@192.168.1.134 "qmrestore <backup-file>.vma.zst <new-vmid>"
+   ssh root@10.10.10.134 "qmrestore <backup-file>.vma.zst <new-vmid>"
    ```
 
 3. **Or restore to existing VM 100 (destructive):**
    ```bash
-   ssh root@192.168.1.134 "qmrestore <backup-file>.vma.zst 100 --force"
+   ssh root@10.10.10.134 "qmrestore <backup-file>.vma.zst 100 --force"
    ```
 
 4. **After restore, re-configure USB passthrough:**
    ```bash
-   ssh root@192.168.1.134 "qm set 100 -usb0 host=10c4:ea60 -usb1 host=0bda:c821"
+   ssh root@10.10.10.134 "qm set 100 -usb0 host=10c4:ea60 -usb1 host=0bda:c821"
    ```
 
 ### Restore Container 101 (docker)
 
 1. **List available backups:**
    ```bash
-   ssh root@192.168.1.134 "ls -lh /var/lib/vz/dump/vzdump-lxc-101-*"
+   ssh root@10.10.10.134 "ls -lh /var/lib/vz/dump/vzdump-lxc-101-*"
    ```
 
 2. **Restore container (replace target VMID if needed):**
    ```bash
-   ssh root@192.168.1.134 "pct restore 101 /var/lib/vz/dump/vzdump-lxc-101-*.vma.zst --storage local-zfs"
+   ssh root@10.10.10.134 "pct restore 101 /var/lib/vz/dump/vzdump-lxc-101-*.vma.zst --storage local-zfs"
    ```
 
 3. **Post-restore: Re-apply LXC 101 specific config not preserved in backup:**
@@ -71,10 +71,10 @@ All backups use `local` (dir-type storage) at `/var/lib/vz/dump/`. ZFS pool stor
 Same procedure as docker:
 ```bash
 # List backups
-ssh root@192.168.1.134 "ls -lh /var/lib/vz/dump/vzdump-lxc-<vmid>-*"
+ssh root@10.10.10.134 "ls -lh /var/lib/vz/dump/vzdump-lxc-<vmid>-*"
 
 # Restore
-ssh root@192.168.1.134 "pct restore <vmid> /var/lib/vz/dump/vzdump-lxc-<vmid>-*.vma.zst --storage local-zfs"
+ssh root@10.10.10.134 "pct restore <vmid> /var/lib/vz/dump/vzdump-lxc-<vmid>-*.vma.zst --storage local-zfs"
 ```
 
 ## Disaster Recovery Scenarios
@@ -101,7 +101,7 @@ ssh root@192.168.1.134 "pct restore <vmid> /var/lib/vz/dump/vzdump-lxc-<vmid>-*.
 
 1. **Check backups immediately:**
    ```bash
-   ssh root@192.168.1.134 "ls -lh /var/lib/vz/dump/ | grep <vmid>"
+   ssh root@10.10.10.134 "ls -lh /var/lib/vz/dump/ | grep <vmid>"
    ```
 2. **Restore from most recent backup** (see procedures above)
 
@@ -135,7 +135,7 @@ If Terraform state drifts from actual:
 
 **Manual execution:**
 ```bash
-ssh root@192.168.1.134 "/usr/local/bin/cleanup-backups.sh"
+ssh root@10.10.10.134 "/usr/local/bin/cleanup-backups.sh"
 ```
 
 **Scheduled:** Daily at 1:00 AM via cron
@@ -146,16 +146,16 @@ ssh root@192.168.1.134 "/usr/local/bin/cleanup-backups.sh"
 
 - **Owner:** @Darth-ATA
 - **Location:** ~/homelab-terraform on GitHub
-- **Proxmox Web UI:** https://192.168.1.134:8006
+- **Proxmox Web UI:** https://10.10.10.134:8006
 
 ## Quick Reference
 
 | Service | VMID | IP (Static) | Purpose |
 |----------|------|-------------|---------|
-| Home Assistant | 100 | 192.168.1.100 | Home automation |
-| docker | 101 | 192.168.1.142 | Container runtime + media stack |
-| tailscale | 102 | 192.168.1.102 | VPN network |
-| adguard | 103 | 192.168.1.2 | DNS ad-blocking |
+| Home Assistant | 100 | 10.10.10.100 | Home automation |
+| docker | 101 | 10.10.10.142 | Container runtime + media stack |
+| tailscale | 102 | 10.10.10.102 | VPN network |
+| adguard | 103 | 10.10.10.2 | DNS ad-blocking |
 
 ## Prevention Tips
 

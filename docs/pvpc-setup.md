@@ -40,7 +40,7 @@ Si no tenés acceso directo a Docker, podés copiar al VM y usar `qm guest exec`
 
 ```bash
 # Desde el Proxmox host
-scp -r ha-pvpc-next-2.2.2/custom_components/pvpc_next root@192.168.1.100:/tmp/
+scp -r ha-pvpc-next-2.2.2/custom_components/pvpc_next root@10.10.10.100:/tmp/
 qm guest exec 100 -- sh -c 'cp -r /tmp/pvpc_next /config/custom_components/'
 ```
 

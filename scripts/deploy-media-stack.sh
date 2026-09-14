@@ -12,9 +12,9 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd -P)"
 
-LXC_IP="192.168.1.142"
+LXC_IP="10.10.10.142"
 LXC_ID="101"
-PROXMOX_IP="192.168.1.134"
+PROXMOX_IP="10.10.10.134"
 SSH_KEY="$HOME/.ssh/homelab_key"
 SSH_CMD="ssh -i $SSH_KEY -o StrictHostKeyChecking=no root@$PROXMOX_IP"
 LXC_EXEC="$SSH_CMD pct exec $LXC_ID --"

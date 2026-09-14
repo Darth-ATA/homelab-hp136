@@ -4,8 +4,8 @@
 This document covers common issues with the Sonarr → Prowlarr → Deluge download pipeline and their solutions.
 
 ## Infrastructure
-- **Proxmox Host**: 192.168.1.134
-- **Docker LXC**: 101 (192.168.1.142)
+- **Proxmox Host**: 10.10.10.134
+- **Docker LXC**: 101 (10.10.10.142)
 - **Prowlarr**: port 9696, API: `<your-prowlarr-api-key>`
 - **Sonarr**: port 8989, API: `<your-sonarr-api-key>`
 - **Deluge**: port 8112, password: `<your-deluge-password>`
@@ -41,10 +41,10 @@ volumes:
 ### Apply Fix
 ```bash
 # Copy updated compose to Proxmox and restart
-scp docker/sonarr/compose.yml root@192.168.1.134:/tmp/
-ssh root@192.168.1.134 "pct exec 101 -- mkdir -p /root/docker/sonarr"
-ssh root@192.168.1.134 "pct push 101 /tmp/compose.yml /root/docker/sonarr/compose.yml"
-ssh root@192.168.1.134 "pct exec 101 -- cd /root/docker/sonarr && docker compose up -d"
+scp docker/sonarr/compose.yml root@10.10.10.134:/tmp/
+ssh root@10.10.10.134 "pct exec 101 -- mkdir -p /root/docker/sonarr"
+ssh root@10.10.10.134 "pct push 101 /tmp/compose.yml /root/docker/sonarr/compose.yml"
+ssh root@10.10.10.134 "pct exec 101 -- cd /root/docker/sonarr && docker compose up -d"
 ```
 
 ---
@@ -76,9 +76,9 @@ path: ".../stream/series/tt{{ if .Query.IMDBID }}{{ .Query.IMDBID}}..."
 ### Apply Fix
 ```bash
 # SSH to Proxmox and edit the file
-ssh root@192.168.1.134 "pct exec 101 -- sed -i 's|stream/movie/{{ .Query.IMDBID }}|stream/movie/tt{{ .Query.IMDBID }}|g' /config/custom/torrentio.yml"
-ssh root@192.168.1.134 "pct exec 101 -- sed -i 's|/stream/series/{{ if .Query.IMDBID }}{{ .Query.IMDBID}}|stream/series/tt{{ if .Query.IMDBID }}{{ .Query.IMDBID}}|g' /config/custom/torrentio.yml"
-ssh root@192.168.1.134 "pct exec 101 -- docker restart prowlarr"
+ssh root@10.10.10.134 "pct exec 101 -- sed -i 's|stream/movie/{{ .Query.IMDBID }}|stream/movie/tt{{ .Query.IMDBID }}|g' /config/custom/torrentio.yml"
+ssh root@10.10.10.134 "pct exec 101 -- sed -i 's|/stream/series/{{ if .Query.IMDBID }}{{ .Query.IMDBID}}|stream/series/tt{{ if .Query.IMDBID }}{{ .Query.IMDBID}}|g' /config/custom/torrentio.yml"
+ssh root@10.10.10.134 "pct exec 101 -- docker restart prowlarr"
 ```
 
 ### Test
@@ -108,7 +108,7 @@ Use **Season Search** instead of Episode Search:
 4. Or trigger via API:
 ```bash
 curl -s -H "X-Api-Key: <your-sonarr-api-key>" \
-  http://192.168.1.142:8989/api/v3/command \
+  http://10.10.10.142:8989/api/v3/command \
   -X POST -H "Content-Type: application/json" \
   -d '{"name":"SeasonSearch","seriesId":<SERIES_ID>,"seasonId":<SEASON_ID>}'
 ```
@@ -116,7 +116,7 @@ curl -s -H "X-Api-Key: <your-sonarr-api-key>" \
 ### Verify Working
 Check Sonarr logs:
 ```bash
-ssh root@192.168.1.134 "pct exec 101 -- docker logs sonarr --tail 50 | grep -i 'download\|grab'"
+ssh root@10.10.10.134 "pct exec 101 -- docker logs sonarr --tail 50 | grep -i 'download\|grab'"
 ```
 
 ---
@@ -232,31 +232,31 @@ The compose file mounts `./custom/` to `/config/Definitions/Custom/` so the dyna
 
 ### Check Container Status
 ```bash
-ssh root@192.168.1.134 "pct exec 101 -- docker ps"
+ssh root@10.10.10.134 "pct exec 101 -- docker ps"
 ```
 
 ### Check Sonarr Logs
 ```bash
-ssh root@192.168.1.134 "pct exec 101 -- docker logs sonarr --tail 100"
+ssh root@10.10.10.134 "pct exec 101 -- docker logs sonarr --tail 100"
 ```
 
 ### Check Prowlarr Logs
 ```bash
-ssh root@192.168.1.134 "pct exec 101 -- docker logs prowlarr --tail 100"
+ssh root@10.10.10.134 "pct exec 101 -- docker logs prowlarr --tail 100"
 ```
 
 ### Test Deluge Connectivity
 ```bash
-ssh root@192.168.1.134 "pct exec 101 -- docker exec deluge curl -s http://localhost:8112/json -u 'localclient:<your-deluge-password>' -d '{\"method\":\"daemon.get_config\",\"id\":1}'"
+ssh root@10.10.10.134 "pct exec 101 -- docker exec deluge curl -s http://localhost:8112/json -u 'localclient:<your-deluge-password>' -d '{\"method\":\"daemon.get_config\",\"id\":1}'"
 ```
 
 ### Force Season Search via API
 ```bash
 # Get series ID first
-ssh root@192.168.1.134 "pct exec 101 -- docker exec sonarr sqlite3 /config/sonarr.db 'SELECT Id,Title FROM Series;'"
+ssh root@10.10.10.134 "pct exec 101 -- docker exec sonarr sqlite3 /config/sonarr.db 'SELECT Id,Title FROM Series;'"
 
 # Trigger search
-ssh root@192.168.1.134 "pct exec 101 -- docker exec sonarr curl -s -H 'X-Api-Key: <your-sonarr-api-key>' 'http://localhost:8989/api/v3/command' -X POST -H 'Content-Type: application/json' -d '{\"name\":\"SeasonSearch\",\"seriesId\":<ID>,\"seasonId\":1}'"
+ssh root@10.10.10.134 "pct exec 101 -- docker exec sonarr curl -s -H 'X-Api-Key: <your-sonarr-api-key>' 'http://localhost:8989/api/v3/command' -X POST -H 'Content-Type: application/json' -d '{\"name\":\"SeasonSearch\",\"seriesId\":<ID>,\"seasonId\":1}'"
 ```
 
 ---

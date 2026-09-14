@@ -100,7 +100,7 @@ The automations use these entity IDs (verify in HA Developer Tools > States and 
 2. Wait for HA to boot, then copy config files to VM:
    ```bash
    # Via Proxmox host
-   scp -r ha-config/* root@192.168.1.134:/mnt/pve/nfs/...
+   scp -r ha-config/* root@10.10.10.134:/mnt/pve/nfs/...
    # Or use guest exec to copy files
    ```
 
@@ -109,7 +109,7 @@ The automations use these entity IDs (verify in HA Developer Tools > States and 
 ### Option 2: Fresh Setup
 
 1. Deploy HAOS VM using Terraform
-2. Complete onboarding via http://192.168.1.100:8123
+2. Complete onboarding via http://10.10.10.100:8123
 3. Copy `configuration.yaml` and `automations.yaml` to HA
 4. Manually configure integrations (Zigbee, Ring, Mobile Apps, etc.)
 
@@ -138,7 +138,7 @@ The `.storage/core.config_entries` file has been sanitized:
 
 ## Network Info
 
-- **HA IP**: 192.168.1.100
+- **HA IP**: 10.10.10.100
 - **HA VM ID**: 100 (Proxmox)
-- **Access**: http://192.168.1.100:8123
-- **Proxmox Host**: 192.168.1.134
+- **Access**: http://10.10.10.100:8123
+- **Proxmox Host**: 10.10.10.134

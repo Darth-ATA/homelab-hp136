@@ -67,7 +67,7 @@ homelab-terraform/
 ```bash
 cat > terraform.tfvars << 'EOL'
 proxmox_api_token = "root@pam!terraform-token-root=YOUR_TOKEN_HERE"
-proxmox_endpoint = "https://192.168.1.134:8006/api2/json"
+proxmox_endpoint = "https://10.10.10.134:8006/api2/json"
 EOL
 ```
 
@@ -79,13 +79,13 @@ terraform init
 
 ### 2b. Terraform State Backend (Garage S3)
 
-State is stored in [Garage](https://garagehq.deuxfleurs.fr/) (S3-compatible object storage) running on LXC 101 at `http://192.168.1.142:3900`.
+State is stored in [Garage](https://garagehq.deuxfleurs.fr/) (S3-compatible object storage) running on LXC 101 at `http://10.10.10.142:3900`.
 
 **If `terraform plan` fails with `AccessDenied` or `key doesn't exist`:**
 
 1. The Garage `.env` on LXC 101 has the **source of truth** credentials:
    ```bash
-   ssh root@192.168.1.134 "pct exec 101 -- cat /root/docker/arcane/data/projects/garage/.env"
+   ssh root@10.10.10.134 "pct exec 101 -- cat /root/docker/arcane/data/projects/garage/.env"
    ```
 2. Sync the credentials to your local `~/.aws/credentials`:
    ```bash
@@ -128,11 +128,11 @@ The following containers and VMs are **fully managed** by Terraform:
 
 | ID  | Name      | Description | Static IP | Terraform File |
 |-----|------------|-------------|-----------|----------------|
-| 100 | home_assistant | Home Assistant VM (HAOS) - 2 cores, 4GB RAM, 32GB disk | 192.168.1.100 | `home_vm.tf` |
-| 101 | docker    | Docker host — media stack + NPM + Arcane — 2 cores, 6GB RAM, 150GB disk, iGPU passthrough | 192.168.1.142 | `docker-container.tf` |
-| 102 | tailscale  | Tailscale VPN connectivity - 1 core, 512MB RAM, 2GB disk | 192.168.1.102 | `tailscale-container.tf` |
-| 103 | adguard   | AdGuard Home DNS ad-blocker - 1 core, 512MB RAM, 2GB disk | 192.168.1.2 | `adguard-container.tf` |
-| 104 | vaultwarden | Vaultwarden password manager (Alpine) - 1 core, 512MB RAM, 4GB disk | 192.168.1.144 | `vaultwarden-container.tf` |
+| 100 | home_assistant | Home Assistant VM (HAOS) - 2 cores, 4GB RAM, 32GB disk | 10.10.10.100 | `home_vm.tf` |
+| 101 | docker    | Docker host — media stack + NPM + Arcane — 2 cores, 6GB RAM, 150GB disk, iGPU passthrough | 10.10.10.142 | `docker-container.tf` |
+| 102 | tailscale  | Tailscale VPN connectivity - 1 core, 512MB RAM, 2GB disk | 10.10.10.102 | `tailscale-container.tf` |
+| 103 | adguard   | AdGuard Home DNS ad-blocker - 1 core, 512MB RAM, 2GB disk | 10.10.10.2 | `adguard-container.tf` |
+| 104 | vaultwarden | Vaultwarden password manager (Alpine) - 1 core, 512MB RAM, 4GB disk | 10.10.10.144 | `vaultwarden-container.tf` |
 
 **All services use static IPs configured in Proxmox/LXC/VM configs. See [NETWORK.md](./NETWORK.md) for complete network documentation.**
 
@@ -174,27 +174,27 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 
 | Group | Purpose | Target | Ports |
 |-------|---------|--------|-------|
-| `mgmt` | Management access (SSH + Proxmox UI) | 192.168.1.134 | 22, 8006 |
-| `dns` | AdGuard DNS | 192.168.1.2 | 53/tcp+udp |
-| `web` | Docker/NPM services | 192.168.1.142 | 80, 443, 81 |
-| `home_assistant` | Home Assistant UI | 192.168.1.100 | 8123 |
-| `tailscale` | Tailscale direct connections | 192.168.1.102 | 41641/udp |
-| `vaultwarden` | Vaultwarden HTTP | 192.168.1.144 | 8000 |
+| `mgmt` | Management access (SSH + Proxmox UI) | 10.10.10.134 | 22, 8006 |
+| `dns` | AdGuard DNS | 10.10.10.2 | 53/tcp+udp |
+| `web` | Docker/NPM services | 10.10.10.142 | 80, 443, 81 |
+| `home_assistant` | Home Assistant UI | 10.10.10.100 | 8123 |
+| `tailscale` | Tailscale direct connections | 10.10.10.102 | 41641/udp |
+| `vaultwarden` | Vaultwarden HTTP | 10.10.10.144 | 8000 |
 
 ### Services & Ports
 
 | Service | IP | Open Ports | Notes |
 |---------|-----|------------|-------|
-| Proxmox Host | 192.168.1.134 | 8006 (UI), 22 (SSH) | Permissive (future: restrict to management IPs) |
-| Home Assistant (VM 100) | 192.168.1.100 | 8123 | VM managed via Terraform ✅ |
-| Docker/NPM (LXC 101) | 192.168.1.142 | 80, 443, 81 | NPM reverse proxy |
-| Docker — *arr suite | 192.168.1.142 | 7878, 8989, 8686, 9696, 6767 | Radarr, Sonarr, Lidarr, Prowlarr, Bazarr |
-| Docker — Deluge | 192.168.1.142 | 8112, 6881 | Torrent client (no VPN) |
-| Docker — Jellyfin | 192.168.1.142 | 8096 | Media server |
-| Vaultwarden (LXC 104) | 192.168.1.144 | 8000 | Password manager (behind NPM at vw.hp136.duckdns.org) |
-| Docker — Arcane | 192.168.1.142 | 3552 | Service orchestrator |
-| Tailscale (LXC 102) | 192.168.1.102 | 41641/UDP | Optional direct connections |
-| AdGuard (LXC 103) | 192.168.1.2 | 53/tcp+udp | DNS server |
+| Proxmox Host | 10.10.10.134 | 8006 (UI), 22 (SSH) | Permissive (future: restrict to management IPs) |
+| Home Assistant (VM 100) | 10.10.10.100 | 8123 | VM managed via Terraform ✅ |
+| Docker/NPM (LXC 101) | 10.10.10.142 | 80, 443, 81 | NPM reverse proxy |
+| Docker — *arr suite | 10.10.10.142 | 7878, 8989, 8686, 9696, 6767 | Radarr, Sonarr, Lidarr, Prowlarr, Bazarr |
+| Docker — Deluge | 10.10.10.142 | 8112, 6881 | Torrent client (no VPN) |
+| Docker — Jellyfin | 10.10.10.142 | 8096 | Media server |
+| Vaultwarden (LXC 104) | 10.10.10.144 | 8000 | Password manager (behind NPM at vw.hp136.duckdns.org) |
+| Docker — Arcane | 10.10.10.142 | 3552 | Service orchestrator |
+| Tailscale (LXC 102) | 10.10.10.102 | 41641/UDP | Optional direct connections |
+| AdGuard (LXC 103) | 10.10.10.2 | 53/tcp+udp | DNS server |
 
 ### Firewall Files
 - `firewall.tf` - Cluster firewall, security groups, and rules
@@ -266,10 +266,10 @@ The cleanup script (`/usr/local/bin/cleanup-backups.sh`) implements a **custom r
 
 ```bash
 # Run cleanup manually
-ssh root@192.168.1.134 "/usr/local/bin/cleanup-backups.sh"
+ssh root@10.10.10.134 "/usr/local/bin/cleanup-backups.sh"
 
 # Check log
-ssh root@192.168.1.134 "cat /var/log/backup-cleanup.log"
+ssh root@10.10.10.134 "cat /var/log/backup-cleanup.log"
 ```
 
 ## Storage Strategy
@@ -297,28 +297,28 @@ Currently, HAOS backups are stored on `local` (dir-type storage). This is the co
 **To verify backup storage via CLI:**
 ```bash
 # Check current backup jobs
-ssh root@192.168.1.134 "cat /etc/pve/jobs.cfg"
+ssh root@10.10.10.134 "cat /etc/pve/jobs.cfg"
 
 # Run a test backup to local storage
-ssh root@192.168.1.134 "vzdump 100 --storage local --mode snapshot"
+ssh root@10.10.10.134 "vzdump 100 --storage local --mode snapshot"
 ```
 
 **Cleanup old backups (keep last 3-5):**
 ```bash
 # List HAOS backups
-ssh root@192.168.1.134 "ls -lht /var/lib/vz/dump/vzdump-qemu-100-*.vma.*"
+ssh root@10.10.10.134 "ls -lht /var/lib/vz/dump/vzdump-qemu-100-*.vma.*"
 
 # Remove old backups (example - adjust dates as needed)
-ssh root@192.168.1.134 "rm /var/lib/vz/dump/vzdump-qemu-100-2026_0*"
+ssh root@10.10.10.134 "rm /var/lib/vz/dump/vzdump-qemu-100-2026_0*"
 ```
 
 ### Cleanup: Unused Templates/ISOs
 ```bash
 # Check what's in templates directory
-ssh root@192.168.1.134 "ls -lh /var/lib/vz/template/cache/ /var/lib/vz/template/iso/"
+ssh root@10.10.10.134 "ls -lh /var/lib/vz/template/cache/ /var/lib/vz/template/iso/"
 
 # Remove unused templates (verify first!)
-ssh root@192.168.1.134 "rm /var/lib/vz/template/cache/<unused-template>.tar.gz"
+ssh root@10.10.10.134 "rm /var/lib/vz/template/cache/<unused-template>.tar.gz"
 ```
 
 ### Disk Size Recommendations

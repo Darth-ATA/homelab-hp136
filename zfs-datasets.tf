@@ -32,7 +32,7 @@ resource "null_resource" "zfs_dataset_media_tuning" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'zfs set recordsize=${local.media_dataset_recordsize} ${local.media_dataset} && zfs set atime=${local.media_dataset_atime} ${local.media_dataset}'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'zfs set recordsize=${local.media_dataset_recordsize} ${local.media_dataset} && zfs set atime=${local.media_dataset_atime} ${local.media_dataset}'"
   }
 }
 
@@ -47,7 +47,7 @@ resource "null_resource" "zfs_dataset_torrents_tuning" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'zfs set recordsize=${local.torrents_dataset_recordsize} ${local.torrents_dataset} && zfs set atime=${local.torrents_dataset_atime} ${local.torrents_dataset}'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'zfs set recordsize=${local.torrents_dataset_recordsize} ${local.torrents_dataset} && zfs set atime=${local.torrents_dataset_atime} ${local.torrents_dataset}'"
   }
 }
 
@@ -62,6 +62,6 @@ resource "null_resource" "zfs_dataset_soulseek_tuning" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'zfs set recordsize=${local.soulseek_dataset_recordsize} ${local.soulseek_dataset} && zfs set atime=${local.soulseek_dataset_atime} ${local.soulseek_dataset}'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'zfs set recordsize=${local.soulseek_dataset_recordsize} ${local.soulseek_dataset} && zfs set atime=${local.soulseek_dataset_atime} ${local.soulseek_dataset}'"
   }
 }

@@ -14,8 +14,8 @@ resource "proxmox_virtual_environment_container" "jellyfin" {
     hostname = "jellyfin"
     ip_config {
       ipv4 {
-        address = "192.168.1.145/24"
-        gateway = "192.168.1.1"
+        address = "${local.subnet_base}.${local.node_ips.jellyfin}/24"
+        gateway = local.lan_gateway
       }
     }
   }
@@ -103,6 +103,6 @@ resource "null_resource" "jellyfin_mount_point" {
   }
 
   provisioner "local-exec" {
-    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'pct set 105 -mp0 /rpool/data/media,mp=/media 2>/dev/null; pct exec 105 -- mkdir -p /media'"
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'pct set 105 -mp0 /rpool/data/media,mp=/media 2>/dev/null; pct exec 105 -- mkdir -p /media'"
   }
 }

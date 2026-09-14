@@ -4,7 +4,7 @@
 
 | Property | Value |
 |----------|-------|
-| **URL** | http://192.168.1.142:81 |
+| **URL** | http://10.10.10.142:81 |
 | **Email** | hasbringer1007@gmail.com |
 | **Password** | *(stored in scripts)* |
 | **SSL Certificate** | *.hp136.duckdns.org (Let's Encrypt via DuckDNS) |
@@ -15,21 +15,21 @@ All services are accessible via `https://<service>.hp136.duckdns.org`
 
 | Subdomain | Full Domain | Target | Port | Notes |
 |-----------|-------------|--------|------|-------|
-| agh | agh.hp136.duckdns.org | 192.168.1.2 | 80 | AdGuard Home |
-| arcane | arcane.hp136.duckdns.org | 192.168.1.142 | 3552 | Arcane |
-| bazarr | bazarr.hp136.duckdns.org | 192.168.1.142 | 6767 | Bazarr (subtitles) |
-| deluge | deluge.hp136.duckdns.org | 192.168.1.142 | 8112 | Deluge (torrent client) |
-| frigate | frigate.hp136.duckdns.org | 192.168.1.142 | 5000 | Frigate (NVR) |
-| ha | ha.hp136.duckdns.org | 192.168.1.100 | 8123 | Home Assistant (websockets enabled) |
-| jelly | jelly.hp136.duckdns.org | 192.168.1.142 | 8096 | Jellyfin |
-| lidarr | lidarr.hp136.duckdns.org | 192.168.1.142 | 8686 | Lidarr (music) |
-| npm | npm.hp136.duckdns.org | 192.168.1.142 | 81 | Nginx Proxy Manager |
-| prowlarr | prowlarr.hp136.duckdns.org | 192.168.1.142 | 9696 | Prowlarr |
-| qbit | qbit.hp136.duckdns.org | 192.168.1.142 | 8081 | qBittorrent |
-| rad | rad.hp136.duckdns.org | 192.168.1.142 | 7878 | Radarr |
-| son | son.hp136.duckdns.org | 192.168.1.142 | 8989 | Sonarr |
-| vw | vw.hp136.duckdns.org | 192.168.1.142 | 8080 | Vaultwarden |
-| darthgain | darthgain.hp136.duckdns.org | 192.168.1.142 | 8000 | DARTH-GAIN web dashboard |
+| agh | agh.hp136.duckdns.org | 10.10.10.2 | 80 | AdGuard Home |
+| arcane | arcane.hp136.duckdns.org | 10.10.10.142 | 3552 | Arcane |
+| bazarr | bazarr.hp136.duckdns.org | 10.10.10.142 | 6767 | Bazarr (subtitles) |
+| deluge | deluge.hp136.duckdns.org | 10.10.10.142 | 8112 | Deluge (torrent client) |
+| frigate | frigate.hp136.duckdns.org | 10.10.10.142 | 5000 | Frigate (NVR) |
+| ha | ha.hp136.duckdns.org | 10.10.10.100 | 8123 | Home Assistant (websockets enabled) |
+| jelly | jelly.hp136.duckdns.org | 10.10.10.142 | 8096 | Jellyfin |
+| lidarr | lidarr.hp136.duckdns.org | 10.10.10.142 | 8686 | Lidarr (music) |
+| npm | npm.hp136.duckdns.org | 10.10.10.142 | 81 | Nginx Proxy Manager |
+| prowlarr | prowlarr.hp136.duckdns.org | 10.10.10.142 | 9696 | Prowlarr |
+| qbit | qbit.hp136.duckdns.org | 10.10.10.142 | 8081 | qBittorrent |
+| rad | rad.hp136.duckdns.org | 10.10.10.142 | 7878 | Radarr |
+| son | son.hp136.duckdns.org | 10.10.10.142 | 8989 | Sonarr |
+| vw | vw.hp136.duckdns.org | 10.10.10.142 | 8080 | Vaultwarden |
+| darthgain | darthgain.hp136.duckdns.org | 10.10.10.142 | 8000 | DARTH-GAIN web dashboard |
 
 ## SSL Certificate
 
@@ -72,7 +72,7 @@ cd docker/npm
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NPM_SSH_KEY_PATH` | ~/.ssh/homelab_key | SSH private key |
-| `NPM_SSH_HOST` | 192.168.1.134 | Proxmox host IP |
+| `NPM_SSH_HOST` | 10.10.10.134 | Proxmox host IP |
 | `NPM_CONTAINER_ID` | 101 | NPM container ID |
 | `NPM_API_URL` | http://localhost:81 | NPM API URL |
 | `NPM_API_USER` | hasbringer1007@gmail.com | NPM admin email |
@@ -99,7 +99,7 @@ cd docker/npm
 ## Adding New Proxy Hosts
 
 1. **Via NPM UI:**
-   - Log in at http://192.168.1.142:81
+   - Log in at http://10.10.10.142:81
    - Go to **Proxy Hosts** → **Add Proxy Host**
    - Fill in domain, scheme (http), forward hostname/IP, and port
    - Enable **SSL** and select the wildcard certificate

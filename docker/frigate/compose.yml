@@ -1,10 +1,10 @@
 # Frigate - NVR with AI object detection
 # Docs: https://docs.frigate.video
-# Access: http://192.168.1.142:5000
+# Access: http://10.10.10.142:5000
 #
 # IMPORTANT - Before starting:
 # 1. Set FRIGATE_RTSP_PASSWORD in docker/.env
-# 2. Run: ssh root@192.168.1.142 "apt install -y intel-opencl-icd intel-igc-cm && groupadd -g 44 video && usermod -aG video root"
+# 2. Run: ssh root@10.10.10.142 "apt install -y intel-opencl-icd intel-igc-cm && groupadd -g 44 video && usermod -aG video root"
 
 services:
   frigate:

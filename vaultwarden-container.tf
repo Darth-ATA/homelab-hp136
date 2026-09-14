@@ -15,8 +15,8 @@ resource "proxmox_virtual_environment_container" "vaultwarden" {
     hostname = "alpine-vaultwarden"
     ip_config {
       ipv4 {
-        address = "192.168.1.144/24"
-        gateway = "192.168.1.1"
+        address = "${local.subnet_base}.${local.node_ips.vaultwarden}/24"
+        gateway = local.lan_gateway
       }
     }
   }

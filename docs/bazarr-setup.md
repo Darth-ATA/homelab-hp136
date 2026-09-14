@@ -4,9 +4,9 @@
 Bazarr is a companion service to Sonarr and Radarr that automatically downloads subtitles for TV shows and movies.
 
 ## Infrastructure
-- **Proxmox Host**: 192.168.1.134
-- **Docker LXC**: 101 (192.168.1.142)
-- **Bazarr Web UI**: http://192.168.1.142:6767
+- **Proxmox Host**: 10.10.10.134
+- **Docker LXC**: 101 (10.10.10.142)
+- **Bazarr Web UI**: http://10.10.10.142:6767
 - **Config path**: `/root/docker/bazarr/config/`
 - **DB path**: `/root/docker/bazarr/config/db/bazarr.db`
 

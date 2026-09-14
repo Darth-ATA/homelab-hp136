@@ -175,7 +175,7 @@ For anime with original audio + Spanish subs only:
 
 ## 4. Bazarr (Spanish Subtitles - Port 6767)
 
-Bazarr is already deployed and managed via Arcane. Access at http://192.168.1.142:6767
+Bazarr is already deployed and managed via Arcane. Access at http://10.10.10.142:6767
 
 Configuration:
 1. Connect Sonarr (http://sonarr:8989) + Radarr (http://radarr:7878)
@@ -200,7 +200,7 @@ Configuration:
 
 ## 6. Deluge (Already Configured)
 
-- Deluge UI: http://192.168.1.142:8112
+- Deluge UI: http://10.10.10.142:8112
 - **No VPN** — torrents go through the regular WAN connection
 - Default save: `/data/torrents` (mounted as `/downloads` inside container)
 

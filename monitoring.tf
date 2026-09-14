@@ -6,8 +6,8 @@
 # All scripts live in scripts/ and are deployed via null_resource + local-exec.
 
 locals {
-  cleanup_backups_hash    = filebase64sha256("${path.module}/scripts/cleanup-backups.sh")
-  check_backup_disk_hash  = filebase64sha256("${path.module}/scripts/check-backup-disk.sh")
+  cleanup_backups_hash     = filebase64sha256("${path.module}/scripts/cleanup-backups.sh")
+  check_backup_disk_hash   = filebase64sha256("${path.module}/scripts/check-backup-disk.sh")
   check_backup_status_hash = filebase64sha256("${path.module}/scripts/check-backup-status.sh")
 }
 
@@ -20,8 +20,8 @@ resource "null_resource" "deploy_cleanup_backups" {
 
   provisioner "local-exec" {
     command = <<EOT
-scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no ${path.module}/scripts/cleanup-backups.sh root@${var.proxmox_host_ip}:/usr/local/bin/cleanup-backups.sh && \
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'chmod 755 /usr/local/bin/cleanup-backups.sh'
+scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no ${path.module}/scripts/cleanup-backups.sh root@${local.host_ip}:/usr/local/bin/cleanup-backups.sh && \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'chmod 755 /usr/local/bin/cleanup-backups.sh'
 EOT
   }
 }
@@ -33,8 +33,8 @@ resource "null_resource" "deploy_check_backup_disk" {
 
   provisioner "local-exec" {
     command = <<EOT
-scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no ${path.module}/scripts/check-backup-disk.sh root@${var.proxmox_host_ip}:/usr/local/bin/check-backup-disk.sh && \
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'chmod 755 /usr/local/bin/check-backup-disk.sh'
+scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no ${path.module}/scripts/check-backup-disk.sh root@${local.host_ip}:/usr/local/bin/check-backup-disk.sh && \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'chmod 755 /usr/local/bin/check-backup-disk.sh'
 EOT
   }
 }
@@ -46,8 +46,8 @@ resource "null_resource" "deploy_check_backup_status" {
 
   provisioner "local-exec" {
     command = <<EOT
-scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no ${path.module}/scripts/check-backup-status.sh root@${var.proxmox_host_ip}:/usr/local/bin/check-backup-status.sh && \
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'chmod 755 /usr/local/bin/check-backup-status.sh'
+scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no ${path.module}/scripts/check-backup-status.sh root@${local.host_ip}:/usr/local/bin/check-backup-status.sh && \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'chmod 755 /usr/local/bin/check-backup-status.sh'
 EOT
   }
 }
@@ -66,7 +66,7 @@ resource "null_resource" "backup_cleanup_cron" {
 
   provisioner "local-exec" {
     command = <<EOT
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'bash -s' << 'REMOTE'
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'bash -s' << 'REMOTE'
 set -e
 # Add pre-backup cleanup at 01:00 if not present
 if ! crontab -l 2>/dev/null | grep -q "01:00.*cleanup-backups"; then
@@ -91,7 +91,7 @@ resource "null_resource" "backup_alert_crons" {
 
   provisioner "local-exec" {
     command = <<EOT
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'bash -s' << 'REMOTE'
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'bash -s' << 'REMOTE'
 set -e
 cat > /etc/cron.d/backup-alerts << 'CRONEOF'
 # Backup status check — runs after backup window ends (last backup at 04:30)
@@ -122,21 +122,21 @@ resource "null_resource" "deploy_check_lxc_internet" {
 
   provisioner "local-exec" {
     command = <<EOT
-scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no ${path.module}/scripts/check-lxc-internet.sh root@${var.proxmox_host_ip}:/usr/local/bin/check-lxc-internet.sh && \
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'chmod 755 /usr/local/bin/check-lxc-internet.sh'
+scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no ${path.module}/scripts/check-lxc-internet.sh root@${local.host_ip}:/usr/local/bin/check-lxc-internet.sh && \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'chmod 755 /usr/local/bin/check-lxc-internet.sh'
 EOT
   }
 }
 
 resource "null_resource" "lxc_internet_check_cron" {
   triggers = {
-    cron_spec = "check-lxc-internet every 5 minutes"
+    cron_spec         = "check-lxc-internet every 5 minutes"
     depends_on_script = local.check_lxc_internet_hash
   }
 
   provisioner "local-exec" {
     command = <<EOT
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'bash -s' << 'REMOTE'
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'bash -s' << 'REMOTE'
 set -e
 # Remove legacy root crontab entry + comment (if migrating from manual setup)
 if crontab -l 2>/dev/null | grep -q "check-lxc-internet\|LXC 101 internet"; then
@@ -167,7 +167,7 @@ resource "null_resource" "backup_storage_zfs_quota" {
 
   provisioner "local-exec" {
     command = <<EOT
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'zfs set quota=40G rpool/var-lib-vz'
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'zfs set quota=40G rpool/var-lib-vz'
 EOT
   }
 }

@@ -1,14 +1,14 @@
 # Docker Services (LXC 101)
 
-This directory contains reference copies of docker-compose files for services running in the Docker LXC container (192.168.1.142).
+This directory contains reference copies of docker-compose files for services running in the Docker LXC container (10.10.10.142).
 
-> **Vaultwarden was migrated to a dedicated LXC (ID 104, Alpine, 192.168.1.144).** See [NETWORK.md](../NETWORK.md) for details. The vaultwarden/ Arcane project is now inactive.
+> **Vaultwarden was migrated to a dedicated LXC (ID 104, Alpine, 10.10.10.144).** See [NETWORK.md](../NETWORK.md) for details. The vaultwarden/ Arcane project is now inactive.
 
 ## Service Management
 
 **All services are managed via [Arcane](https://getarcane.app)** — a project-based Docker orchestrator.
 
-Arcane runs at `http://192.168.1.142:3552` and manages individual compose files per project under `/root/docker/arcane/data/projects/`.
+Arcane runs at `http://10.10.10.142:3552` and manages individual compose files per project under `/root/docker/arcane/data/projects/`.
 
 **Do NOT use raw `docker compose` for individual services** — Arcane handles lifecycle, updates, and dependency ordering.
 
@@ -104,7 +104,7 @@ If you need to deploy the full stack on a new LXC 101:
 # 3. Start Arcane (it manages the rest)
 cd /root/docker/arcane && docker compose up -d
 
-# 4. Access Arcane UI at http://192.168.1.142:3552
+# 4. Access Arcane UI at http://10.10.10.142:3552
 #    Add each project from /root/docker/arcane/data/projects/
 ```
 
@@ -112,36 +112,36 @@ cd /root/docker/arcane && docker compose up -d
 
 ## Service URLs
 
-- **Deluge**: http://192.168.1.142:8112
-- **Prowlarr**: http://192.168.1.142:9696
-- **Radarr**: http://192.168.1.142:7878
-- **Sonarr**: http://192.168.1.142:8989
-- **Lidarr**: http://192.168.1.142:8686
-- **Bazarr**: http://192.168.1.142:6767
-- **FlareSolverr**: http://192.168.1.142:8191 (API endpoint: `http://192.168.1.142:8191/v1`)
-- **Jellyfin**: http://192.168.1.142:8096
-- **slskd**: http://192.168.1.142:5030 (login: `slskd` / `slskd`)
-- **soularr**: http://192.168.1.142:8265
+- **Deluge**: http://10.10.10.142:8112
+- **Prowlarr**: http://10.10.10.142:9696
+- **Radarr**: http://10.10.10.142:7878
+- **Sonarr**: http://10.10.10.142:8989
+- **Lidarr**: http://10.10.10.142:8686
+- **Bazarr**: http://10.10.10.142:6767
+- **FlareSolverr**: http://10.10.10.142:8191 (API endpoint: `http://10.10.10.142:8191/v1`)
+- **Jellyfin**: http://10.10.10.142:8096
+- **slskd**: http://10.10.10.142:5030 (login: `slskd` / `slskd`)
+- **soularr**: http://10.10.10.142:8265
 - **Vaultwarden**: https://vw.hp136.duckdns.org (LXC 104, proxied via NPM)
-- **NPM Admin**: http://192.168.1.142:81
-- **Arcane**: http://192.168.1.142:3552
-- **Garage (S3 API)**: http://192.168.1.142:3900
-- **Garage (Admin)**: http://192.168.1.142:3903
+- **NPM Admin**: http://10.10.10.142:81
+- **Arcane**: http://10.10.10.142:3552
+- **Garage (S3 API)**: http://10.10.10.142:3900
+- **Garage (Admin)**: http://10.10.10.142:3903
 
 ## Nginx Proxy Manager Configuration
 
-Add proxy hosts in NPM (http://192.168.1.142:81):
-- `prowlarr.hp136.duckdns.org` → 192.168.1.142:9696
-- `radarr.hp136.duckdns.org` → 192.168.1.142:7878
-- `sonarr.hp136.duckdns.org` → 192.168.1.142:8989
-- `lidarr.hp136.duckdns.org` → 192.168.1.142:8686
-- `jellyfin.hp136.duckdns.org` → 192.168.1.142:8096
+Add proxy hosts in NPM (http://10.10.10.142:81):
+- `prowlarr.hp136.duckdns.org` → 10.10.10.142:9696
+- `radarr.hp136.duckdns.org` → 10.10.10.142:7878
+- `sonarr.hp136.duckdns.org` → 10.10.10.142:8989
+- `lidarr.hp136.duckdns.org` → 10.10.10.142:8686
+- `jellyfin.hp136.duckdns.org` → 10.10.10.142:8096
 
 ## Verify Running Services
 
 ```bash
 # List all Docker containers in LXC 101
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker ps --format 'table {{.Names}}\t{{.Ports}}'"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- docker ps --format 'table {{.Names}}\t{{.Ports}}'"
 ```
 
 ## Soularr Configuration
@@ -170,12 +170,12 @@ Key settings:
 
 ### Soularr Web UI
 
-Access at http://192.168.1.142:8265 to view recent runs, logs, and queued searches.
+Access at http://10.10.10.142:8265 to view recent runs, logs, and queued searches.
 
 ### Restart After Config Change
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker restart soularr"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- docker restart soularr"
 ```
 
 ## Docker Image Cleanup
@@ -194,13 +194,13 @@ The cron job is configured via `null_resource "docker_prune_cron"` in `docker-co
 To run an immediate cleanup (remove ALL unused images, regardless of age):
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker image prune -a --force"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- docker image prune -a --force"
 ```
 
 ### Check Current Disk Usage
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker system df"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- docker system df"
 ```
 
 ## Notes

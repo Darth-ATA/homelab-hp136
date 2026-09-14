@@ -83,7 +83,7 @@ NPM_TOKEN="$(NPM_API_USER="admin@example.com" NPM_API_PASS="password" ./recovery
 | Variable | Default | Description |
 |---------|---------|-------------|
 | `NPM_SSH_KEY_PATH` | `~/.ssh/homelab_key` | SSH private key path |
-| `NPM_SSH_HOST` | `192.168.1.134` | Proxmox host IP (NOT container) |
+| `NPM_SSH_HOST` | `10.10.10.134` | Proxmox host IP (NOT container) |
 | `NPM_SSH_PORT` | `22` | SSH port |
 | `NPM_SSH_USER` | `root` | SSH username |
 | `NPM_CONTAINER_ID` | `101` | Docker container ID on Proxmox |
@@ -124,16 +124,16 @@ For example: `npm.hp136.duckdns.org`
 
 | Subdomain | Target | Description |
 |----------|--------|-------------|
-| `arcane` | 192.168.1.142:3552 | Arcane |
-| `npm` | 192.168.1.142:81 | Nginx Proxy Manager |
-| `vw` | 192.168.1.142:8080 | Volkswagen |
-| `ha` | 192.168.1.100:8123 | Home Assistant (with websockets) |
-| `agh` | 192.168.1.2:80 | AdGuard Home |
-| `jelly` | 192.168.1.142:8096 | Jellyfin |
-| `rad` | 192.168.1.142:7878 | Radarr |
-| `son` | 192.168.1.142:8989 | Sonarr |
-| `prowlarr` | 192.168.1.142:9696 | Prowlarr |
-| `qbit` | 192.168.1.142:8081 | qBittorrent |
+| `arcane` | 10.10.10.142:3552 | Arcane |
+| `npm` | 10.10.10.142:81 | Nginx Proxy Manager |
+| `vw` | 10.10.10.142:8080 | Volkswagen |
+| `ha` | 10.10.10.100:8123 | Home Assistant (with websockets) |
+| `agh` | 10.10.10.2:80 | AdGuard Home |
+| `jelly` | 10.10.10.142:8096 | Jellyfin |
+| `rad` | 10.10.10.142:7878 | Radarr |
+| `son` | 10.10.10.142:8989 | Sonarr |
+| `prowlarr` | 10.10.10.142:9696 | Prowlarr |
+| `qbit` | 10.10.10.142:8081 | qBittorrent |
 
 ### SSL Certificate
 
