@@ -5,6 +5,10 @@
 # All cleanup runs on Proxmox host or inside LXC containers
 # ============================================================
 
+locals {
+  host_ip = var.proxmox_host_ip
+}
+
 # ----------------------------------------------------------------------
 # BACKUP CLEANUP — Deploy improved script (replaces existing in monitoring.tf)
 # ----------------------------------------------------------------------

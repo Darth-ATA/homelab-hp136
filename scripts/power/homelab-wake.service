@@ -1,0 +1,18 @@
+[Unit]
+Description=Set RTC wake alarm for next 07:00 AM Argentina time (10:00 UTC)
+Documentation=man:rtcwake(8)
+DefaultDependencies=no
+After=time-sync.target
+Wants=time-sync.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/homelab-set-wake-alarm.sh
+RemainAfterExit=no
+
+# Ensure we have a usable system clock before calculating wake time
+ExecStartPre=/bin/bash -c 'until timedatectl status | grep -q "System clock synchronized: yes"; do sleep 1; done'
+
+# Log for debugging
+StandardOutput=journal
+StandardError=journal
