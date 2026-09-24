@@ -7,6 +7,7 @@
 
 locals {
   shutdown_script_hash   = filebase64sha256("${path.module}/scripts/power/homelab-shutdown.sh")
+  suspend_script_hash    = filebase64sha256("${path.module}/scripts/power/homelab-suspend.sh")
   wake_service_hash      = filebase64sha256("${path.module}/scripts/power/homelab-wake.service")
   wake_timer_hash        = filebase64sha256("${path.module}/scripts/power/homelab-wake.timer")
   wake_alarm_script_hash = filebase64sha256("${path.module}/scripts/power/homelab-set-wake-alarm.sh")
@@ -80,6 +81,19 @@ EOT
   }
 }
 
+resource "null_resource" "deploy_suspend_script" {
+  triggers = {
+    script_hash = local.suspend_script_hash
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no ${path.module}/scripts/power/homelab-suspend.sh root@${var.proxmox_host_ip}:/usr/local/bin/homelab-suspend.sh && \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'chmod 755 /usr/local/bin/homelab-suspend.sh'
+EOT
+  }
+}
+
 # ─── Cron Job: Daily Shutdown at 03:00 UTC (00:00 ARG) ──────────────────────────
 
 resource "null_resource" "shutdown_cron" {
@@ -97,6 +111,34 @@ cat > /etc/cron.d/homelab-scheduled-shutdown << 'CRONEOF'
 0 3 * * * root /usr/local/bin/homelab-shutdown.sh
 CRONEOF
 chmod 644 /etc/cron.d/homelab-scheduled-shutdown
+REMOTE
+EOT
+  }
+}
+
+# ─── Cron Job: Daily Suspend at 00:00 Local (Europe/Madrid) ───────────────────────
+# Runs at midnight Spain time (00:00 CET/CEST) — stops fan, wakes at 07:00 local via RTC
+
+resource "null_resource" "suspend_cron" {
+  triggers = {
+    cron_spec = "daily suspend at 00:00 local (Spain) with Frigate check"
+  }
+
+  depends_on = [
+    null_resource.deploy_suspend_script,
+  ]
+
+  provisioner "local-exec" {
+    command = <<EOT
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'bash -s' << 'REMOTE'
+set -e
+cat > /etc/cron.d/homelab-scheduled-suspend << 'CRONEOF'
+# Homelab scheduled suspend — runs at 00:00 local time (Europe/Madrid)
+# Checks for Frigate in LXC 101 (Docker) and host systemd before suspending
+# Host wakes automatically via RTC alarm set by homelab-wake.timer (07:00 local = Europe/Madrid)
+0 0 * * * root /usr/local/bin/homelab-suspend.sh
+CRONEOF
+chmod 644 /etc/cron.d/homelab-scheduled-suspend
 REMOTE
 EOT
   }
@@ -148,5 +190,17 @@ resource "null_resource" "test_shutdown_script_manual" {
 
   provisioner "local-exec" {
     command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} '/usr/local/bin/homelab-shutdown.sh --dry-run 2>&1 || true'"
+  }
+}
+
+# ─── Manual Trigger: Test Suspend Script (dry-run, no actual suspend) ─────────────
+
+resource "null_resource" "test_suspend_script_manual" {
+  triggers = {
+    manual_trigger = "test suspend script logic (dry-run)"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} '/usr/local/bin/homelab-suspend.sh --dry-run 2>&1 || true'"
   }
 }

@@ -1,5 +1,5 @@
 [Unit]
-Description=Set RTC wake alarm for next 07:00 AM Argentina time (10:00 UTC)
+Description=Set RTC wake alarm for next 07:00 AM local (Europe/Madrid)
 Documentation=man:rtcwake(8)
 DefaultDependencies=no
 After=time-sync.target

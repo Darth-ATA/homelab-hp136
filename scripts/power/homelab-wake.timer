@@ -1,9 +1,9 @@
 [Unit]
-Description=Daily timer to set RTC wake alarm for 07:00 AM Argentina time
+Description=Daily timer to set RTC wake alarm for 07:00 AM local (Europe/Madrid)
 Requires=homelab-wake.service
 
 [Timer]
-# Run at 06:55 UTC daily (03:55 ARG) — gives 3h5m before 10:00 UTC (07:00 ARG)
+# Run at 06:55 UTC daily (08:55 CEST / 07:55 CET) — after 07:00 local wake, sets alarm for NEXT day
 OnCalendar=*-*-* 06:55:00
 Persistent=true
 RandomizedDelaySec=0

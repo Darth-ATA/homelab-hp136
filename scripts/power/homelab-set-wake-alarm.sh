@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# homelab-set-wake-alarm.sh — Calculate and set RTC wake alarm for 07:00 ARG (10:00 UTC)
+# homelab-set-wake-alarm.sh — Calculate and set RTC wake alarm for 07:00 local (Europe/Madrid)
 # Called by homelab-wake.service via systemd timer at 06:55 UTC daily
+# Also called by homelab-suspend.sh before suspending
 
 set -euo pipefail
 
 # ─── Configuration ──────────────────────────────────────────────────────────────
-TIMEZONE="America/Argentina/Buenos_Aires"
-TARGET_HOUR_LOCAL=7   # 07:00 Argentina time
+TIMEZONE="Europe/Madrid"
+TARGET_HOUR_LOCAL=7   # 07:00 local Spain time (CET/CEST)
 TARGET_MINUTE_LOCAL=0
 RTC_DEVICE="/dev/rtc0"
 LOG_TAG="homelab-wake"
@@ -20,22 +21,22 @@ log() {
 
 # ─── Main ───────────────────────────────────────────────────────────────────────
 main() {
-    log "info" "Calculating next 07:00 ARG wake alarm..."
+    log "info" "Calculating next 07:00 local (Europe/Madrid) wake alarm..."
 
     # Get current time in UTC (system clock)
     local now_utc
     now_utc="$(date -u +%s)"
 
-    # Calculate target time: tomorrow 07:00 ARG = 10:00 UTC
-    # Use date with TZ to compute the timestamp (no -u flag, TZ handles conversion)
+    # Calculate target time: tomorrow 07:00 local = varies UTC depending on DST
+    # Use date with TZ to compute the timestamp
     local target_utc
     local minute_fmt
     minute_fmt="$(printf '%02d' "${TARGET_MINUTE_LOCAL}")"
     target_utc="$(TZ="${TIMEZONE}" date -d "tomorrow ${TARGET_HOUR_LOCAL}:${minute_fmt}" +%s)"
 
-    # Sanity check: target must be in the future (at least 1 hour, at most 25 hours)
+    # Sanity check: target must be in the future (at least 1 hour, at most 30 hours)
     local diff=$((target_utc - now_utc))
-    if (( diff < 3600 )) || (( diff > 90000 )); then
+    if (( diff < 3600 )) || (( diff > 108000 )); then
         log "err" "Calculated wake time looks wrong: diff=${diff}s (now=$(date -u -d @"${now_utc}"), target=$(date -u -d @"${target_utc}"))"
         exit 1
     fi
