@@ -117,6 +117,56 @@ resource "null_resource" "jellyfin_cache_cleanup_cron" {
 }
 
 # ----------------------------------------------------------------------
+# ZFS SNAPSHOT PRUNING — Media dataset auto-snapshot cleanup
+# Keeps last 7 daily, 4 weekly, 3 monthly
+# ----------------------------------------------------------------------
+
+resource "null_resource" "deploy_zfs_snapshot_prune_script" {
+  triggers = {
+    script_version = "v1-daily7-weekly4-monthly3"
+  }
+
+  provisioner "local-exec" {
+    command = "scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no scripts/cleanup/cleanup-zfs-snapshots.sh root@${local.host_ip}:/usr/local/bin/cleanup-zfs-snapshots.sh && ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'chmod +x /usr/local/bin/cleanup-zfs-snapshots.sh'"
+  }
+}
+
+resource "null_resource" "zfs_snapshot_prune_cron" {
+  triggers = {
+    cron_spec = "zfs snapshot prune monthly 1st 05:00"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'sh -c \"echo \\\"0 5 1 * * root /usr/local/bin/cleanup-zfs-snapshots.sh\\\" > /etc/cron.d/zfs-snapshot-prune && chmod 644 /etc/cron.d/zfs-snapshot-prune\"'"
+  }
+}
+
+# ----------------------------------------------------------------------
+# DELUGE GHOST SPACE RECOVERY — Restart deluge if deleted-but-open files found
+# Prevents 11G+ space leak from deleted torrents held open by deluge process
+# ----------------------------------------------------------------------
+
+resource "null_resource" "deploy_deluge_ghost_cleanup_script" {
+  triggers = {
+    script_version = "v1-weekly-check"
+  }
+
+  provisioner "local-exec" {
+    command = "scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no scripts/cleanup/cleanup-deluge-ghost.sh root@${local.host_ip}:/usr/local/bin/cleanup-deluge-ghost.sh && ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'chmod +x /usr/local/bin/cleanup-deluge-ghost.sh'"
+  }
+}
+
+resource "null_resource" "deluge_ghost_cleanup_cron" {
+  triggers = {
+    cron_spec = "deluge ghost space check weekly Sunday 06:00"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'sh -c \"echo \\\"0 6 * * 0 root /usr/local/bin/cleanup-deluge-ghost.sh\\\" > /etc/cron.d/deluge-ghost-cleanup && chmod 644 /etc/cron.d/deluge-ghost-cleanup\"'"
+  }
+}
+
+# ----------------------------------------------------------------------
 # ZFS DISK ALERT — Telegram notification when pool usage >= 80%
 # ----------------------------------------------------------------------
 
@@ -192,5 +242,25 @@ resource "null_resource" "jellyfin_cleanup_manual" {
 
   provisioner "local-exec" {
     command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'pct exec 105 -- /usr/local/bin/cleanup-jellyfin.sh'"
+  }
+}
+
+resource "null_resource" "zfs_snapshot_prune_manual" {
+  triggers = {
+    manual_trigger = "run zfs snapshot prune now"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} '/usr/local/bin/cleanup-zfs-snapshots.sh'"
+  }
+}
+
+resource "null_resource" "deluge_ghost_cleanup_manual" {
+  triggers = {
+    manual_trigger = "run deluge ghost space recovery now"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} '/usr/local/bin/cleanup-deluge-ghost.sh'"
   }
 }
