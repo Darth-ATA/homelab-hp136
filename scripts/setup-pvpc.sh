@@ -32,7 +32,7 @@ set -Eeuo pipefail
 # Configuration
 #-------------------------------------------------------------------------------
 VM_ID="100"
-PROXMOX_HOST="192.168.1.134"
+PROXMOX_HOST="10.10.10.134"
 SSH_KEY="$HOME/.ssh/homelab_key"
 HA_CONTAINER="homeassistant"
 TMPDIR_REMOTE="/tmp/pvpc-setup"

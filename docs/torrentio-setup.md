@@ -4,9 +4,9 @@
 Torrentio is a Stremio add-on that aggregates torrents from multiple providers. When configured as a Prowlarr indexer, it allows Sonarr/Radarr to search and download content through Torrentio's providers.
 
 ### Prerequisites
-- Prowlarr running at http://192.168.1.142:9696
+- Prowlarr running at http://10.10.10.142:9696
 - API Key: `<your-prowlarr-api-key>`
-- SSH access to Proxmox: `ssh -i ~/.ssh/homelab_key root@192.168.1.134`
+- SSH access to Proxmox: `ssh -i ~/.ssh/homelab_key root@10.10.10.134`
 
 ---
 
@@ -14,7 +14,7 @@ Torrentio is a Stremio add-on that aggregates torrents from multiple providers. 
 
 ### Step 1: Create the Config Directory
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 \
   "pct exec 101 -- mkdir -p /config/custom"
 ```
 
@@ -22,20 +22,20 @@ ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
 Copy the contents from `docker/prowlarr/custom/torrentio.yml` to `/config/custom/torrentio.yml` in the Prowlarr container:
 
 ```bash
-scp docker/prowlarr/custom/torrentio.yml root@192.168.1.134:/tmp/torrentio.yml
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
+scp docker/prowlarr/custom/torrentio.yml root@10.10.10.134:/tmp/torrentio.yml
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 \
   "pct exec 101 -- mkdir -p /root/docker/prowlarr/config/custom && \
    pct push 101 /tmp/torrentio.yml /root/docker/prowlarr/config/custom/torrentio.yml"
 ```
 
 ### Step 3: Restart Prowlarr
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 \
   "pct exec 101 -- docker restart prowlarr"
 ```
 
 ### Step 4: Enable in Prowlarr UI
-1. Open http://192.168.1.142:9696
+1. Open http://10.10.10.142:9696
 2. Go to Settings → Indexers
 3. Click "+" → Add from Custom
 4. Find "Torrentio" → Enable all capabilities
@@ -48,7 +48,7 @@ ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
 ### Create torrentio.yml manually:
 
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 \
   "pct exec 101 -- cat > /config/custom/torrentio.yml << 'EOF'
 ---
 id: torrentio
@@ -166,7 +166,7 @@ EOF"
 
 ### Step 2: Restart Prowlarr
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 \
   "pct exec 101 -- docker restart prowlarr"
 ```
 
@@ -176,14 +176,14 @@ ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
 
 ### Test Movie Search
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 \
   "pct exec 101 -- curl -s 'https://torrentio.strem.fun/providers=eztv,rarbg|thepiratebay,torrentgalaxy,magnetdl,horriblesubs,nyaasi,anidex/stream/movie/tt0137523.json' | jq '.streams | length'"
 ```
 Expected: 10+ results
 
 ### Test TV Series Search (anime example)
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 \
   "pct exec 101 -- curl -s 'https://torrentio.strem.fun/providers=eztv,rarbg/thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex/stream/series/tt9529546:1:1.json' | jq '.streams | length'"
 ```
 Expected: 20+ results (The Rising of the Shield Hero)
@@ -225,7 +225,7 @@ curl -s 'https://torrentio.strem.fun/providers=eztv,rarbg/stream/series/tt952954
 
 **Check 3: Prowlarr Logs**
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 \
   "pct exec 101 -- docker logs prowlarr --tail 50 | grep -i torrentio"
 ```
 

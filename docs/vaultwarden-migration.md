@@ -17,7 +17,7 @@ Vaultwarden was co-located in LXC 101 (Docker) alongside Deluge, \*Arr, and othe
 | CPU | Shared (2 cores) | 1 dedicated core |
 | RAM | Shared (6GB pool) | 512MB dedicated |
 | Disk | 150GB shared (ZFS) | 4GB dedicated (ZFS) |
-| IP | 192.168.1.142 (LXC) | 192.168.1.144 (static) |
+| IP | 10.10.10.142 (LXC) | 10.10.10.144 (static) |
 | Port | 8080 (Docker mapped from 80) | 8000 (native) |
 | TLS | Via NPM (https → http) | Via NPM (https → http) |
 | Domain | vw.hp136.duckdns.org | vw.hp136.duckdns.org (unchanged) |
@@ -35,7 +35,7 @@ pct resize 104 rootfs 4G
 pct set 104 -memory 512
 
 # Set static IP
-pct set 104 -net0 name=eth0,bridge=vmbr0,firewall=1,gw=192.168.1.1,ip=192.168.1.144/24
+pct set 104 -net0 name=eth0,bridge=vmbr0,firewall=1,gw=10.10.10.1,ip=10.10.10.144/24
 
 # Reboot to apply IP
 pct reboot 104
@@ -74,11 +74,11 @@ pct exec 104 -- sed -i 's/^ROCKET_TLS=.*//' /etc/conf.d/vaultwarden
 pct exec 104 -- rc-service vaultwarden restart
 ```
 
-NPM proxy must target `http://192.168.1.144:8000` (not https).
+NPM proxy must target `http://10.10.10.144:8000` (not https).
 
 ### 4. Update NPM Proxy
 
-1. In NPM web UI (http://192.168.1.142:81), edit the vaultwarden proxy host
+1. In NPM web UI (http://10.10.10.142:81), edit the vaultwarden proxy host
 2. Change scheme to `http`
 3. Change forward port to `8000`
 4. Save
@@ -114,7 +114,7 @@ pct exec 101 -- rm -rf /root/docker/arcane/data/projects/vaultwarden
 
 If something goes wrong:
 
-1. Revert NPM proxy target to `http://192.168.1.142:8080`
+1. Revert NPM proxy target to `http://10.10.10.142:8080`
 2. Start vaultwarden Docker container on LXC 101: `docker start vaultwarden`
 3. Remove LXC 104: `pct stop 104 && pct destroy 104`
 4. Revert Terraform changes via `git revert`

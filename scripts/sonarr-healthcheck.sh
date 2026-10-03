@@ -21,7 +21,7 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 # ─── Configuration ────────────────────────────────────────────────────────────
 
 # Sonarr
-SONARR_URL="${SONARR_URL:-http://192.168.1.142:8989}"
+SONARR_URL="${SONARR_URL:-http://10.10.10.142:8989}"
 SONARR_API_KEY="${SONARR_API_KEY:?SONARR_API_KEY is required - set it in the cron environment or pass as env var}"
 
 # Internet test target — caught the TP-Link DoS issue blocking LXC outbound

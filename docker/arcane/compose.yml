@@ -1,5 +1,5 @@
 # Arcane - Game Server Management Panel
-# Access: http://192.168.1.142:3552
+# Access: http://10.10.10.142:3552
 # Configure game servers via the web interface
 
 services:
@@ -17,7 +17,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Madrid
-      - APP_URL=http://192.168.1.142:3552
+      - APP_URL=http://10.10.10.142:3552
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - JWT_SECRET=${JWT_SECRET}
     networks:

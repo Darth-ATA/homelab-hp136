@@ -2,35 +2,35 @@
 
 ## Quick Start - Connecting to Proxmox
 
-**Proxmox Host:** 192.168.1.134
+**Proxmox Host:** 10.10.10.134
 **SSH User:** root
 **SSH Key:** ~/.ssh/homelab_key
-**Web UI:** https://192.168.1.134:8006
+**Web UI:** https://10.10.10.134:8006
 
 ### Basic SSH Connection
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134
 ```
 
 ### Running Commands Remotely
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 "pct list"
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 "qm list"
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 "pct list"
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 "qm list"
 ```
 
 ### Accessing Containers (LXC)
 ```bash
 # Exec command inside container
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker ps"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- docker ps"
 
 # Shell inside container
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct enter 101"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct enter 101"
 ```
 
 ### Accessing VMs
 ```bash
 # Shell inside VM
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "qm terminal 100"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "qm terminal 100"
 
 # Exit qemu terminal: Ctrl-]
 ```
@@ -39,16 +39,16 @@ ssh -i ~/.ssh/homelab_key root@192.168.1.134 "qm terminal 100"
 
 | ID | Name | Type | IP | Specs |
 |----|------|------|-----|-------|
-| 100 | home_assistant | VM | 192.168.1.100 | 2 cores, 4GB RAM, 32GB disk |
-| 101 | docker | LXC | 192.168.1.142 | 2 cores, 6GB RAM, **150GB** disk, iGPU passthrough |
-| 102 | tailscale | LXC | 192.168.1.102 | 1 core, 512MB RAM, 2GB disk |
-| 103 | adguard | LXC | 192.168.1.2 | 1 core, 512MB RAM, 2GB disk |
-| 104 | vaultwarden | LXC | 192.168.1.144 | 1 core, 512MB RAM, 4GB disk |
-| 105 | jellyfin | LXC | 192.168.1.145 | 2 cores, 4GB RAM, **16GB** disk, iGPU passthrough |
+| 100 | home_assistant | VM | 10.10.10.100 | 2 cores, 4GB RAM, 32GB disk |
+| 101 | docker | LXC | 10.10.10.142 | 2 cores, 6GB RAM, **150GB** disk, iGPU passthrough |
+| 102 | tailscale | LXC | 10.10.10.102 | 1 core, 512MB RAM, 2GB disk |
+| 103 | adguard | LXC | 10.10.10.2 | 1 core, 512MB RAM, 2GB disk |
+| 104 | vaultwarden | LXC | 10.10.10.144 | 1 core, 512MB RAM, 4GB disk |
+| 105 | jellyfin | LXC | 10.10.10.145 | 2 cores, 4GB RAM, **16GB** disk, iGPU passthrough |
 
 ## Terraform
 
-- **API Endpoint:** https://192.168.1.134:8006/api2/json
+- **API Endpoint:** https://10.10.10.134:8006/api2/json
 - **API Token:** In terraform.tfvars (NOT committed to git)
 - **Provider:** bpg/proxmox
 

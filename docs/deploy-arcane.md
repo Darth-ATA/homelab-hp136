@@ -25,13 +25,13 @@ Before deploying Arcane, ensure you have:
 An SSH key must be configured for authentication to the Proxmox host.
 
 - **Key location**: `~/.ssh/homelab_key`
-- **Target host**: `192.168.1.134`
+- **Target host**: `10.10.10.134`
 - **SSH user**: `root`
 
 Test your connection:
 
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134
 ```
 
 ### 2. Proxmox LXC Running
@@ -41,7 +41,7 @@ The target LXC container (ID: **101**) must be running before deployment.
 Check LXC status:
 
 ```bash
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@192.168.1.134 "pct status 101"
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@10.10.10.134 "pct status 101"
 ```
 
 ### 3. Source Files
@@ -66,7 +66,7 @@ Expected output:
 ```
 ==============================================
   Arcane Deployment Script
-  Target: LXC 101 @ 192.168.1.134
+  Target: LXC 101 @ 10.10.10.134
 ==============================================
 
 [INFO] Validating prerequisites...
@@ -89,7 +89,7 @@ Expected output:
   Deployment Complete!
 ==============================================
 
-[SUCCESS] Access Arcane at: http://192.168.1.142:3552
+[SUCCESS] Access Arcane at: http://10.10.10.142:3552
 ```
 
 ### Redeploy (Force)
@@ -138,7 +138,7 @@ Options:
           │ SSH (key: ~/.ssh/homelab_key)                                    │
           ▼                                                                   │
 ┌─────────────────────────────────────────────────────────────────┐
-│                    PROXMOX HOST (192.168.1.134)                         │
+│                    PROXMOX HOST (10.10.10.134)                         │
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐             │
 │  │                   LXC CONTAINER (ID: 101)                  │             │
@@ -194,13 +194,13 @@ SSH_KEY="/path/to/your/key"
 **Solution**: Start the LXC:
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct start 101"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct start 101"
 ```
 
 Then verify:
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct status 101"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct status 101"
 ```
 
 ### Container Not Starting
@@ -210,13 +210,13 @@ ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct status 101"
 **Solution**: Check container logs inside the LXC:
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker logs arcane"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- docker logs arcane"
 ```
 
 Also check container status:
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker ps -a"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- docker ps -a"
 ```
 
 ### Files Not Found
@@ -243,7 +243,7 @@ ls -la docker/arcane/
 **Solution**: Check what's using the port:
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- netstat -tlnp | grep 3552"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- netstat -tlnp | grep 3552"
 ```
 
 Either stop the conflicting service or change the port in `compose.yml`.
@@ -276,7 +276,7 @@ JWT_SECRET=your-jwt-secret-here
 
 ### Network Access
 
-Arcane is accessible at `http://192.168.1.142:3552`. Consider:
+Arcane is accessible at `http://10.10.10.142:3552`. Consider:
 - Configuring firewall rules to restrict access
 - Using a reverse proxy with HTTPS for production
 - Implementing authentication at the application level
@@ -286,22 +286,22 @@ Arcane is accessible at `http://192.168.1.142:3552`. Consider:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `LXC_ID` | Proxmox LXC container ID | `101` |
-| `PROXMOX_HOST` | Proxmox host IP | `192.168.1.134` |
+| `PROXMOX_HOST` | Proxmox host IP | `10.10.10.134` |
 | `SSH_KEY` | Path to SSH private key | `~/.ssh/homelab_key` |
 | `APP_PORT` | Application port | `3552` |
-| `APP_URL` | Full access URL | `http://192.168.1.142:3552` |
+| `APP_URL` | Full access URL | `http://10.10.10.142:3552` |
 
 To modify these, edit the configuration section at the top of `deploy-arcane.sh`:
 
 ```bash
 # Configuration
 LXC_ID="101"
-PROXMOX_HOST="192.168.1.134"
+PROXMOX_HOST="10.10.10.134"
 SSH_KEY="~/.ssh/homelab_key"
 LOCAL_DIR="$(cd "$(dirname "$0")/../docker/arcane" && pwd)"
 REMOTE_DIR="/root/docker/arcane"
 APP_PORT="3552"
-APP_URL="http://192.168.1.142:${APP_PORT}"
+APP_URL="http://10.10.10.142:${APP_PORT}"
 ```
 
 ## Quick Reference
@@ -317,11 +317,11 @@ APP_URL="http://192.168.1.142:${APP_PORT}"
 ./scripts/deploy-arcane.sh --help
 
 # Check container status (inside LXC)
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker ps"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- docker ps"
 
 # View logs
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker logs arcane"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- docker logs arcane"
 
 # Restart container
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct exec 101 -- docker restart arcane"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- docker restart arcane"
 ```

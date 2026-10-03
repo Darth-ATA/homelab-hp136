@@ -17,7 +17,7 @@ resource "null_resource" "zfs_auto_snapshots" {
 
   provisioner "local-exec" {
     command = <<EOT
-ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${var.proxmox_host_ip} 'bash -s' << 'REMOTE'
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'bash -s' << 'REMOTE'
 set -e
 which zfs-auto-snapshot > /dev/null 2>&1 || apt-get install -y -qq zfs-auto-snapshot
 zfs set com.sun:auto-snapshot=true rpool/data/media

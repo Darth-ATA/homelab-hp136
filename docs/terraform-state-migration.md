@@ -8,7 +8,7 @@ Migrate Terraform state from local `terraform.tfstate` to [Garage](https://garag
 Workstation (terraform)
   │  S3 API (HTTP)
   ▼
-LXC 101 (192.168.1.142:3900)
+LXC 101 (10.10.10.142:3900)
   │  Garage Docker container
   ▼
 /var/lib/garage/ (named volume → ZFS backup)
@@ -17,7 +17,7 @@ LXC 101 (192.168.1.142:3900)
 - **Bucket:** `homelab-terraform-state`
 - **State key:** `terraform.tfstate`
 - **Region:** `garage`
-- **Endpoint:** `http://192.168.1.142:3900`
+- **Endpoint:** `http://10.10.10.142:3900`
 
 ## Prerequisites
 
@@ -52,11 +52,11 @@ The script will:
 
 ```bash
 # Check Garage is running
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 \
   "pct exec 101 -- docker ps --filter name=garage"
 
 # Check S3 endpoint responds
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 \
   "pct exec 101 -- curl -s -o /dev/null -w '%{http_code}' http://localhost:3900/"
 ```
 
@@ -83,7 +83,7 @@ If you prefer to do it manually or need to troubleshoot:
 
 ```bash
 # SSH into LXC 101
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 "pct enter 101"
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct enter 101"
 
 # Inside LXC 101, run garage CLI commands
 docker exec garage garage bucket create homelab-terraform-state
@@ -182,11 +182,11 @@ rm -rf /root/docker/arcane/data/projects/garage/
 
 ```bash
 # Check logs
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 \
   "pct exec 101 -- docker logs garage"
 
 # Verify .env exists on LXC
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 \
   "pct exec 101 -- ls -la /root/docker/arcane/data/projects/garage/"
 ```
 
@@ -214,7 +214,7 @@ terraform plan  # Retry — the conflict is transient
 Re-run the setup script or create manually:
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134 \
+ssh -i ~/.ssh/homelab_key root@10.10.10.134 \
   "pct exec 101 -- docker exec garage garage bucket create homelab-terraform-state"
 ```
 
@@ -230,7 +230,7 @@ ssh -i ~/.ssh/homelab_key root@192.168.1.134 \
 |----------|-------|
 | Service | Garage S3-compatible storage |
 | Container | `garage` |
-| LXC | 101 (docker, 192.168.1.142) |
+| LXC | 101 (docker, 10.10.10.142) |
 | Port | 3900 (S3 API) |
 | Image | `dxflrs/garage:v1.0.1` |
 | Arcane project | `/root/docker/arcane/data/projects/garage/` |

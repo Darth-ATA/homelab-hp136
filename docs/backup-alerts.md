@@ -7,7 +7,7 @@ Telegram-based backup monitoring for the Proxmox homelab. Two scripts:
 ## Prerequisites
 
 - Telegram bot token and chat ID (already configured for other monitors)
-- SSH access to Proxmox host (`192.168.1.134`)
+- SSH access to Proxmox host (`10.10.10.134`)
 - Terraform applied with `mailnotification = "failure"` on all backup jobs
 
 ## Setup
@@ -15,7 +15,7 @@ Telegram-based backup monitoring for the Proxmox homelab. Two scripts:
 ### 1. Create `/root/.env` on Proxmox host
 
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134
+ssh -i ~/.ssh/homelab_key root@10.10.10.134
 cat > /root/.env << 'EOF'
 # Telegram bot credentials — sourced by backup alert scripts
 TELEGRAM_BOT_TOKEN="<your-telegram-bot-token>"
@@ -34,8 +34,8 @@ source /root/.env && echo "$TELEGRAM_CHAT_ID"
 
 From your workstation:
 ```bash
-scp -i ~/.ssh/homelab_key scripts/check-backup-status.sh root@192.168.1.134:/usr/local/bin/
-scp -i ~/.ssh/homelab_key scripts/check-backup-disk.sh root@192.168.1.134:/usr/local/bin/
+scp -i ~/.ssh/homelab_key scripts/check-backup-status.sh root@10.10.10.134:/usr/local/bin/
+scp -i ~/.ssh/homelab_key scripts/check-backup-disk.sh root@10.10.10.134:/usr/local/bin/
 ```
 
 On the Proxmox host:
@@ -48,7 +48,7 @@ chmod +x /usr/local/bin/check-backup-disk.sh
 
 Create `/etc/cron.d/backup-alerts`:
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134
+ssh -i ~/.ssh/homelab_key root@10.10.10.134
 cat > /etc/cron.d/backup-alerts << 'EOF'
 # Backup status check — runs after backup window ends (last backup at 04:30)
 30 5 * * * root /usr/local/bin/check-backup-status.sh
@@ -150,7 +150,7 @@ Both scripts use a state file to prevent alert spam:
 
 ### Remove scripts and cron:
 ```bash
-ssh -i ~/.ssh/homelab_key root@192.168.1.134
+ssh -i ~/.ssh/homelab_key root@10.10.10.134
 rm /usr/local/bin/check-backup-status.sh
 rm /usr/local/bin/check-backup-disk.sh
 rm /etc/cron.d/backup-alerts

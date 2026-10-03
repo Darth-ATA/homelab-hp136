@@ -264,7 +264,7 @@ main() {
         local lxc_id="$2"
         shift 2
         # Re-execute inside LXC
-        exec ssh -i "$HOME/.ssh/homelab_key" root@192.168.1.134 \
+        exec ssh -i "$HOME/.ssh/homelab_key" root@10.10.10.134 \
           "pct exec $lxc_id -- bash -c '$(cat "$0")'" 2>/dev/null || {
           log_error "Failed to run inside LXC. Make sure Proxmox is reachable."
           exit 1

@@ -32,7 +32,7 @@ TEST_URL="${TEST_URL:-https://google.com}"
 TEST_TIMEOUT="${TEST_TIMEOUT:-10}"           # seconds per curl attempt
 RETRY_DELAY="${RETRY_DELAY:-30}"             # seconds between attempt and retry
 REQUIRED_FAILURES="${REQUIRED_FAILURES:-2}"   # consecutive failures before alert
-GATEWAY="${GATEWAY:-192.168.1.1}"             # for diagnostic ping
+GATEWAY="${GATEWAY:-10.10.10.1}"             # for diagnostic ping
 
 # Telegram bot (empty = no alerts — sourced from /root/.env or env var)
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
@@ -221,8 +221,8 @@ EOF
 • DNS no resuelve dentro del LXC
 
 <b>Quick check:</b>
-  ssh root@192.168.1.134 "pct exec $LXC_ID -- ping -c 2 192.168.1.1"
-  ssh root@192.168.1.134 "pct exec $LXC_ID -- curl -s $TEST_URL"
+  ssh root@10.10.10.134 "pct exec $LXC_ID -- ping -c 2 10.10.10.1"
+  ssh root@10.10.10.134 "pct exec $LXC_ID -- curl -s $TEST_URL"
 EOF
 )
             else

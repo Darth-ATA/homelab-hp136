@@ -1,17 +1,24 @@
 #!/bin/bash
 # Set static IPs for Proxmox LXC containers
-# Run this on the Proxmox host (192.168.1.134) as root
+# Run this on the Proxmox host as root
+#
+# The subnet is configurable via SUBNET so this script survives future
+# renumbers (defaults to the current homelab LAN, see NETWORK.md).
 
-set -e
+set -Eeuo pipefail
+
+SUBNET="${SUBNET:-10.10.10}"
+GATEWAY="${GATEWAY:-${SUBNET}.1}"
 
 echo "Setting static IPs for LXC containers..."
 
-# Container configurations: ID|IP|Gateway
+# Container configurations: ID|IP|Description (matches NETWORK.md allocation table)
 containers=(
-    "101|192.168.1.142|Home Assistant (Docker/NPM)"
-    "102|192.168.1.102|Tailscale"
-    "103|192.168.1.2|AdGuard Home"
-    "105|192.168.1.105|Debian Test"
+    "101|${SUBNET}.142|Docker (media stack + NPM + Arcane)"
+    "102|${SUBNET}.102|Tailscale"
+    "103|${SUBNET}.2|AdGuard Home"
+    "104|${SUBNET}.144|Vaultwarden"
+    "105|${SUBNET}.145|Jellyfin"
 )
 
 for container in "${containers[@]}"; do
@@ -30,7 +37,7 @@ for container in "${containers[@]}"; do
     sed -i '/^net0:/d' "$config_file"
 
     # Add static IP configuration
-    echo "net0: name=eth0,bridge=vmbr0,firewall=1,ip=${ip}/24,gateway=192.168.1.1,type=veth" >> "$config_file"
+    echo "net0: name=eth0,bridge=vmbr0,firewall=1,ip=${ip}/24,gateway=${GATEWAY},type=veth" >> "$config_file"
 
     echo "  Updated $config_file"
 done
@@ -49,7 +56,7 @@ done
 
 echo ""
 echo "Next steps:"
-echo "1. Restart each container: for id in 101 102 103 105; do pct stop \$id && pct start \$id; done"
-echo "2. Configure Home Assistant VM (ID 100) with static IP 192.168.1.100 inside HA OS"
+echo "1. Restart each container: for id in 101 102 103 104 105; do pct stop \$id && pct start \$id; done"
+echo "2. Configure Home Assistant VM (ID 100) with static IP ${SUBNET}.100 inside HA OS"
 echo "3. Configure AdGuard DNS records (see adguard-dns-records.md)"
 echo "4. Configure Nginx Proxy Manager (see npm-config.md)"

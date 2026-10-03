@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := help
 
 SHELL := /bin/bash
-PROXMOX_HOST := 192.168.1.134
+PROXMOX_HOST := 10.10.10.134
 SSH_KEY := ~/.ssh/homelab_key
 LXC_DOCKER := 101
 SSH := ssh -i $(SSH_KEY) -o StrictHostKeyChecking=no root@$(PROXMOX_HOST)

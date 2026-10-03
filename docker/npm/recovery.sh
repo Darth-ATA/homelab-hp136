@@ -19,7 +19,7 @@ set -Eeo pipefail
 
 # SSH configuration for Proxmox container access
 NPM_SSH_KEY_PATH="${NPM_SSH_KEY_PATH:-${HOME}/.ssh/homelab_key}"
-NPM_SSH_HOST="${NPM_SSH_HOST:-192.168.1.134}"
+NPM_SSH_HOST="${NPM_SSH_HOST:-10.10.10.134}"
 NPM_SSH_PORT="${NPM_SSH_PORT:-22}"
 NPM_SSH_USER="${NPM_SSH_USER:-root}"
 NPM_CONTAINER_ID="${NPM_CONTAINER_ID:-101}"
@@ -42,7 +42,7 @@ LOG_FILE="${LOG_FILE:-/var/log/npm-recovery.log}"
 
 # Full domain suffix for DuckDNS
 DOMAIN_SUFFIX="${DUBNSDNS_DOMAIN}.duckdns.org"
-BASE_HOST="192.168.1"
+BASE_HOST="10.10.10"
 
 #==============================================================================
 # PROXY HOSTS DEFINITION
@@ -50,7 +50,7 @@ BASE_HOST="192.168.1"
 
 # Format: subdomain -> "ip:port[:websocket]"
 # Using indirect reference to build associative array compatible with all bash versions
-PROXY_HOSTS="arcane:192.168.1.142:3552 bazarr:192.168.1.142:6767 deluge:192.168.1.142:8112 frigate:192.168.1.142:5000 lidarr:192.168.1.142:8686 npm:192.168.1.142:81 vw:192.168.1.142:8080 ha:192.168.1.100:8123:websocket agh:192.168.1.2:80 jelly:192.168.1.142:8096 rad:192.168.1.142:7878 son:192.168.1.142:8989 prowlarr:192.168.1.142:9696 qbit:192.168.1.142:8081"
+PROXY_HOSTS="arcane:10.10.10.142:3552 bazarr:10.10.10.142:6767 deluge:10.10.10.142:8112 frigate:10.10.10.142:5000 lidarr:10.10.10.142:8686 npm:10.10.10.142:81 vw:10.10.10.142:8080 ha:10.10.10.100:8123:websocket agh:10.10.10.2:80 jelly:10.10.10.142:8096 rad:10.10.10.142:7878 son:10.10.10.142:8989 prowlarr:10.10.10.142:9696 qbit:10.10.10.142:8081"
 
 # Validate proxy hosts are defined
 if [[ -z "$PROXY_HOSTS" ]]; then

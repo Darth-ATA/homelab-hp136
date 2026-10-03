@@ -17,7 +17,7 @@ Priorities: 🔴 Crítico | 🟡 Alta | 🟢 Media | ⚪ Baja
 **Decisión tomada:** Se eligió **Deluge** como cliente único. qBittorrent y Gluetun fueron removidos. No hay VPN.
 
 **Implicaciones:**
-- Tráfico P2P sale por IP real (192.168.1.142)
+- Tráfico P2P sale por IP real (10.10.10.142)
 - Ya no hay contención de puertos entre Deluge/qBittorrent
 - `/dev/net/tun` ya no es necesario en LXC 101
 
