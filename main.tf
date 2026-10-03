@@ -7,14 +7,16 @@ terraform {
   }
 
   backend "s3" {
-    bucket                      = "homelab-terraform-state"
-    key                         = "terraform.tfstate"
-    region                      = "garage"
-    endpoint                    = "http://192.168.1.142:3900"
-    force_path_style            = true
-    skip_credentials_validation = true
-    skip_region_validation      = true
-    profile                     = "garage"
+    bucket                       = "homelab-terraform-state"
+    key                          = "terraform.tfstate"
+    region                       = "garage"
+    endpoint                     = "http://10.10.10.142:3900"
+    force_path_style             = true
+    skip_credentials_validation  = true
+    skip_region_validation       = true
+    skip_metadata_api_check      = true
+    skip_requesting_account_id   = true
+    profile                      = "garage"
   }
 }
 

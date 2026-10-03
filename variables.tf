@@ -4,6 +4,12 @@ variable "proxmox_api_token" {
   sensitive   = true
 }
 
+variable "proxmox_host_ip" {
+  description = "Proxmox host IP (legacy variable, being phased out)"
+  type        = string
+  default     = "192.168.1.134"
+}
+
 # Staging flags for the subnet migration (192.168.1.0/24 -> 10.10.10.0/24).
 # stage_dual_stack defaults false for the diff-neutral refactor PR and flips to
 # true at Apply A (staging). The cutover commits flip the rest:

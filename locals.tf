@@ -5,7 +5,7 @@
 # firewall destination derives from it, so a renumber is a one-line change
 # (fallback subnet: 192.168.77, identical last octets).
 locals {
-  subnet_base        = "192.168.1" # ships legacy; flip to "10.10.10" at cutover
+  subnet_base        = "10.10.10"  # cutover: flip to new subnet
   legacy_subnet_base = "192.168.1" # documented exception: docker hold address until Apply C
   new_subnet_base    = "10.10.10"  # staging target: eth1 (docker) + host dual-stack before the flip
 
