@@ -1,61 +1,62 @@
-# HA Static IP via DHCP Reservation (Router)
+# HA Static IP in 10.10.10.x Subnet
 
-## Problema
-HA OS tiene filesystem read-only (`/etc` es erofs). La IP estática configurada via `ip addr add` o NetworkManager **no persiste tras reboot**.
+## Estado Actual
+**IP Estática Manual** en `10.10.10.100` - FUNCIONA
 
-## Solución: DHCP Reservation en Router (EX520v)
+## Problemas con DHCP Reservation
+1. Router EX520v no honra la reserva estática (asigna IP del pool 10.10.10.157)
+2. `dhclient` no persiste en HA OS (filesystem read-only, no `/var/lib/dhcp`, no `/etc/resolv.conf` writable)
+3. NetworkManager tiene `enp6s18` como `unmanaged` (configurado por supervisor)
 
-### 1. Configurar Reserva DHCP en Router
-```
-Router UI → DHCP Server → Static Leases / Address Reservation
-MAC Address: 02:8d:ab:80:c0:9d
-IP Address: 10.10.10.100
-```
+## Solución: IP Estática Manual
 
-### 2. Cambiar HA a DHCP
-**Opción A - Via UI (recomendado):**
-```
-Settings → System → Network → Configure network interfaces
-Interface: enp6s18
-Method: Automatic (DHCP)
-Apply → Restart Home Assistant
-```
+### Estado Actual ✅
+- IP: `10.10.10.100/24`
+- Gateway: `10.10.10.1`
+- DNS: `10.10.10.2` (AdGuard)
+- HA accesible en `https://ha.hp136.duckdns.org` (200 OK)
 
-**Opción B - Via configuration.yaml:**
-```yaml
-# En /mnt/data/supervisor/homeassistant/configuration.yaml
-# ANTES de default_config:
-network:
-  config:
-    - interface: enp6s18
-      type: ethernet
-      method: auto
-```
-*Luego: Settings → System → Restart Home Assistant*
-
-### 3. Verificar
+### Tras Reboot de HA (ejecutar en Proxmox Host)
 ```bash
-# En Proxmox host
+qm guest exec 100 -- bash -c 'ip link set enp6s18 up && sleep 3 && ip addr add 10.10.10.100/24 dev enp6s18 2>/dev/null && ip route add default via 10.10.10.1 dev enp6s18'
+```
+
+### Verificar
+```bash
 qm guest exec 100 -- ip addr show enp6s18
-# Debe mostrar: 10.10.10.100/24 (asignado por DHCP)
+# Debe mostrar: inet 10.10.10.100/24 scope global enp6s18
+
+curl -s -o /dev/null -w "%{http_code}" https://ha.hp136.duckdns.org
+# Debe responder: 200
 ```
 
-### Ventajas
-- ✅ Persiste tras reboot automáticamente
-- ✅ No toca HA OS read-only
-- ✅ Router es autoridad DHCP (única fuente de verdad)
-- ✅ Config centralizada en router
-- ✅ La conexión NetworkManager ya existe en overlay (`/etc/NetworkManager/system-connections/`) - solo cambiar `method: auto`
-
-### Rollback
-Si algo falla, en Proxmox console:
-```bash
-qm guest exec 100 -- ip link set enp6s18 up && sleep 3 && ip addr add 10.10.10.100/24 dev enp6s18 && ip route add default via 10.10.10.1 dev enp6s18
+## Configuración de Red en HA (NetworkManager)
+La conexión existe en overlay persistente:
 ```
+/mnt/data/supervisor/overlay/etc/NetworkManager/system-connections/Supervisor enp6s18.nmconnection
+```
+- `method: manual`
+- `address1: 10.10.10.100/24,10.10.10.1`
+- `dns: 10.10.10.2`
+- `autoconnect: yes`
+
+**Nota:** NetworkManager tiene la interfaz como `unmanaged` (configurado por supervisor HA OS), por eso la IP no se levanta sola tras reboot.
+
+## Alternativas Evaluadas y Descarte
+| Opción | Resultado |
+|--------|-----------|
+| DHCP Reservation en Router | ❌ Router no honra reserva (da IP pool) |
+| dhclient en boot | ❌ Read-only FS, no persiste leases/resolv.conf |
+| systemd service en overlay | ❌ Overlay no cubre /etc/systemd/system/ |
+| NetworkManager managed | ❌ Supervisor fuerza unmanaged |
+| Custom HA OS Build | ✅ Funcionaría pero overkill |
+
+## Conclusión
+**IP estática manual + comando post-reboot documentado** es la solución pragmática. Los reboots de HA OS son infrecuentes (solo updates de HA OS), y el comando toma ~5 segundos.
 
 ---
 
 **MAC de HA:** `02:8d:ab:80:c0:9d`  
-**IP reservada:** `10.10.10.100`  
+**IP:** `10.10.10.100`  
 **Gateway:** `10.10.10.1`  
-**DNS:** `10.10.10.2` (AdGuard)
+**DNS:** `10.10.10.2`
