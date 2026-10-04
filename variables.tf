@@ -7,31 +7,26 @@ variable "proxmox_api_token" {
 variable "proxmox_host_ip" {
   description = "Proxmox host IP (legacy variable, being phased out)"
   type        = string
-  default     = "192.168.1.134"
+  default     = "10.10.10.134"
 }
 
-# Staging flags for the subnet migration (192.168.1.0/24 -> 10.10.10.0/24).
-# stage_dual_stack defaults false for the diff-neutral refactor PR and flips to
-# true at Apply A (staging). The cutover commits flip the rest:
-#   - stage_dual_stack:  host gets 10.10.10.134 alongside 192.168.1.134; docker LXC gets eth1 10.10.10.142
-#   - stage_docker_hold: docker net0 stays on the legacy subnet until the final cutover (Apply C)
-#   - keep_legacy_host_ip: remove the legacy 192.168.1.134 host IP in the final cleanup
+# Migration complete: all staging flags set to false (final state)
 variable "stage_dual_stack" {
-  description = "Stage dual-stack: add 10.10.10 addresses before the cutover (true during Apply A..C window)"
+  description = "Stage dual-stack: add 10.10.10 addresses before the cutover (false after migration complete)"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "stage_docker_hold" {
-  description = "Hold docker LXC 101 net0 on the legacy subnet until the final cutover (Apply C)"
+  description = "Hold docker LXC 101 net0 on the legacy subnet until the final cutover (false after migration complete)"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "keep_legacy_host_ip" {
-  description = "Keep the legacy 192.168.1.134 host IP during and after cutover (set false in final cleanup)"
+  description = "Keep the legacy 192.168.1.134 host IP during and after cutover (false after migration complete)"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "proxmox_node_name" {
