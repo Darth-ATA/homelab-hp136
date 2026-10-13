@@ -38,7 +38,7 @@ resource "proxmox_virtual_environment_container" "jellyfin" {
     name        = "eth0"
     bridge      = "vmbr0"
     mac_address = "BC:24:11:46:95:DE"
-    firewall    = true
+    firewall    = false
   }
 
   features {

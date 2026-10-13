@@ -62,7 +62,7 @@ resource "proxmox_virtual_environment_container" "docker" {
     name        = "eth0"
     bridge      = "vmbr0"
     mac_address = "BC:24:11:C5:96:4F"
-    firewall    = true
+    firewall    = false
   }
 
   # Staging eth1 on the NEW subnet (paired positionally with the dynamic
@@ -72,7 +72,7 @@ resource "proxmox_virtual_environment_container" "docker" {
     content {
       name     = "eth1"
       bridge   = "vmbr0"
-      firewall = true
+      firewall = false
     }
   }
 

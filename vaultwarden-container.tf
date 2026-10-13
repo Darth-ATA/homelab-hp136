@@ -39,7 +39,7 @@ resource "proxmox_virtual_environment_container" "vaultwarden" {
     name        = "eth0"
     bridge      = "vmbr0"
     mac_address = "BC:24:11:78:83:C3"
-    firewall    = true
+    firewall    = false
   }
 
   features {
