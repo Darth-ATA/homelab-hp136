@@ -18,6 +18,11 @@ locals {
   soulseek_dataset            = "rpool/data/soulseek"
   soulseek_dataset_recordsize = "1M"
   soulseek_dataset_atime      = "off"
+
+  # Shared dataset — Samba share for file exchange between homelab and clients (Mac/PC)
+  shared_dataset            = "rpool/data/shared"
+  shared_dataset_recordsize = "1M"
+  shared_dataset_atime      = "off"
 }
 
 # Apply ZFS tuning for the media dataset
@@ -63,5 +68,46 @@ resource "null_resource" "zfs_dataset_soulseek_tuning" {
 
   provisioner "local-exec" {
     command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'zfs set recordsize=${local.soulseek_dataset_recordsize} ${local.soulseek_dataset} && zfs set atime=${local.soulseek_dataset_atime} ${local.soulseek_dataset}'"
+  }
+}
+
+# Create the shared dataset (if missing) and apply ZFS tuning
+# Idempotent: skips creation if the dataset already exists
+resource "null_resource" "zfs_dataset_shared_create" {
+  triggers = {
+    dataset = local.shared_dataset
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'zfs list ${local.shared_dataset} >/dev/null 2>&1 || zfs create ${local.shared_dataset}'"
+  }
+}
+
+resource "null_resource" "zfs_dataset_shared_tuning" {
+  depends_on = [null_resource.zfs_dataset_shared_create]
+
+  triggers = {
+    dataset    = local.shared_dataset
+    recordsize = local.shared_dataset_recordsize
+    atime      = local.shared_dataset_atime
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'zfs set recordsize=${local.shared_dataset_recordsize} ${local.shared_dataset} && zfs set atime=${local.shared_dataset_atime} ${local.shared_dataset}'"
+  }
+}
+
+# Set ownership of the shared dataset mountpoint to UID/GID 1000 (media user),
+# consistent with the other data datasets, so Samba/container writes work.
+resource "null_resource" "zfs_dataset_shared_ownership" {
+  depends_on = [null_resource.zfs_dataset_shared_create]
+
+  triggers = {
+    dataset = local.shared_dataset
+    owner   = "1000:1000"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'chown 1000:1000 /${local.shared_dataset} && chmod 777 /${local.shared_dataset}'"
   }
 }
