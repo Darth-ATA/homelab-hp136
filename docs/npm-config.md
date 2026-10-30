@@ -28,7 +28,7 @@ All services are accessible via `https://<service>.hp136.duckdns.org`
 | qbit | qbit.hp136.duckdns.org | 10.10.10.142 | 8081 | qBittorrent |
 | rad | rad.hp136.duckdns.org | 10.10.10.142 | 7878 | Radarr |
 | son | son.hp136.duckdns.org | 10.10.10.142 | 8989 | Sonarr |
-| vw | vw.hp136.duckdns.org | 10.10.10.142 | 8080 | Vaultwarden |
+| vw | vw.hp136.duckdns.org | 10.10.10.144 | 8000 | Vaultwarden (websockets enabled) |
 | darthgain | darthgain.hp136.duckdns.org | 10.10.10.142 | 8000 | DARTH-GAIN web dashboard |
 
 ## SSL Certificate

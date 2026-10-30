@@ -1,22 +1,16 @@
 # Nginx Proxy Manager
 # Access: http://10.10.10.142:81 (or via proxy)
 # Default login: admin@example.com / changeme (change on first login)
+# network_mode: host required to reach LAN IPs (10.10.10.x)
 
 services:
   app:
     image: jc21/nginx-proxy-manager:latest
     container_name: npm-app
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "81:81"
-      - "443:443"
+    network_mode: host
     volumes:
       - ./data:/data
       - ./letsencrypt:/etc/letsencrypt
-    networks:
-      - default
 
-networks:
-  default:
-    driver: bridge
+# networks: (not needed with host mode)

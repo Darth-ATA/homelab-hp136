@@ -89,6 +89,42 @@ curl -s "https://torrentio.strem.fun/providers=rarbg/stream/movie/tt8579674.json
 
 ---
 
+## Issue 4: Interactive Search Returns "Unable to load results"
+
+### Symptoms
+- Sonarr interactive search shows "Unable to load results for this episode search. Try again later"
+- Backend API (`/api/v3/release?episodeId=...`) returns results, but UI doesn't display them
+
+### Root Causes (found 2026-10-22)
+1. **AnimeTosho indexer** (`feed.animetosho.org`) — DNS no longer resolves (NXDOMAIN). Prowlarr hangs trying to query it, causing the whole search request to timeout.
+2. **Torrentio Proxy** — disabled by Prowlarr due to 429 (Too Many Requests) after recent failures. Sonarr still had it cached and kept getting 410 Gone.
+3. **Sonarr SQLite "database is locked"** — concurrent writes (interactive search + RSS sync) caused lock contention, making searches fail.
+4. **Deluge password mismatch** — Sonarr had a wrong Deluge password, causing "Unable to communicate with Deluge" errors that surfaced in the UI.
+
+### Solution
+1. Disable **AnimeTosho** in Prowlarr (and remove it from Sonarr's indexers).
+2. Disable **Torrentio Proxy** in Prowlarr (and remove the duplicate from Sonarr).
+3. Restart Sonarr to clear the SQLite lock and cached indexer state.
+4. Fix the Deluge password in Sonarr to match Deluge's actual password (`deluge`).
+5. Add working indexers with FlareSolverr: **1337x** (base URL `https://1337x.to/`, tag `flaresolverr`), **EZTV**, **The Pirate Bay**.
+
+### Verify
+```bash
+# Sonarr API should return results
+curl -s -H "X-Api-Key: <sonarr-api-key>" \
+  "http://10.10.10.142:8989/api/v3/release?episodeId=<EPISODE_ID>" | jq length
+
+# Prowlarr search should respond quickly
+curl -s -H "X-Api-Key: <prowlarr-api-key>" \
+  "http://10.10.10.142:9696/api/v1/search?query=My+Hero+Academia+S03E07" | head -c 100
+```
+
+### Notes
+- If the UI still shows "Unable to load results" after the backend returns data, it's a frontend cache issue: hard-refresh (Ctrl+F5) or use incognito mode.
+- Load average spikes (60+) on the LXC can cause Sonarr to crash (exit 137). Restart Sonarr if it becomes unresponsive.
+
+---
+
 ## Issue 3: Sonarr Episode Search Crashes
 
 ### Symptoms

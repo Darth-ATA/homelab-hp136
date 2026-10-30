@@ -46,3 +46,8 @@ docker/frigate/config/config.yml
 .ocx/
 .opencode/
 skills-lock.json
+
+# Agent/IDE local config and caches (user-specific)
+.envsitter/
+.pi/
+.atl/

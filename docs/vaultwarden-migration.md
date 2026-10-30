@@ -129,6 +129,7 @@ The old data on LXC 101 was preserved until cleanup step 6.
 - **Unprivileged**: Alpine unprivileged containers need `features { keyctl = true }` and `nesting = true` for vaultwarden.
 - **Volume mount**: Alpine vaultwarden stores data at `/var/lib/vaultwarden/` by default (not `/data` like Docker).
 - **NPM config drift**: NPM's nginx config is generated from its DB. Direct file edits work but may be overwritten by NPM on restart.
+- **DOMAIN not set**: Vaultwarden defaults to `http://localhost` if `DOMAIN` is not configured in `/etc/conf.d/vaultwarden`. This causes `/api/config` to report `http://localhost/api`, breaking CORS and all API clients (browser extension, mobile app, desktop). Fix: add `export DOMAIN=https://vw.hp136.duckdns.org` to `/etc/conf.d/vaultwarden` and restart. Web vault works regardless because it is served from the same origin.
 
 ## Verification
 

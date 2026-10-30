@@ -275,8 +275,11 @@
   description: >
     Detecta arranque por consumo > 5W sostenido 30s.
     Si no es hora barata dentro de 08-22, busca próxima hora barata:
-    si existe, apaga y espera; si no (últimas horas del día), deja correr.
+    - Si la hora más barata está a ≤2h: deja correr (umbral cercano).
+    - Si hay hora barata hoy pero >2h: apaga y espera.
+    - Si no hay más horas baratas hoy: deja correr.
     Si es hora barata, lo deja correr.
+    Fuera de 08-22: apaga y espera.
   triggers:
   - trigger: numeric_state
     entity_id: sensor.lavadero_sonoff_s60zbtpf_lavadora_potencia
@@ -324,11 +327,36 @@
               title: "🫧 Lavadora"
               message: "Arrancó en hora barata. Ciclo en curso 💪"
         - conditions:
-          - condition: state
-            entity_id: binary_sensor.lavadora_en_hora_barata
-            state: 'off'
+            - condition: state
+              entity_id: binary_sensor.lavadora_en_hora_barata
+              state: 'off'
           sequence:
           - choose:
+            - conditions:
+              - condition: template
+                value_template: >
+                  {{ (states('sensor.lavadora_hora_mas_barata') | int(-1) - now().hour) <= 2
+                     and states('sensor.lavadora_hora_mas_barata') | int(-1) > now().hour }}
+              sequence:
+              - action: switch.turn_on
+                target:
+                  entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
+              - action: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.lavadora_apagada_por_automatizacion
+              - action: notify.send_message
+                data:
+                  title: "\U0001F9FA Lavadora"
+                  message: "Arrancó y la hora más barata está a {{ (states('sensor.lavadora_hora_mas_barata') | int(-1) - now().hour) }}h. Dejo correr."
+                target:
+                  entity_id:
+                    - notify.mobile_app_alejandros_iphone
+                    - notify.mobile_app_miriam_iphone
+              - action: persistent_notification.create
+                data:
+                  notification_id: lavadora_inicio_hora_cercana
+                  title: "\U0001F9FA Lavadora"
+                  message: "Arrancó y la hora más barata está a {{ (states('sensor.lavadora_hora_mas_barata') | int(-1) - now().hour) }}h. Dejo correr."
             - conditions:
               - condition: template
                 value_template: >
@@ -343,7 +371,7 @@
               - action: notify.send_message
                 data:
                   title: "\U0001F9FA Lavadora"
-                  message: "Arranc\u00F3 pero no es hora barata. Enchufe apagado. Esperando pr\u00F3xima hora barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
+                  message: "Arrancó pero no es hora barata. Enchufe apagado. Esperando próxima hora barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
                 target:
                   entity_id:
                     - notify.mobile_app_alejandros_iphone
@@ -352,7 +380,7 @@
                 data:
                   notification_id: lavadora_inicio_no_hora_barata
                   title: "\U0001F9FA Lavadora"
-                  message: "Arranc\u00F3 pero no es hora barata. Enchufe apagado. Esperando pr\u00F3xima hora barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
+                  message: "Arrancó pero no es hora barata. Enchufe apagado. Esperando próxima hora barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
             - conditions:
               - condition: template
                 value_template: "true"
@@ -366,7 +394,7 @@
               - action: notify.send_message
                 data:
                   title: "\U0001F9FA Lavadora"
-                  message: "No hay m\u00E1s horas baratas hoy. Arranco la lavadora."
+                  message: "No hay más horas baratas hoy. Arranco la lavadora."
                 target:
                   entity_id:
                     - notify.mobile_app_alejandros_iphone
@@ -375,7 +403,7 @@
                 data:
                   notification_id: lavadora_inicio_no_hora_barata
                   title: "\U0001F9FA Lavadora"
-                  message: "No hay m\u00E1s horas baratas hoy. Arranco la lavadora."
+                  message: "No hay más horas baratas hoy. Arranco la lavadora."
     - conditions:
       - condition: template
         value_template: "{{ now().hour >= 22 or now().hour < 8 }}"
@@ -492,6 +520,9 @@
       message: "La lavadora termin\u00F3. Ya pod\u00E9s tender la ropa."
   - action: input_boolean.turn_on
     target:
+      entity_id: input_boolean.lavadora_tendida
+  - action: input_boolean.turn_on
+    target:
       entity_id: input_boolean.lavadora_ciclo_terminado
   - action: switch.turn_off
     target:
@@ -503,14 +534,14 @@
 # -----------------------------------------------------------------------------
 - id: 'lavadora_notificacion_tendida_001'
   alias: "Lavadora - Responder 'Ya tendí'"
-  description: "Cuando el usuario toca 'Ya tendí' en la notificación, marca el input_boolean."
+  description: "Cuando el usuario toca 'Ya tendí' en la notificación, apaga el switch de tendido (OFF = ya tendido)."
   triggers:
   - trigger: event
     event_type: mobile_app_notification_action
     event_data:
       action: LAVADORA_TENDIDA
   actions:
-  - action: input_boolean.turn_on
+  - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.lavadora_tendida
   mode: single
@@ -520,11 +551,11 @@
 # -----------------------------------------------------------------------------
 - id: 'lavadora_reset_001'
   alias: "Lavadora - Reset por tendido"
-  description: "Resetea todos los flags de la automatización cuando el usuario marca que ya tendió."
+  description: "Resetea todos los flags cuando el usuario apaga el switch de tendido (OFF = ya tendido). Vuelve a poner tendida=ON para el próximo ciclo."
   triggers:
   - trigger: state
     entity_id: input_boolean.lavadora_tendida
-    to: 'on'
+    to: 'off'
   actions:
   - action: input_boolean.turn_off
     target:
@@ -532,7 +563,7 @@
   - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.lavadora_apagada_por_automatizacion
-  - action: input_boolean.turn_off
+  - action: input_boolean.turn_on
     target:
       entity_id: input_boolean.lavadora_tendida
   - action: input_boolean.turn_off
@@ -555,7 +586,7 @@
     state: 'on'
   - condition: state
     entity_id: input_boolean.lavadora_tendida
-    state: 'off'
+    state: 'on'
   actions:
   - action: notify.mobile_app_alejandros_iphone
     data:
