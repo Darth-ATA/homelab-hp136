@@ -262,8 +262,10 @@
 #
 # Reglas:
 #   - Restricción 08-22: la lavadora solo arranca SI está en hora barata
+#   - Modo noche: si se arranca de noche (22-08) con "Iniciar mañana en hora barata" activo,
+#     se apaga y se programa para la hora más barata de MAÑANA entre 08-22.
 #   - Si ya está funcionando, NO se toca el enchufe (que termine el ciclo)
-#   - Si llega la hora barata y estaba apagada por la automación, se enciende
+#   - Si llega la hora barata y estaba apagada por la automatización, se enciende
 #   - Si arranca manualmente en hora barata, se deja correr
 # =============================================================================
 
@@ -297,6 +299,32 @@
   - delay:
       seconds: 5
   - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ now().hour >= 22 or now().hour < 8 }}"
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.lavadora_apagada_por_automatizacion
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.lavadora_programada_para_mañana
+      - action: notify.send_message
+        data:
+          title: "🫧 Lavadora"
+          message: "Se iniciará mañana a las {% set h = states('sensor.lavadora_hora_mas_barata_mañana') | int(-1) %}{{ 8 if h == -1 else h }}:00{% if h == -1 %} (fallback, sin datos de mañana){% endif %}."
+        target:
+          entity_id:
+            - notify.mobile_app_alejandros_iphone
+            - notify.mobile_app_miriam_iphone
+      - action: persistent_notification.create
+        data:
+          notification_id: lavadora_inicio_mañana_hora_barata
+          title: "🫧 Lavadora"
+          message: "Se iniciará mañana a las {% set h = states('sensor.lavadora_hora_mas_barata_mañana') | int(-1) %}{{ 8 if h == -1 else h }}:00{% if h == -1 %} (fallback, sin datos de mañana){% endif %}."
     - conditions:
       - condition: template
         value_template: "{{ now().hour >= 8 and now().hour < 22 }}"
@@ -450,6 +478,9 @@
   - condition: state
     entity_id: input_boolean.lavadora_apagada_por_automatizacion
     state: 'on'
+  - condition: state
+    entity_id: input_boolean.lavadora_programada_para_mañana
+    state: 'off'
   actions:
   - action: switch.turn_on
     target:
@@ -474,6 +505,63 @@
       notification_id: lavadora_hora_barata
       title: "\u26A1 Lavadora - Hora barata"
       message: "Lleg\u00F3 la hora m\u00E1s barata. Enciendo la lavadora."
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Encender mañana en la hora más barata (modo noche diferido)
+# -----------------------------------------------------------------------------
+- id: 'lavadora_hora_barata_mañana_001'
+  alias: "Lavadora - Encender mañana en hora barata"
+  description: >
+    Cada hora en punto, si es la hora más barata de mañana entre 08-22,
+    el modo iniciar-mañana está activo y la lavadora fue apagada por la automatización,
+    enciende el enchufe.
+  triggers:
+  - trigger: template
+    value_template: >
+      {{ now().minute == 0
+         and now().hour >= 8 and now().hour < 22
+         and (
+           now().hour == states('sensor.lavadora_hora_mas_barata_mañana') | int(-1)
+           or (states('sensor.lavadora_hora_mas_barata_mañana') | int(-1) == -1 and now().hour == 8)
+         ) }}
+  conditions:
+  - condition: state
+    entity_id: input_boolean.lavadora_automatizacion_activa
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.lavadora_programada_para_mañana
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.lavadora_apagada_por_automatizacion
+    state: 'on'
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.lavadora_apagada_por_automatizacion
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.lavadora_programada_para_mañana
+  - action: notify.mobile_app_alejandros_iphone
+    data:
+      title: "\u26A1 Lavadora - Hora barata mañana"
+      message: "Llegó la hora más barata de mañana. Enciendo la lavadora."
+      data:
+        tag: lavadora_hora_barata_mañana
+  - action: notify.mobile_app_miriam_iphone
+    data:
+      title: "\u26A1 Lavadora - Hora barata mañana"
+      message: "Llegó la hora más barata de mañana. Enciendo la lavadora."
+      data:
+        tag: lavadora_hora_barata_mañana
+  - action: persistent_notification.create
+    data:
+      notification_id: lavadora_hora_barata_mañana
+      title: "\u26A1 Lavadora - Hora barata mañana"
+      message: "Llegó la hora más barata de mañana. Enciendo la lavadora."
   mode: single
 
 # -----------------------------------------------------------------------------

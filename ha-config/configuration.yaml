@@ -42,6 +42,23 @@ template:
             false
           {% endif %}
 
+  - sensor:
+      - name: "Lavadora - Hora más barata mañana"
+        unique_id: "lavadora_hora_mas_barata_mañana"
+        state: >
+          {% set ns = namespace(min_hour=-1, min_price=999) %}
+          {% for h in range(8, 22) %}
+            {% set p = state_attr('sensor.esios_current_price', 'price_%02dh' | format(h)) %}
+            {% if p is not none and p|float > 0 and p|float < ns.min_price %}
+              {% set ns.min_price = p|float %}
+              {% set ns.min_hour = h %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.min_hour }}
+        availability: "{{ state_attr('sensor.esios_current_price', 'price_08h') is not none }}"
+        icon: "mdi:clock-outline"
+        unit_of_measurement: "h"
+
 # =============================================================================
 # LAVADORA: Helpers para la automatización
 # =============================================================================
@@ -58,6 +75,10 @@ input_boolean:
   lavadora_ciclo_terminado:
     name: "Lavadora - Ciclo terminado"
     icon: "mdi:check-circle-outline"
+  # Gestionado por la automatización (no lo activa el usuario)
+  lavadora_programada_para_mañana:
+    name: "Lavadora - Programada para mañana"
+    icon: "mdi:clock-start"
 
 # =============================================================================
 # NIGHT PURGE: Estado para ventilación nocturna inteligente
