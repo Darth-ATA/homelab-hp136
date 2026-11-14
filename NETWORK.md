@@ -35,6 +35,7 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | **AdGuard Home** | LXC | 103 | 10.10.10.2 | `BC:24:11:D5:A2:77` | `adguard` | DNS ad-blocking |
 | **Vaultwarden** | LXC | 104 | 10.10.10.144 | `BC:24:11:78:83:C3` | `alpine-vaultwarden` | Password manager |
 | **Jellyfin** | LXC | 105 | 10.10.10.145 | `BC:24:11:46:95:DE` | `jellyfin` | Media server (native, not Docker), iGPU passthrough |
+| **Dahua IPC-HDW2230 Camera** | Physical | - | 10.10.10.200 | `C4:AA:C4:1F:D2:F0` | `dahua-cam` | POE security camera — static IP outside DHCP pool |
 
 ## Service Access Points
 
@@ -193,7 +194,7 @@ Reserve `10.10.10.150-254` for DHCP clients on your router to avoid conflicts wi
 
 Frigate is **configured but not currently running** on LXC 101. The compose file and config exist on the host at `/root/docker/frigate/`.
 
-**Why not deployed:** The Dahua camera (10.10.10.108) requires authentication setup and OpenVINO GPU passthrough validation.
+**Why not deployed:** The Dahua camera (10.10.10.200) requires authentication setup and OpenVINO GPU passthrough validation.
 
 **To deploy when ready:**
 
@@ -211,15 +212,18 @@ ssh root@10.10.10.134 "pct exec 101 -- docker logs frigate -f"
 
 **Access when running:** http://10.10.10.142:5000
 
-### Camera — Dahua IPC-HDW2230T-AS-S2
+### Camera — Dahua IPC-HDW2230
 
 | Property | Value |
 |----------|-------|
-| IP | `10.10.10.108` |
+| IP | `10.10.10.200` |
+| MAC | `C4:AA:C4:1F:D2:F0` |
 | RTSP port | `554` |
+| HTTP port | `80` |
 | Auth | Digest (no Basic) |
 | RTSP path (sub/main) | `/live` |
 | Streaming user | `admin` |
+| Connection | POE, wired directly to router |
 
 ### Known issues
 
