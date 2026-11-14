@@ -18,62 +18,7 @@ mqtt:
 # =============================================================================
 go2rtc:
   streams:
-    dahua_main: "rtsp://admin:{{ FRIGATE_RTSP_PASSWORD }}@10.10.10.200:554/live"
-    dahua_sub: "rtsp://admin:{{ FRIGATE_RTSP_PASSWORD }}@10.10.10.200:554/live"
-
-# =============================================================================
-# Cameras
-# =============================================================================
-cameras:
-  dahua:
-    enabled: true
-    ffmpeg:
-      inputs:
-        # Sub-stream for detection (lower res = less GPU work)
-        - path: rtsp://127.0.0.1:8554/dahua_sub
-          input_args: preset-rtsp-restream
-          roles:
-            - detect
-        # Main stream for recording (full quality)
-        - path: rtsp://127.0.0.1:8554/dahua_main
-          input_args: preset-rtsp-restream
-          roles:
-            - record
-    detect:
-      enabled: true
-      width: 704
-      height: 576
-      fps: 5
-    record:
-      enabled: true
-      events:
-        pre_capture: 3
-        post_capture: 5
-      retain:
-        days: 7
-        mode: motion
-    snapshots:
-      enabled: true
-      retain:
-        default: 30
-    objects:
-      track:
-        - person
-        - car
-        - bicycle
-        - motorcycle
-        - cat
-        - dog
-    zones:
-      front_entrance:
-        coordinates:
-          - 0, 0
-          - 704, 0
-          - 704, 576
-          - 0, 576
-    motion:
-      threshold: 30
-      contour_area: 10
+    # Sin cámaras configuradas temporalmente
 
 # =============================================================================
 # Detectors - OpenVINO on Intel N100 iGPU
