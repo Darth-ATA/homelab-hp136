@@ -69,16 +69,11 @@ input_boolean:
   lavadora_apagada_por_automatizacion:
     name: "Lavadora - Apagada por automatización"
     icon: "mdi:power-plug-off"
-  lavadora_tendida:
-    name: "Lavadora - Ropa tendida"
-    icon: "mdi:hanger"
-  lavadora_ciclo_terminado:
-    name: "Lavadora - Ciclo terminado"
-    icon: "mdi:check-circle-outline"
   # Gestionado por la automatización (no lo activa el usuario)
-  lavadora_programada_para_mañana:
-    name: "Lavadora - Programada para mañana"
+  lavadora_programada_para_manana:
+    name: "Lavadora - Programada para manana"
     icon: "mdi:clock-start"
+  lavadora_tendida:
 
 # =============================================================================
 # NIGHT PURGE: Estado para ventilación nocturna inteligente

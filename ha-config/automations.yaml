@@ -290,8 +290,7 @@
       seconds: 30
   conditions:
   - condition: state
-    entity_id:
-      - input_boolean.lavadora_automatizacion_activa
+    entity_id: input_boolean.lavadora_automatizacion_activa
     state: 'off'
   actions:
   - action: input_boolean.turn_on
@@ -315,7 +314,7 @@
       - action: input_boolean.turn_on
         target:
           entity_id:
-            - input_boolean.lavadora_programada_para_mañana
+            - input_boolean.lavadora_programada_para_manana
       - action: notify.mobile_app_alejandros_iphone
         data:
           title: "🫧 Lavadora"
@@ -477,7 +476,7 @@
     state: 'on'
   - condition: state
     entity_id:
-      - input_boolean.lavadora_programada_para_mañana
+      - input_boolean.lavadora_programada_para_manana
     state: 'off'
   actions:
   - action: switch.turn_on
@@ -531,7 +530,7 @@
     state: 'on'
   - condition: state
     entity_id:
-      - input_boolean.lavadora_programada_para_mañana
+      - input_boolean.lavadora_programada_para_manana
     state: 'on'
   - condition: state
     entity_id:
@@ -548,7 +547,7 @@
   - action: input_boolean.turn_off
     target:
       entity_id:
-        - input_boolean.lavadora_programada_para_mañana
+        - input_boolean.lavadora_programada_para_manana
   - action: notify.mobile_app_alejandros_iphone
     data:
       title: "\u26A1 Lavadora - Hora barata mañana"
