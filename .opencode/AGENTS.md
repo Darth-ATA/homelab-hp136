@@ -1,10 +1,10 @@
-# Reglas de OpenCode Gentle AI — homelab-hp136
+# OpenCode Gentle AI rules — homelab-hp136
 
-## Validación en homelab (Home Assistant)
+## Home Assistant homelab validation
 
-Cuando se toquen archivos bajo `ha-config/` (`automations.yaml`, `scripts.yaml`, `configuration.yaml`) o cualquier automatización de Home Assistant:
+When touching files under `ha-config/` (`automations.yaml`, `scripts.yaml`, `configuration.yaml`) or any Home Assistant automation:
 
-- No des el cambio por hecho solo porque el YAML sea válido.
-- Despliega al homelab con `./scripts/deploy-ha-config.sh`.
-- Revisa los logs de HA (`ha core logs`) para confirmar que no hay errores de automatización.
-- Si no hay acceso al homelab, detente y pregunta al usuario antes de continuar.
+- Do not take the change for granted just because the YAML is valid.
+- Deploy to the homelab with `./scripts/deploy-ha-config.sh`.
+- Review HA logs (`ha core logs`) to confirm there are no automation errors.
+- If you don't have access to the homelab, stop and ask the user before continuing.

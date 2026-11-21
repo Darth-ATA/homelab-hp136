@@ -1,6 +1,6 @@
 ---
 name: homelab-ha-automation
-description: "Trigger: cambios en ha-config/ (automations.yaml, scripts.yaml, configuration.yaml) o cualquier automatización de Home Assistant. Obliga a validar en el homelab real antes de dar por hecho el cambio."
+description: "Trigger: changes to ha-config/ (automations.yaml, scripts.yaml, configuration.yaml) or any Home Assistant automation. Requires validation in the real homelab before considering the change done."
 license: MIT
 metadata:
   author: gentleman-programming
@@ -9,37 +9,37 @@ metadata:
 
 ## Activation Contract
 
-Use esta skill cuando el trabajo toque archivos bajo `ha-config/` o cualquier automatización de Home Assistant del homelab.
+Use this skill when the work touches files under `ha-config/` or any Home Assistant automation of the homelab.
 
 ## Hard Rules
 
-- Nunca des por hecho que un cambio de automatización funciona solo porque el YAML es válido.
-- Después de editar `ha-config/automations.yaml` (o `scripts.yaml` / `configuration.yaml`), ejecuta:
-  1. Validación de sintaxis YAML local.
-  2. Despliegue al homelab con `./scripts/deploy-ha-config.sh`.
-  3. Revisión de logs de Home Assistant (`ha core logs`) para confirmar que no hay errores de automatización ni tracebacks relacionados.
-  4. Si el cambio afecta a un escenario concreto (p. ej. hora barata de lavadora), verifica el estado de las entidades implicadas en Developer Tools de HA o reproduce el trigger si es seguro hacerlo.
-- Si no hay acceso al homelab, detente y pregunta al usuario antes de continuar.
+- Never assume a Home Assistant automation change works just because the YAML is valid.
+- After editing `ha-config/automations.yaml` (or `scripts.yaml` / `configuration.yaml`), execute:
+  1. Local YAML syntax validation.
+  2. Deploy to the homelab with `./scripts/deploy-ha-config.sh`.
+  3. Review Home Assistant logs (`ha core logs`) to confirm there are no automation errors or related tracebacks.
+  4. If the change affects a concrete scenario (e.g. washing machine cheap-hour), verify the state of the involved entities in HA Developer Tools or reproduce the trigger if it's safe to do so.
+- If you don't have access to the homelab, stop and ask the user before continuing.
 
 ## Decision Gates
 
-| Situación | Acción |
+| Situation | Action |
 | --- | --- |
-| Se edita `ha-config/automations.yaml` | Desplegar y revisar logs antes de cerrar la tarea |
-| El YAML tiene error de sintaxis | Corregir localmente antes de desplegar |
-| No hay acceso al homelab | Detener y preguntar al usuario |
-| Hay errores en los logs de HA | No dar la tarea como terminada; corregir y re-desplegar |
+| `ha-config/automations.yaml` is edited | Deploy and review logs before closing the task |
+| YAML has a syntax error | Fix locally before deploying |
+| No access to the homelab | Stop and ask the user |
+| There are errors in HA logs | Do not consider the task done; fix and re-deploy |
 
 ## Execution Steps
 
-1. Identificar qué archivos de `ha-config/` se van a tocar.
-2. Validar YAML localmente (`python3 -c "import yaml; yaml.safe_load(open(...))"`).
-3. Ejecutar `./scripts/deploy-ha-config.sh <archivo>` con el(s) archivo(s) modificado(s).
-4. Revisar logs de HA: `ha core logs | grep -i <alias o id de la automatización>`.
-5. Reportar al usuario qué se desplegó, si HA Core se reinició sin errores y qué se observó en los logs.
+1. Identify which `ha-config/` files will be touched.
+2. Validate YAML locally (`python3 -c "import yaml; yaml.safe_load(open(...))"`).
+3. Run `./scripts/deploy-ha-config.sh <file>` with the modified file(s).
+4. Review HA logs: `ha core logs | grep -i <automation alias or id>`.
+5. Report to the user which files were deployed, whether HA Core restarted without errors, and what was observed in the logs.
 
 ## Output Contract
 
-- Indicar qué archivos se desplegaron.
-- Indicar si HA Core se reinició sin errores.
-- Indicar qué se observó en los logs (errores o limpio).
+- Indicate which files were deployed.
+- Indicate whether HA Core restarted without errors.
+- Indicate what was observed in the logs (errors or clean).
