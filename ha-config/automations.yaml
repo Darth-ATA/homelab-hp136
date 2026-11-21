@@ -425,7 +425,9 @@
                   message: "Arrancó pero no es hora barata. Enchufe apagado. Esperando próxima hora barata ({{ states('sensor.lavadora_hora_mas_barata') }}:00)."
             - conditions:
               - condition: template
-                value_template: "true"
+                value_template: >
+                  {{ states('sensor.lavadora_hora_mas_barata') not in ['unknown', 'unavailable', 'none', '-1']
+                     and states('sensor.lavadora_hora_mas_barata') | int(-1) <= now().hour }}
               sequence:
               - action: switch.turn_on
                 target:
@@ -449,6 +451,36 @@
                   notification_id: lavadora_inicio_no_hora_barata
                   title: "\U0001F9FA Lavadora"
                   message: "No hay más horas baratas hoy. Arranco la lavadora."
+            - conditions:
+              - condition: template
+                value_template: "true"
+              sequence:
+              - action: switch.turn_off
+                target:
+                  entity_id: switch.lavadero_sonoff_s60zbtpf_lavadora
+              - action: input_boolean.turn_on
+                target:
+                  entity_id:
+                    - input_boolean.lavadora_apagada_por_automatizacion
+              - action: input_boolean.turn_on
+                target:
+                  entity_id:
+                    - input_boolean.lavadora_programada_para_manana
+              - action: notify.mobile_app_alejandros_iphone
+                data:
+                  title: "\U0001F9FA Lavadora"
+                  message: "Sin datos de precios de la luz. Enchufe apagado, esperando datos."
+                  tag: lavadora_inicio_sin_datos
+              - action: notify.mobile_app_miriam_iphone
+                data:
+                  title: "\U0001F9FA Lavadora"
+                  message: "Sin datos de precios de la luz. Enchufe apagado, esperando datos."
+                  tag: lavadora_inicio_sin_datos
+              - action: persistent_notification.create
+                data:
+                  notification_id: lavadora_inicio_sin_datos
+                  title: "\U0001F9FA Lavadora"
+                  message: "Sin datos de precios de la luz. Enchufe apagado, esperando datos."
   mode: single
 
 # -----------------------------------------------------------------------------
