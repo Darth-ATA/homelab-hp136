@@ -59,21 +59,14 @@ template:
         icon: "mdi:clock-outline"
         unit_of_measurement: "h"
 
-# =============================================================================
-# LAVADORA: Helpers para la automatización
-# =============================================================================
+# Booleanos internos de control de la lógica PVPC (no expuestos al usuario)
 input_boolean:
-  lavadora_automatizacion_activa:
-    name: "Lavadora - Automatización activa"
-    icon: "mdi:washing-machine"
   lavadora_apagada_por_automatizacion:
     name: "Lavadora - Apagada por automatización"
     icon: "mdi:power-plug-off"
-  # Gestionado por la automatización (no lo activa el usuario)
   lavadora_programada_para_manana:
     name: "Lavadora - Programada para manana"
     icon: "mdi:clock-start"
-  lavadora_tendida:
 
 # =============================================================================
 # NIGHT PURGE: Estado para ventilación nocturna inteligente
@@ -111,3 +104,12 @@ input_select:
       - bad
     initial: normal
     icon: "mdi:air-filter"
+  lavadora_estado:
+    name: "Lavadora - Estado"
+    options:
+      - inactivo
+      - lavando
+      - terminado_pendiente_tendido
+      - tendido
+    initial: inactivo
+    icon: "mdi:washing-machine"
