@@ -107,6 +107,7 @@
           brightness: 20
           color_temp: 2000
   mode: single
+  initial_state: off
 
 # =============================================================================
 # CIRCADIANA: VENTILADOR DESPACHO (TEMPERATURA)
@@ -202,6 +203,7 @@
         data:
           percentage: 25
   mode: single
+  initial_state: off
 
 # =============================================================================
 # (Automation existente: termo gym)
