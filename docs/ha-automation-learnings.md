@@ -20,6 +20,7 @@
         - light.ventilador_de_techo_despacho_main_light
         - light.innr_rb_272_t
   ```
+  The `name` and `alias` values are kept in Spanish because they appear in the HA UI for household members; repo code and docs stay in English.
 
 ## Skill `homelab-ha-automation`
 

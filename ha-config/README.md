@@ -39,11 +39,11 @@ The `automations.yaml` includes an automation that:
 
 ### Circadian Lighting - Office Ceiling Fan Light
 
-Controlado por el componente **`hass-circadian_lighting`** (claytonjn, v2.1.7), instalado vía Marketplace nativo de HA.
+Controlled by the **`hass-circadian_lighting`** component (claytonjn, v2.1.7), installed via HA's native Marketplace.
 
-Ajusta color temperature y brightness del FanLamp Pro ceiling fan light (`light.ventilador_de_techo_despacho_main_light`) y del `light.innr_rb_272_t` siguiendo la posición real del sol durante el día, en lugar de tramos horarios fijos hardcodeados.
+Adjusts color temperature and brightness of the FanLamp Pro ceiling fan light (`light.ventilador_de_techo_despacho_main_light`) and `light.innr_rb_272_t` following the sun's position during the day, instead of hardcoded time slots.
 
-Configuración en `configuration.yaml`:
+Configuration in `configuration.yaml`:
 
 ```yaml
 circadian_lighting:
@@ -56,9 +56,11 @@ switch:
       - light.innr_rb_272_t
 ```
 
-La automatización propia `Circadiana: Luz despacho` está **desactivada** (`initial_state: off`) como respaldo para volver si es necesario.
+The `name` is kept in Spanish because it appears in the HA UI for household members; repo code and docs stay in English.
 
-Entidad de control: `switch.circadian_lighting_circadian_lighting_despacho` (encender/apagar desde Settings → Devices & Services → Entities).
+Control entity: `switch.circadian_lighting_circadian_lighting_despacho` (turn on/off from Settings → Devices & Services → Entities).
+
+The original automation `Circadiana: Luz despacho` is **disabled** (`initial_state: off`) as a fallback to revert if needed.
 
 ### Circadian Fan Speed - Office Ceiling Fan
 
