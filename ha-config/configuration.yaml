@@ -113,3 +113,17 @@ input_select:
       - tendido
     initial: inactivo
     icon: "mdi:washing-machine"
+
+# =============================================================================
+# CIRCADIAN LIGHTING: Despacho (claytonjn/hass-circadian_lighting)
+# Sincroniza brillo y temperatura de color con la luz natural del día.
+# Controla: light.ventilador_de_techo_despacho_main_light, light.innr_rb_272_t
+# =============================================================================
+circadian_lighting:
+
+switch:
+  - platform: circadian_lighting
+    name: "Circadian Lighting - Despacho"
+    lights_ct:
+      - light.ventilador_de_techo_despacho_main_light
+      - light.innr_rb_272_t

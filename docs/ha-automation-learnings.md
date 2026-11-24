@@ -9,6 +9,18 @@
 
 - HACS **does not work on Home Assistant 2026.11 and newer** (verified on 2026.11.2). It has been replaced by the native **Marketplace** integration.
 - Community cards such as `custom:button-card` are installed via Settings → Devices & Services → Marketplace.
+- Custom components like `claytonjn/hass-circadian_lighting` are available via the native Marketplace (version 2.1.7). Once installed, configure in `configuration.yaml`:
+  ```yaml
+  circadian_lighting:
+
+  switch:
+    - platform: circadian_lighting
+      name: "Circadian Lighting - Despacho"
+      lights_ct:
+        - light.ventilador_de_techo_despacho_main_light
+        - light.innr_rb_272_t
+  ```
+  The `name` and `alias` values are kept in Spanish because they appear in the HA UI for household members; repo code and docs stay in English.
 
 ## Skill `homelab-ha-automation`
 
