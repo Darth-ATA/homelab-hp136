@@ -7,7 +7,7 @@ This document describes the network configuration for the homelab Proxmox host a
 - **LAN subnet:** `10.10.10.0/24` (gateway `.1`, DNS `.2` at AdGuard)
 - **Single source of truth:** Terraform `locals.tf` (`subnet_base` + `node_ips` last octets). All `*.tf` IPs, firewall destinations, and this allocation table derive from it — no hardcoded IP literals in Terraform.
 - **Fallback:** if the router ever rejects a 10.x LAN, switch `locals.subnet_base` to `192.168.77` (identical last octets) plus the `main.tf` backend endpoint literal.
-- **DHCP:** router pool is `.150`–`.254` — static homelab IPs (.1–.145) stay out of the pool.
+- **DHCP:** documented router pool is `.150`–`.254`. The host and guest addresses are outside it; the documented camera address (`.200`) is inside it.
 - **Renumber procedure:** `docs/tailscale-derp-runbook.md`.
 
 ## Proxmox Host
@@ -35,7 +35,42 @@ All services use static IPs to ensure DNS resolution and proxy configurations do
 | **AdGuard Home** | LXC | 103 | 10.10.10.2 | `BC:24:11:D5:A2:77` | `adguard` | DNS ad-blocking |
 | **Vaultwarden** | LXC | 104 | 10.10.10.144 | `BC:24:11:78:83:C3` | `alpine-vaultwarden` | Password manager |
 | **Jellyfin** | LXC | 105 | 10.10.10.145 | `BC:24:11:46:95:DE` | `jellyfin` | Media server (native, not Docker), iGPU passthrough |
-| **Dahua IPC-HDW2230 Camera** | Physical | - | 10.10.10.200 | `C4:AA:C4:1F:D2:F0` | `dahua-cam` | POE security camera — static IP outside DHCP pool |
+| **Dahua IPC-HDW2230 Camera** | Physical | - | 10.10.10.200 | `C4:AA:C4:1F:D2:F0` | `dahua-cam` | PoE camera — verify reservation/exclusion; `.200` overlaps documented DHCP pool |
+
+## Network security review
+
+**Scope:** repository configuration, not a live audit. `locals.tf` selects `10.10.10.0/24`; the `192.168.1.134` in issue #7 is the legacy host address. Migration staging is off by default in `variables.tf`. No guest VLAN tag or host VLAN interface is declared.
+
+```text
+Internet --- edge router (.1; WAN rules not in Terraform)
+                |
+                +-- LAN clients and IP camera
+                |
+                +-- nic0 / vmbr0 --- Proxmox management (.134)
+                               |
+                               +-- VM 100 HA --- USB Zigbee and Bluetooth radios
+                               +-- CT 101 Docker (NPM, Arcane, Garage, media, SMB)
+                               +-- CT 102 Tailscale subnet router <-- tailnet peers
+                               +-- CT 103 AdGuard DNS
+                               +-- CT 104 Vaultwarden
+                               +-- CT 105 Jellyfin
+```
+
+- **IP and MAC policy:** Keep the pinned primary LXC MACs for repeatable restores and consistent router inventory. HA's MAC in the allocation table is documented in the [HA addressing notes](docs/ha-static-ip-dhcp-reservation.md), not fixed in `home_vm.tf`; check it after recreation. A static IP does not require a fixed MAC, and a MAC is not an access control. Randomizing stationary guests adds churn without isolating them. Check the camera address against the router leases and exclusions before assigning it elsewhere.
+- **Inbound exposure:** The [router cutover runbook](docs/tailscale-derp-runbook.md) calls for a forward to slskd on CT 101 (TCP 50300); the [slskd integration spec](openspec/specs/soularr-integration/spec.md) describes outbound-only operation. Neither proves the current router rule. Check static forwards, UPnP mappings, exposed-host mode and IPv6 ingress policy. Check NPM host access lists too: forwarding 80/443 could publish Arcane, NPM itself or other administrative upstreams. A DNS record or wildcard certificate is not evidence of public access. Keep management, DNS, SMB and Garage off the public Internet.
+- **Lateral access:** Guests share a broadcast domain. Traffic between neighbors need not cross the router. The [cluster rules](firewall.tf) default to ACCEPT, with no source limit in the management group; guest NIC filtering is disabled in the checked-in definitions. Tailscale also advertises the LAN: review route approval and tailnet grants separately from WAN NAT. Before enforcing guest rules, identify trusted management sources and required flows (including NPM to backends and Terraform clients to Garage).
+
+### Proposed segmentation (not deployed)
+
+| Zone | Intended access at the routing firewall |
+|------|-----------------------------------------|
+| Existing trusted LAN | Keep Proxmox management and HA here initially. Only trusted admins should reach management UIs. |
+| IoT VLAN | Put Ethernet/Wi-Fi IoT endpoints such as the camera here. Deny new connections to the trusted LAN by default. Permit DNS to AdGuard and DHCP to the IoT gateway; allow HA or the NVR to initiate only required device connections (e.g. RTSP to the camera), with stateful replies. Limit Internet egress to documented device needs. |
+| Optional DMZ | Only if inbound public service is required: separate the ingress proxy from the multi-service Docker CT. Permit approved WAN ports to the proxy and only named upstreams/ports from it to the LAN. Never place CT 101 wholesale in a router's exposed-host mode. Otherwise prefer tailnet-only access. |
+
+Zigbee, Z-Wave and Bluetooth radio traffic is not Ethernet; a VLAN cannot isolate devices on a USB coordinator. Keep HA single-homed. Test IP integrations across the routed boundary; enable a scoped discovery relay only for integrations that require multicast.
+
+**Implementation gate:** Confirm router inter-VLAN ACLs, switch trunk/access-port support and AP SSID-to-VLAN mapping where Wi-Fi is needed. The owner must select an unused VLAN ID, non-overlapping subnet, DHCP scope and permitted flows. A router/switch-only camera VLAN needs no Proxmox interface. If guests later join it, carry the tag on a VLAN-aware `vmbr0` trunk and tag only their NICs; a `vmbr0.<tag>` interface is needed only if the host itself needs an address there. Keep the management path unchanged. Before a Terraform change, save current network settings, arrange local console rollback and pilot one IP device; verify DNS, HA control, blocked IoT-to-management access and continued access to the state backend.
 
 ## Service Access Points
 
@@ -107,17 +142,7 @@ All domains use the wildcard SSL certificate `*.hp136.duckdns.org` (Let's Encryp
 
 ### LXC Containers (101, 102, 103, 104, 105)
 
-SSH to Proxmox and edit configs:
-```bash
-ssh -i ~/.ssh/homelab_key root@10.10.10.134
-
-# For each container, edit /etc/pve/lxc/<ID>.conf
-# Replace net0 line with:
-# net0: name=eth0,bridge=vmbr0,hwaddr=<MAC>,firewall=1,ip=<IP>/24,gw=10.10.10.1,type=veth
-
-# Restart container
-pct stop <ID> && pct start <ID>
-```
+Use `locals.tf` and the corresponding `*-container.tf` network and initialization blocks as the desired configuration. Compare the restored guest's primary NIC, address and gateway with the allocation table before reconnecting it; do not generate a new MAC on each boot.
 
 ### Home Assistant VM (100)
 
