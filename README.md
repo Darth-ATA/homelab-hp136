@@ -122,19 +122,18 @@ The `setup-garage-state.sh` script handles:
   terraform apply
   ```
 
-## Existing Containers (Managed by Terraform)
+## Guest network inventory
 
-The following containers and VMs are **fully managed** by Terraform:
+| ID | Guest | Static IP | Primary NIC MAC | Terraform definition |
+|----|-------|-----------|-----------------|----------------------|
+| 100 | Home Assistant (HAOS) | 10.10.10.100 | `02:8D:AB:80:C0:9D` | `home_vm.tf` (MAC documented, not pinned) |
+| 101 | Docker (media, NPM, Arcane) | 10.10.10.142 | `BC:24:11:C5:96:4F` | `docker-container.tf` |
+| 102 | Tailscale subnet router | 10.10.10.102 | `BC:24:11:CA:68:89` | `tailscale-container.tf` |
+| 103 | AdGuard Home | 10.10.10.2 | `BC:24:11:D5:A2:77` | `adguard-container.tf` |
+| 104 | Vaultwarden | 10.10.10.144 | `BC:24:11:78:83:C3` | `vaultwarden-container.tf` |
+| 105 | Jellyfin (native) | 10.10.10.145 | `BC:24:11:46:95:DE` | `jellyfin-container.tf` |
 
-| ID  | Name      | Description | Static IP | Terraform File |
-|-----|------------|-------------|-----------|----------------|
-| 100 | home_assistant | Home Assistant VM (HAOS) - 2 cores, 4GB RAM, 32GB disk | 10.10.10.100 | `home_vm.tf` |
-| 101 | docker    | Docker host — media stack + NPM + Arcane — 2 cores, 6GB RAM, 150GB disk, iGPU passthrough | 10.10.10.142 | `docker-container.tf` |
-| 102 | tailscale  | Tailscale VPN connectivity - 1 core, 512MB RAM, 2GB disk | 10.10.10.102 | `tailscale-container.tf` |
-| 103 | adguard   | AdGuard Home DNS ad-blocker - 1 core, 512MB RAM, 2GB disk | 10.10.10.2 | `adguard-container.tf` |
-| 104 | vaultwarden | Vaultwarden password manager (Alpine) - 1 core, 512MB RAM, 4GB disk | 10.10.10.144 | `vaultwarden-container.tf` |
-
-**All services use static IPs configured in Proxmox/LXC/VM configs. See [NETWORK.md](./NETWORK.md) for complete network documentation.**
+See [NETWORK.md](NETWORK.md#static-ip-assignments) for physical devices and addressing.
 
 ## Importing Containers
 
@@ -153,22 +152,9 @@ terraform show
 - Apply changes incrementally to catch issues early
 - Use provider v0.76.0+
 
-## Firewall Configuration ✅
+## Firewall Configuration
 
-The firewall is **enabled with permissive ACCEPT policies** to avoid breaking existing services. See [Issue #3](https://github.com/Darth-ATA/homelab-hp136/issues/3) for implementation details.
-
-### Status (2026-06-18)
-- ✅ Cluster-level firewall enabled
-- ✅ Security groups created (mgmt, dns, web, home_assistant, tailscale, vaultwarden)
-- ✅ Cluster firewall rules applied
-- ✅ Container-level firewall enabled on all LXC containers
-- ✅ Home Assistant VM firewall options configured
-
-### Architecture
-
-- **Cluster-level firewall**: Enabled with ACCEPT policies (input/output)
-- **Security Groups**: Reusable rule sets for common services
-- **Container-level firewall**: Enabled on all LXC containers (`firewall = true` on network interfaces)
+[`firewall.tf`](firewall.tf) enables the cluster firewall with **ACCEPT** input and output defaults. The groups below permit traffic; they are not a default-deny allowlist. All guest NIC definitions on `vmbr0` set `firewall = false`, including HA despite its enabled VM firewall options. Do not rely on these rules for guest-to-guest isolation.
 
 ### Security Groups Defined
 
@@ -177,32 +163,36 @@ The firewall is **enabled with permissive ACCEPT policies** to avoid breaking ex
 | `mgmt` | Management access (SSH + Proxmox UI) | 10.10.10.134 | 22, 8006 |
 | `dns` | AdGuard DNS | 10.10.10.2 | 53/tcp+udp |
 | `web` | Docker/NPM services | 10.10.10.142 | 80, 443, 81 |
-| `home_assistant` | Home Assistant UI | 10.10.10.100 | 8123 |
+| `home_assistant` | Home Assistant UI and discovery | 10.10.10.100 | 8123/tcp, 5353/udp, 1900/udp |
 | `tailscale` | Tailscale direct connections | 10.10.10.102 | 41641/udp |
 | `vaultwarden` | Vaultwarden HTTP | 10.10.10.144 | 8000 |
+| `jellyfin` | Jellyfin HTTP | 10.10.10.145 | 8096 |
 
 ### Services & Ports
 
-| Service | IP | Open Ports | Notes |
-|---------|-----|------------|-------|
-| Proxmox Host | 10.10.10.134 | 8006 (UI), 22 (SSH) | Permissive (future: restrict to management IPs) |
-| Home Assistant (VM 100) | 10.10.10.100 | 8123 | VM managed via Terraform ✅ |
-| Docker/NPM (LXC 101) | 10.10.10.142 | 80, 443, 81 | NPM reverse proxy |
-| Docker — *arr suite | 10.10.10.142 | 7878, 8989, 8686, 9696, 6767 | Radarr, Sonarr, Lidarr, Prowlarr, Bazarr |
-| Docker — Deluge | 10.10.10.142 | 8112, 6881 | Torrent client (no VPN) |
-| Docker — Jellyfin | 10.10.10.142 | 8096 | Media server |
-| Vaultwarden (LXC 104) | 10.10.10.144 | 8000 | Password manager (behind NPM at vw.hp136.duckdns.org) |
-| Docker — Arcane | 10.10.10.142 | 3552 | Service orchestrator |
-| Tailscale (LXC 102) | 10.10.10.102 | 41641/UDP | Optional direct connections |
-| AdGuard (LXC 103) | 10.10.10.2 | 53/tcp+udp | DNS server |
+These are **repo-documented LAN endpoints**, not tested listeners or WAN forwards. Ports are TCP unless marked UDP. For Docker, published host and container port numbers match unless an arrow shows otherwise. Compare the [reference Compose files](docker/) with the live Arcane projects before changing access.
 
-### Firewall Files
-- `firewall.tf` - Cluster firewall, security groups, and rules
-- `ha-config/home_assitant-vm.tf` - Home Assistant VM (HAOS) configuration and firewall options
+| Host | Service | LAN port(s) and purpose |
+|------|---------|-------------------------|
+| Proxmox | Management | 22 SSH, 8006 UI/API |
+| VM 100 | HA | 8123 UI; 5353/UDP mDNS and 1900/UDP SSDP discovery traffic |
+| CT 101 | Nginx Proxy Manager (host network) | 80 HTTP, 443 HTTPS proxy; 81 admin |
+| CT 101 | Arcane | 3552 admin |
+| CT 101 | Garage | 3900 S3 (includes Terraform state), 3901 cluster RPC, 3902 web serving, 3903 admin |
+| CT 101 | Samba ([Terraform definition](samba-share.tf)) | 139, 445 SMB for LAN/tailnet clients |
+| CT 101 | Media automation | 8989 Sonarr, 7878 Radarr, 8686 Lidarr, 9696 Prowlarr, 6767 Bazarr, 8191 FlareSolverr |
+| CT 101 | Deluge | 8112 UI, 58846 daemon, 6881 TCP+UDP peers |
+| CT 101 | Music | 4533 Navidrome, 5030 slskd UI, 50300 slskd peers, 8265 Soularr UI |
+| CT 101 | Dashboard | 8000 (documented [NPM upstream](docs/npm-config.md)) |
+| CT 102 | Tailscale | 41641/UDP direct peer connections |
+| CT 103 | AdGuard | 53 TCP+UDP DNS, 80 admin |
+| CT 104 | Vaultwarden | 8000 HTTP upstream for NPM |
+| CT 105 | Jellyfin | 8096 native HTTP upstream |
+| LAN camera | Video | 80 HTTP, 554 RTSP |
 
-### Future Hardening
+Reference-only or inactive deployments on CT 101 are **not evidence of open ports**: qBittorrent (8081 → 8080 UI, 6881 TCP+UDP peers), Immich (2283 → 3001), Frigate (host network, documented UI 5000), and the old Jellyfin Compose (8096, 8920, 7359/UDP, 1900/UDP).
 
-A follow-up issue will restrict SSH and Proxmox UI to management IPs only, and potentially implement VLAN for IoT devices.
+**WAN exposure is unverified.** Publishing a Docker port makes it available on the host interfaces by default; it does not configure the edge router. Conversely, forwarding HTTPS to NPM could expose an admin UI without forwarding its own port. See the [topology, exposure review and proposed isolation policy](NETWORK.md#network-security-review).
 
 ## Notable Infrastructure Workarounds
 
