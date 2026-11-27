@@ -102,6 +102,7 @@ All domains use the wildcard SSL certificate `*.hp136.duckdns.org` (Let's Encryp
 | `deluge.hp136.duckdns.org` | `10.10.10.142` | 8112 | Deluge |
 | `jelly.hp136.duckdns.org` | `10.10.10.145` | 8096 | Jellyfin |
 | `frigate.hp136.duckdns.org` | `10.10.10.142` | 5000 | ⚠️ Not deployed — configured for future use |
+| `wedding.hp136.duckdns.org` | `10.10.10.142` | 8095 | Wedding site preview (static, Arcane project `wedding`) |
 
 ## How to Recreate Static IPs
 

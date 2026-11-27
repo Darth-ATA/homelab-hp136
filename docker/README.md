@@ -211,3 +211,13 @@ ssh -i ~/.ssh/homelab_key root@10.10.10.134 "pct exec 101 -- docker system df"
 - **Deluge** (not qBittorrent) is the active torrent client — no VPN
 - After creating accounts in any service, disable signups
 - The `docker/` directory in this repo has **reference copies** — the live files live on the LXC under `/root/docker/`
+
+## Wedding site preview (`wedding/`)
+
+Static build of [Darth-ATA/wedding-template](https://github.com/Darth-ATA/wedding-template) (`main`), served read-only
+by `nginx:1.27-alpine` on port 8095 and proxied by NPM at `https://wedding.hp136.duckdns.org` (LAN/Tailscale only:
+the DuckDNS name resolves to 10.10.10.142). The RSVP form submits to Netlify Forms, so submissions do not work here.
+
+To refresh it with a new build: run `npx astro build` in the wedding repo, then copy `dist/` (without `admin/`) into
+`/root/docker/arcane/data/projects/wedding/site/` on LXC 101. Use `COPYFILE_DISABLE=1` with macOS `tar` so no `._*`
+files are copied. nginx serves the new files immediately; no restart is needed.
