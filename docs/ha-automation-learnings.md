@@ -41,3 +41,12 @@ This skill is mandatory when touching `ha-config/`. Its hard rules:
 - After: a single `input_select.lavadora_estado` with 4 explicit states (`inactivo`, `lavando`, `terminado_pendiente_tendido`, `tendido`) plus 2 internal PVPC control booleans.
 - The "Ya tendí" button only works when the state is `terminado_pendiente_tendido`.
 - The reset turns flags off before returning to `inactivo` to prevent the 5-minute reminder from firing again.
+
+## Dishwasher state design
+
+- Follows the same pattern as the washing machine.
+- Single `input_select.lavavajillas_estado` with 4 explicit states (`inactivo`, `lavando`, `terminado_pendiente_abrir`, `abierto`) plus 2 internal PVPC control booleans (`lavavajillas_apagada_por_automatizacion`, `lavavajillas_programada_para_manana`).
+- Template sensors: `sensor.lavavajillas_hora_mas_barata`, `binary_sensor.lavavajillas_en_hora_barata`, `sensor.lavavajillas_hora_mas_barata_mañana`.
+- The "Ya lo abrí" button only works when the state is `terminado_pendiente_abrir`.
+- The reset turns flags off before returning to `inactivo` to prevent the 5-minute reminder from firing again.
+- At end of cycle, the plug (`switch.sonoff_s60zbtpf`) is left **on** so it is accessible for the next load.
