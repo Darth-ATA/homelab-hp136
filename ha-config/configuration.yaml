@@ -59,6 +59,52 @@ template:
         icon: "mdi:clock-outline"
         unit_of_measurement: "h"
 
+  - sensor:
+      - name: "Lavavajillas - Hora más barata"
+        unique_id: "lavavajillas_hora_mas_barata"
+        state: >
+          {% set ns = namespace(min_hour=-1, min_price=999) %}
+          {% set start = [now().hour, 8] | max %}
+          {% for h in range(start, 22) %}
+            {% set p = state_attr('sensor.esios_current_price', 'price_%02dh' | format(h)) %}
+            {% if p is not none and p|float > 0 and p|float < ns.min_price %}
+              {% set ns.min_price = p|float %}
+              {% set ns.min_hour = h %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.min_hour }}
+        availability: "{{ state_attr('sensor.esios_current_price', 'price_08h') is not none }}"
+        icon: "mdi:clock-outline"
+        unit_of_measurement: "h"
+
+  - binary_sensor:
+      - name: "Lavavajillas - En hora barata"
+        unique_id: "lavavajillas_hora_barata_ahora"
+        state: >
+          {% set cheapest = states('sensor.lavavajillas_hora_mas_barata') %}
+          {% if cheapest not in ['unknown', 'unavailable', 'none', '-1'] %}
+            {{ now().hour >= 8 and now().hour < 22 and now().hour == cheapest | int(-1) }}
+          {% else %}
+            false
+          {% endif %}
+
+  - sensor:
+      - name: "Lavavajillas - Hora más barata mañana"
+        unique_id: "lavavajillas_hora_mas_barata_mañana"
+        state: >
+          {% set ns = namespace(min_hour=-1, min_price=999) %}
+          {% for h in range(8, 22) %}
+            {% set p = state_attr('sensor.esios_current_price', 'price_%02dh' | format(h)) %}
+            {% if p is not none and p|float > 0 and p|float < ns.min_price %}
+              {% set ns.min_price = p|float %}
+              {% set ns.min_hour = h %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.min_hour }}
+        availability: "{{ state_attr('sensor.esios_current_price', 'price_08h') is not none }}"
+        icon: "mdi:clock-outline"
+        unit_of_measurement: "h"
+
 # Booleanos internos de control de la lógica PVPC (no expuestos al usuario)
 input_boolean:
   lavadora_apagada_por_automatizacion:
@@ -67,10 +113,6 @@ input_boolean:
   lavadora_programada_para_manana:
     name: "Lavadora - Programada para manana"
     icon: "mdi:clock-start"
-
-# =============================================================================
-# NIGHT PURGE: Estado para ventilación nocturna inteligente
-# =============================================================================
   modo_ventilacion_nocturna:
     name: "Night purge - Modo activo"
     icon: "mdi:weather-night"
@@ -80,10 +122,13 @@ input_boolean:
   night_purge_skip_today:
     name: "Night purge - Saltar hoy"
     icon: "mdi:cancel"
+  lavavajillas_apagada_por_automatizacion:
+    name: "Lavavajillas - Apagada por automatización"
+    icon: "mdi:power-plug-off"
+  lavavajillas_programada_para_manana:
+    name: "Lavavajillas - Programada para manana"
+    icon: "mdi:clock-start"
 
-# =============================================================================
-# VENTILACIÓN: Estado para notificaciones de ventanas
-# =============================================================================
 input_select:
   ventilation_state:
     name: "Ventilación - Estado"
@@ -93,10 +138,6 @@ input_select:
       - close_windows
     initial: normal
     icon: "mdi:window-open-variant"
-
-# =============================================================================
-# CALIDAD DEL AIRE: Estado para notificaciones de CO₂
-# =============================================================================
   air_quality_state:
     name: "Calidad de aire - Estado"
     options:
@@ -113,6 +154,15 @@ input_select:
       - tendido
     initial: inactivo
     icon: "mdi:washing-machine"
+  lavavajillas_estado:
+    name: "Lavavajillas - Estado"
+    options:
+      - inactivo
+      - lavando
+      - terminado_pendiente_abrir
+      - abierto
+    initial: inactivo
+    icon: "mdi:dishwasher"
 
 # =============================================================================
 # CIRCADIAN LIGHTING: Despacho (claytonjn/hass-circadian_lighting)
