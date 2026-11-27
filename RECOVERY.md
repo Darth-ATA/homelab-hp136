@@ -1,195 +1,39 @@
-# Homelab HP136 - Recovery Procedures
+# Recovering the Proxmox homelab
 
-This document describes how to recover from various disasters in your Proxmox homelab.
+## Before restoring
 
-## Backup Locations
+1. Contact the repository owner. Record the affected VMID, symptoms and last known good backup time. For a full disk or a `lock: mounted` error, check active PVE tasks and [known issues](docs/troubleshooting.md) first. Do not unlock a guest during an active backup or restore.
+2. On the node, list completed archives with `pvesm list local --content backup --vmid <id>` and check the corresponding **Tasks** log for a successful vzdump. Pick **one exact archive**, not a wildcard. Prefer the most recent known-good copy from before the incident.
+3. `local` (`/var/lib/vz/dump`) stores archives; `local-zfs` stores guest disks. Local backups do **not** protect against loss of the host pool. After disk loss, first recover an independent copy. Terraform can recreate configuration, not lost guest data.
+4. Check `pvesm status` for restore capacity. Use an **unused VMID** for a rehearsal or side-by-side restore. Leave the restored guest stopped until its networking, devices and bind mounts are isolated: duplicate IPs, shared writable datasets and real Home Assistant automations are unsafe in a test restore.
 
-All backups use `local` (dir-type storage) at `/var/lib/vz/dump/`. ZFS pool storage (`local-zfs`) does NOT support backup content type.
+## Restore a VM (Home Assistant, VM 100)
 
-| Resource | Backup Schedule | Storage | Retention Policy |
-|-----------|----------------|---------|------------------|
-| VM 100 (Home Assistant) | Daily 21:00 | local (dir) | Keep last 5 |
-| Container 101 (docker) | Daily 03:00 | local (dir) | Keep daily + monthly (excludes `/data`) |
-| Container 102 (tailscale) | Daily 03:45 | local (dir) | Keep daily + monthly |
-| Container 103 (adguard) | Daily 04:00 | local (dir) | Keep daily + monthly |
+On the node, substitute the absolute archive path and unused numeric ID:
 
-**Note:** Docker backup excludes `/data` (media + torrents) — those are replaceable via \*arr downloads. Schedules are staggered off-peak to avoid I/O contention.
-
-## Restore Procedures
-
-### Restore VM 100 (Home Assistant)
-
-1. **List available backups:**
-   ```bash
-   ssh root@10.10.10.134 "ls -lh /var/lib/vz/dump/vzdump-qemu-100*"
-   ```
-
-2. **Restore VM (will create new VMID):**
-   ```bash
-   ssh root@10.10.10.134 "qmrestore <backup-file>.vma.zst <new-vmid>"
-   ```
-
-3. **Or restore to existing VM 100 (destructive):**
-   ```bash
-   ssh root@10.10.10.134 "qmrestore <backup-file>.vma.zst 100 --force"
-   ```
-
-4. **After restore, re-configure USB passthrough:**
-   ```bash
-   ssh root@10.10.10.134 "qm set 100 -usb0 host=10c4:ea60 -usb1 host=0bda:c821"
-   ```
-
-### Restore Container 101 (docker)
-
-1. **List available backups:**
-   ```bash
-   ssh root@10.10.10.134 "ls -lh /var/lib/vz/dump/vzdump-lxc-101-*"
-   ```
-
-2. **Restore container (replace target VMID if needed):**
-   ```bash
-   ssh root@10.10.10.134 "pct restore 101 /var/lib/vz/dump/vzdump-lxc-101-*.vma.zst --storage local-zfs"
-   ```
-
-3. **Post-restore: Re-apply LXC 101 specific config not preserved in backup:**
-   ```bash
-   # Re-enable device passthrough (iGPU)
-   pct set 101 -dev0 /dev/dri/card0,uid=0,gid=0,mode=0666
-   pct set 101 -dev1 /dev/dri/renderD128,uid=0,gid=0,mode=0666
-
-   # Re-add /data bind mount if missing
-   pct set 101 -mp0 /data,mp=/data
-   ```
-
-4. **Restart Docker stack (managed via Arcane):**
-   ```bash
-   pct exec 101 -- docker compose -f /root/docker/arcane/compose.yml up -d
-   ```
-
-### Restore Container 102 (tailscale) / 103 (adguard)
-
-Same procedure as docker:
 ```bash
-# List backups
-ssh root@10.10.10.134 "ls -lh /var/lib/vz/dump/vzdump-lxc-<vmid>-*"
-
-# Restore
-ssh root@10.10.10.134 "pct restore <vmid> /var/lib/vz/dump/vzdump-lxc-<vmid>-*.vma.zst --storage local-zfs"
+qmrestore <archive.vma.zst> <unused-vmid> --storage local-zfs
+qm config <unused-vmid>
 ```
 
-## Disaster Recovery Scenarios
+Verify boot disk, NIC and Zigbee/Bluetooth passthrough against `home_vm.tf`. For a test, disconnect the virtual NIC and detach physical devices before boot. Check the console and HA startup. For production cutover, stop the old guest before attaching its devices or bringing the restored instance onto the LAN. Verify HA integrations, networking and a recent configuration change.
 
-### Scenario 1: Proxmox Host Failure (prxhp136)
+## Restore or recreate a container (CT 101–105)
 
-1. **Reinstall Proxmox VE** on new hardware
-2. **Restore from Terraform** (the infrastructure is fully defined in code):
-   ```bash
-   cd ~/homelab-terraform
-   terraform init
-   terraform apply  # This will recreate containers from scratch
-   ```
-3. **Restore critical data from backups:**
-   ```bash
-   # Restore Home Assistant VM from backup
-   ssh root@new-host "qmrestore /var/lib/vz/dump/vzdump-qemu-100-*.vma.zst 100 --force"
-
-   # Restore docker container data (if /data was backed up)
-   ssh root@new-host "pct restore 101 /var/lib/vz/dump/vzdump-lxc-101-*.vma.zst --storage local-zfs"
-   ```
-
-### Scenario 2: Accidental Container/VM Deletion
-
-1. **Check backups immediately:**
-   ```bash
-   ssh root@10.10.10.134 "ls -lh /var/lib/vz/dump/ | grep <vmid>"
-   ```
-2. **Restore from most recent backup** (see procedures above)
-
-### Scenario 3: Configuration Drift
-
-If Terraform state drifts from actual:
-
-1. **Refresh state:**
-   ```bash
-   cd ~/homelab-terraform
-   terraform refresh
-   terraform plan  # Review detected changes
-   ```
-2. **Import missing resources:**
-   ```bash
-   terraform import proxmox_virtual_environment_container.docker prxhp136/101
-   ```
-3. **Or destroy and recreate (DOWNTIME!):**
-   ```bash
-   terraform destroy -target=proxmox_virtual_environment_container.docker
-   terraform apply
-   ```
-
-## Backup Cleanup Script
-
-**Location:** `/usr/local/bin/cleanup-backups.sh`
-
-**Retention Policy:** 
-- **Current month:** Keep ALL daily backups
-- **Previous months:** Keep ONLY the LAST backup (highest date) of each month
-
-**Manual execution:**
 ```bash
-ssh root@10.10.10.134 "/usr/local/bin/cleanup-backups.sh"
+pct restore <unused-vmid> <archive.tar.zst> --storage local-zfs
+pct config <unused-vmid>
 ```
 
-**Scheduled:** Daily at 1:00 AM via cron
+Compare the network, device permissions and `mpN` entries to the guest's Terraform configuration. **Bind-mounted data is not in the container archive.** For CT 101, verify the media, torrents, Soulseek and shared datasets on the host before reconnecting the production mounts. For CT 105 check the media mount and iGPU. Do not point a test guest at writable production paths.
 
-**Log file:** `/var/log/backup-cleanup.log`
+Start the isolated guest and check its console and service status. At cutover, verify the affected workload (e.g. DNS queries for AdGuard, the Arcane-managed projects for Docker, playback for Jellyfin). Keep the old instance/archive until verification succeeds. Returning to a production VMID is a separate owner-controlled downtime operation; never force an in-place restore as a test.
 
-## Emergency Contacts
+If no usable container archive exists, the owner can provision a **blank** Terraform-managed container from its declared template, then restore application data separately. Review the plan for the intended VMID only; stop on unexpected replacements. Do not recreate a stateful guest just to resolve Terraform drift.
 
-- **Owner:** @Darth-ATA
-- **Location:** ~/homelab-terraform on GitHub
-- **Proxmox Web UI:** https://10.10.10.134:8006
+## Rebuilding the node
 
-## Quick Reference
-
-| Service | VMID | IP (Static) | Purpose |
-|----------|------|-------------|---------|
-| Home Assistant | 100 | 10.10.10.100 | Home automation |
-| docker | 101 | 10.10.10.142 | Container runtime + media stack |
-| tailscale | 102 | 10.10.10.102 | VPN network |
-| adguard | 103 | 10.10.10.2 | DNS ad-blocking |
-
-## Silent Backup Failures (LXC lock:mounted)
-
-**When LXC containers have bind mounts** (e.g., CT 101 map `/data` → `/rpool/data/media`), Proxmox sets `lock: mounted` in the container config. This prevents `vzdump` from creating snapshots, causing **silent backup failures**.
-
-**What happens:**
-1. Backup job starts → vzdump sees CT is locked → fails
-2. Failed backup is NOT pruned — it accumulates on disk
-3. Over time, failed backup files fill `local` storage
-4. All subsequent backups are at risk
-
-**Detect:**
-```bash
-ssh root@192.168.1.134 "pct list | grep locked"
-```
-
-**Fix:**
-```bash
-# Remove the lock
-ssh root@192.168.1.134 "sed -i '/^lock: mounted/d' /etc/pve/lxc/<VMID>.conf"
-
-# Run a manual backup with prune to clear failed dumps
-ssh root@192.168.1.134 "vzdump <VMID> --storage local --mode snapshot --prune-backups 'keep-daily=1,keep-monthly=1'"
-
-# If disk is critically full, delete failed backup files manually
-ssh root@192.168.1.134 "rm /var/lib/vz/dump/vzdump-lxc-<VMID>-<date>_*.vma.*"
-```
-
-**Prevention:** Add `lock: mounted` check to post-deploy verification scripts. See `docs/troubleshooting.md` for full details.
-
-## Prevention Tips
-
-1. **Test backups regularly:** Restore to a test VMID monthly
-2. **Document changes:** Update README.md, NETWORK.md, and this file after any infra change
-3. **Use Terraform:** All containers and VMs are defined in `.tf` files — never create infra manually
-4. **Monitor backups:** Check `/var/log/backup-cleanup.log` regularly
-5. **Keep this repo in sync:** If you change something on Proxmox, update the corresponding `.tf` file and run `terraform plan` to verify state
+1. Recover storage and independently saved archives before provisioning guests. Re-establish the node name, storage IDs, network and physical passthrough prerequisites.
+2. Restore data-bearing guests first. In particular restore the Docker guest and its Garage state service before expecting to use the remote Terraform backend. Verify the state is available; do not initialize an empty replacement state over it.
+3. Reconcile the restored guest IDs with existing Terraform state and review a plan before applying configuration. A `null_resource` recorded in surviving state does not automatically rerun on a rebuilt host: verify deployed scripts, cron entries and APT policy against the [maintenance schedule](README.md#maintenance), then explicitly redeploy missing host configuration. Verify the manually managed CT 101 backup job in PVE as well.
+4. Verify guest services and the next successful backup for each guest. Run an isolated restore drill monthly, using the steps above. A passing health check is not proof that a backup can be restored.

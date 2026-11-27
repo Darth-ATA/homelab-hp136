@@ -227,50 +227,40 @@ See `docs/bluetooth-ceiling-fan-setup.md` for the full step-by-step guide.
 - Never commit `terraform.tfvars` or `.terraform/` directory
 - Use sensitive variables for passwords and tokens
 
+## Maintenance
+
+Times are local to the Proxmox node. Host maintenance is deployed by Terraform (`maintenance.tf`, `monitoring.tf`, `cleanup.tf`); it does not update guest OSes, HAOS or Docker images.
+
+| When | Task | Where to check |
+|------|------|----------------|
+| Daily (APT timers, randomized) | Install eligible Debian security updates only. Proxmox packages, general upgrades and reboots remain manual. | `systemctl list-timers 'apt-daily*'`; `/var/log/unattended-upgrades/` |
+| Every 15 min | Warn on host CPU or RAM ≥90%, `/` or `/var/lib/vz` ≥80%, stopped/unreachable guests 100–105, or inactive core PVE services. | `journalctl -t homelab-health --since today`; run `/usr/local/bin/check-host-health.sh` (nonzero on warning) |
+| Daily 01:00 and 05:00 | Prune local backups before and after the overnight container backup window. | `/var/log/backup-cleanup.log`; preview with `/usr/local/bin/cleanup-backups.sh --dry-run` |
+| Hourly / daily 05:30 / daily 09:00 | Existing backup storage, backup status and ZFS pool checks, respectively. | PVE task history, `pvesm status`, `zpool list` |
+| Monthly | Review outstanding PVE updates and reboot needs; test an isolated restore. | [Recovery runbook](RECOVERY.md) |
+
+**Triage and escalation:** For resource warnings, check `top`, `free -h`, `df -h` and active backup tasks before intervening. For a missing guest or service, check `qm list`, `pct list`, `systemctl --failed` and that unit's journal. The host health check logs locally; it cannot report a node that is powered off. Escalate repeated warnings, backup failures or loss of access privately to the repository owner before restarting guests or deleting data. See [known Proxmox issues](docs/troubleshooting.md).
+
 ## Backup Strategy
 
 ### Backup Jobs Configured
 
 | Resource | VMID | Schedule | Storage | Retention Policy |
 |-----------|------|----------|---------|------------------|
-| Home Assistant | 100 | Daily 21:00 | local (dir) | Keep last 5 |
+| Home Assistant | 100 | Daily 21:00 | local (dir) | Keep last 3 |
 | docker | 101 | Daily 03:00 | local (dir) | Keep daily + monthly (excludes `/data`) |
 | tailscale | 102 | Daily 03:45 | local (dir) | Keep daily + monthly |
 | adguard | 103 | Daily 04:00 | local (dir) | Keep daily + monthly |
 | vaultwarden | 104 | Daily 04:15 | local (dir) | Keep daily + monthly |
+| jellyfin | 105 | Daily 04:30 | local (dir) | Keep daily + monthly |
 
 **Note:** Docker backup excludes `/data` (media + torrents) to save space. Schedules are staggered off-peak to avoid I/O contention.
 
 **Note:** All backups use `local` (dir-type storage) which supports the backup content type. ZFS zpool storage (`local-zfs`) does NOT support backup content type.
 
-### Special Retention Policy
+### Backup cleanup
 
-The cleanup script (`/usr/local/bin/cleanup-backups.sh`) implements a **custom retention policy**:
-
-- **Current month:** Keep ALL daily backups
-- **Previous months:** Keep ONLY the LAST backup (highest date) of each month
-- **Purpose:** Maintain daily granularity for recent backups, but save space for older ones
-
-### Cleanup Script
-
-- **Location:** `/usr/local/bin/cleanup-backups.sh`
-- **Scheduled:** Daily at 1:00 AM via cron
-- **Log file:** `/var/log/backup-cleanup.log`
-- **What it does:**
-  1. Finds all `vzdump-*.vma.*` files in `/var/lib/vz/dump` and `/var/lib/vz/snapshot`
-  2. Groups by year-month (from filename)
-  3. Current month: Keep all
-  4. Previous months: Delete all except the last backup (highest date)
-
-### Manual Execution
-
-```bash
-# Run cleanup manually
-ssh root@10.10.10.134 "/usr/local/bin/cleanup-backups.sh"
-
-# Check log
-ssh root@10.10.10.134 "cat /var/log/backup-cleanup.log"
-```
+The [scheduled script](scripts/cleanup-backups.sh) uses `pvesm prune-backups` on `local`, scoped separately to VM 100 and CTs 101–105, with `keep-daily=7,keep-monthly=6`. PVE handles protected backups. This is an additional cap, not a guarantee of that many restore points: `backup.tf` sets stricter per-job retention (3 latest for HA; 1 daily + 1 monthly for managed CT jobs). Verify CT 101's job settings in PVE; that job is maintained outside Terraform.
 
 ## Storage Strategy
 
@@ -303,14 +293,7 @@ ssh root@10.10.10.134 "cat /etc/pve/jobs.cfg"
 ssh root@10.10.10.134 "vzdump 100 --storage local --mode snapshot"
 ```
 
-**Cleanup old backups (keep last 3-5):**
-```bash
-# List HAOS backups
-ssh root@10.10.10.134 "ls -lht /var/lib/vz/dump/vzdump-qemu-100-*.vma.*"
-
-# Remove old backups (example - adjust dates as needed)
-ssh root@10.10.10.134 "rm /var/lib/vz/dump/vzdump-qemu-100-2026_0*"
-```
+To review which archives are eligible for cleanup, use the dry run under [Maintenance](#maintenance). Do not delete archives by wildcard.
 
 ### Cleanup: Unused Templates/ISOs
 ```bash

@@ -60,6 +60,8 @@ EOT
 # during the backup window (03:00-04:30).
 
 resource "null_resource" "backup_cleanup_cron" {
+  depends_on = [null_resource.deploy_cleanup_backups]
+
   triggers = {
     cron_spec = "cleanup-backups at 01:00 and 05:00 daily"
   }
@@ -69,11 +71,11 @@ resource "null_resource" "backup_cleanup_cron" {
 ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'bash -s' << 'REMOTE'
 set -e
 # Add pre-backup cleanup at 01:00 if not present
-if ! crontab -l 2>/dev/null | grep -q "01:00.*cleanup-backups"; then
+if ! crontab -l 2>/dev/null | grep -Fxq "0 1 * * * /usr/local/bin/cleanup-backups.sh"; then
   (crontab -l 2>/dev/null; echo "0 1 * * * /usr/local/bin/cleanup-backups.sh") | crontab -
 fi
 # Add post-backup cleanup at 05:00 if not present
-if ! crontab -l 2>/dev/null | grep -q "05:00.*cleanup-backups"; then
+if ! crontab -l 2>/dev/null | grep -Fxq "0 5 * * * /usr/local/bin/cleanup-backups.sh"; then
   (crontab -l 2>/dev/null; echo "0 5 * * * /usr/local/bin/cleanup-backups.sh") | crontab -
 fi
 REMOTE

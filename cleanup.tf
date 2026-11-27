@@ -5,22 +5,7 @@
 # All cleanup runs on Proxmox host or inside LXC containers
 # ============================================================
 
-# ----------------------------------------------------------------------
-# BACKUP CLEANUP — Deploy improved script (replaces existing in monitoring.tf)
-# ----------------------------------------------------------------------
-
-resource "null_resource" "deploy_backup_cleanup_script" {
-  triggers = {
-    script_version = "v2-7daily-6monthly"
-  }
-
-  provisioner "local-exec" {
-    command = "scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no scripts/cleanup/cleanup-backups.sh root@${local.host_ip}:/usr/local/bin/cleanup-backups.sh && ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'chmod +x /usr/local/bin/cleanup-backups.sh'"
-  }
-}
-
-# The backup cleanup cron already exists in monitoring.tf (runs at 01:00 and 05:00)
-# It will automatically use the new script deployed above.
+# Backup cleanup deployment and scheduling are both managed in monitoring.tf.
 
 # ----------------------------------------------------------------------
 # TORRENT CLEANUP — Deluge seeding management
@@ -202,6 +187,8 @@ resource "null_resource" "zfs_disk_check_manual" {
 # ----------------------------------------------------------------------
 
 resource "null_resource" "backup_cleanup_manual" {
+  depends_on = [null_resource.deploy_cleanup_backups]
+
   triggers = {
     manual_trigger = "run backup cleanup now"
   }
