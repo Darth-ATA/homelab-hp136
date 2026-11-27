@@ -1,0 +1,17 @@
+# Wedding site preview (static Astro build from Darth-ATA/wedding-template main), served read-only.
+# Behind NPM: https://wedding.hp136.duckdns.org -> 10.10.10.142:8095. RSVP submissions need Netlify Forms and do not
+# work here; this is a preview.
+services:
+  wedding:
+    image: nginx:1.27-alpine
+    container_name: wedding
+    restart: unless-stopped
+    ports:
+      - "8095:80"
+    volumes:
+      - ./site:/usr/share/nginx/html:ro
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
