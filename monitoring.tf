@@ -171,3 +171,46 @@ ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'zfs
 EOT
   }
 }
+
+# ─── Bluetooth Healthcheck for Home Assistant VM ───────────────────────────────
+# Re-attaches the Realtek RTL8821C (0bda:c821) USB to VM 100 when it drops out
+# of the USB passthrough config, rebooting the VM as last resort.
+# Runs every 5 minutes on the Proxmox host via /etc/cron.d.
+
+locals {
+  bluetooth_healthcheck_hash = filebase64sha256("${path.module}/scripts/bluetooth-healthcheck.sh")
+}
+
+resource "null_resource" "deploy_bluetooth_healthcheck" {
+  triggers = {
+    script_hash = local.bluetooth_healthcheck_hash
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+scp -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no ${path.module}/scripts/bluetooth-healthcheck.sh root@${local.host_ip}:/usr/local/bin/bluetooth-healthcheck.sh && \
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'chmod 755 /usr/local/bin/bluetooth-healthcheck.sh'
+EOT
+  }
+}
+
+resource "null_resource" "bluetooth_healthcheck_cron" {
+  triggers = {
+    cron_spec     = "bluetooth-healthcheck every 5 minutes"
+    script_hash   = local.bluetooth_healthcheck_hash
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+ssh -i ~/.ssh/homelab_key -o StrictHostKeyChecking=no root@${local.host_ip} 'bash -s' << 'REMOTE'
+set -e
+cat > /etc/cron.d/bluetooth-healthcheck << 'CRONEOF'
+# Bluetooth USB passthrough healthcheck for Home Assistant VM (100)
+# Re-attaches Realtek RTL8821C (0bda:c821) when it drops out of passthrough.
+*/5 * * * * root /usr/local/bin/bluetooth-healthcheck.sh >> /var/log/bluetooth-healthcheck.log 2>&1
+CRONEOF
+chmod 644 /etc/cron.d/bluetooth-healthcheck
+REMOTE
+EOT
+  }
+}
