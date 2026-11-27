@@ -196,6 +196,12 @@ Frigate is **configured but not currently running** on LXC 101. The compose file
 
 **Why not deployed:** The Dahua camera (10.10.10.200) requires authentication setup and OpenVINO GPU passthrough validation.
 
+**Before connecting Frigate to HA/Ajax ([#20](https://github.com/Darth-ATA/homelab-hp136/issues/20)):** The issue describes a running indoor camera, but `docker/frigate/config/config.yml.j2` has no camera definition. Do not deploy this template over the running config. Reconcile these inputs first:
+
+- Capture a sanitized copy of the active camera, go2rtc, recording, snapshot and MQTT configuration. Confirm the running Frigate version and how the Jinja template becomes the mounted config. Record the native resolution of each input; the detection dimensions alone do not establish that the camera supplies a lower-resolution stream.
+- Confirm which broker HA uses (listener, port and TLS requirements). Provision Frigate's broker credentials privately; do not include credential values, authenticated stream URLs or interior images in the issue.
+- In HA, identify the Ajax alarm state/event, balcony contact, motion source, Frigate person-occupancy and camera entities, and intended mobile notification action. Confirm how full arming is initiated: a guard on an HA script cannot block arming via the Ajax app or keypad. Loss of camera/MQTT availability must not count as vacancy, and a person detection does not establish identity.
+
 **To deploy when ready:**
 
 ```bash
