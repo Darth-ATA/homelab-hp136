@@ -81,6 +81,32 @@ Adjusts fan speed based on time of day and solar elevation. Since there's no ind
 
 **Future upgrade**: Add a temperature sensor (Aqara Zigbee, Shelly, or ESPHome) and switch the fan automation from time+sun logic to direct temperature thresholds.
 
+### Dishwasher PVPC Automation
+
+Replicates the washing machine PVPC automation for the Laurus LSV60-4 dishwasher connected to the Sonoff S60ZBTPF smart plug.
+
+**Entities:**
+
+| Entity | ID |
+|--------|-----|
+| Plug switch | `switch.sonoff_s60zbtpf` |
+| Power sensor | `sensor.sonoff_s60zbtpf_potencia` |
+| Dishwasher state | `input_select.lavavajillas_estado` |
+| Cheapest hour (today) | `sensor.lavavajillas_hora_mas_barata` |
+| In cheap hour now | `binary_sensor.lavavajillas_en_hora_barata` |
+| Cheapest hour (tomorrow) | `sensor.lavavajillas_hora_mas_barata_mañana` |
+| Off by automation flag | `input_boolean.lavavajillas_apagada_por_automatizacion` |
+| Scheduled for tomorrow flag | `input_boolean.lavavajillas_programada_para_manana` |
+
+**States:** `inactivo`, `lavando`, `terminado_pendiente_abrir`, `abierto`
+
+**Flow:**
+1. Detects cycle start when power > 5W sustained 30s
+2. If not in cheap hour (08-22), turns plug off and schedules for tomorrow's cheapest hour
+3. Turns plug on automatically when the cheapest hour arrives
+4. At end of cycle (power < 10W for 5 min), notifies to open the dishwasher and leaves the plug on
+5. User taps "Ya lo abrí" to reset to `inactivo`
+
 ### Entity IDs
 
 The automations use these entity IDs (verify in HA Developer Tools > States and adjust if needed):
