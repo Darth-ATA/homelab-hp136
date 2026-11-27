@@ -9,8 +9,9 @@ Use `null_resource` + `local-exec` with SSH (the established codebase pattern) f
 ### Examples of Terraform-managed operations in this codebase:
 - Mount points (media, jellyfin)
 - Bluetooth USB passthrough  
+- Bluetooth healthcheck cron (re-attaches USB to HA VM)
 - ZFS dataset tuning
-- Cron jobs (docker prune)
+- Cron jobs (docker prune, lxc internet check, backup alerts)
 - Docker prune scheduling
 
 Only fall back to scripts or manual steps when Terraform is genuinely impractical.

@@ -50,7 +50,8 @@ homelab-terraform/
     ├── deploy-media-stack.sh
     ├── cleanup-backups.sh
     ├── check-router-dns.sh
-    └── sonarr-healthcheck.sh
+    ├── sonarr-healthcheck.sh
+    └── bluetooth-healthcheck.sh
 ```
 
 ## Prerequisites

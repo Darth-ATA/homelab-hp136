@@ -735,6 +735,490 @@
   mode: single
 
 # =============================================================================
+# LAVAVAJILLAS: Automatización inteligente por PVPC
+# =============================================================================
+#
+# Flujo:
+#   1. Se detecta inicio por pico de consumo > 5W sostenido 30s
+#   2. Si no es hora barata dentro 08-22 → apaga enchufe, marca apagada
+#   3. Llega la hora barata → enciende enchufe automáticamente
+#   4. Termina el ciclo (consumo < 10W x 5 min) → notificación al móvil
+#   5. Usuario marca "Ya lo abrí" → resetea todo
+#
+# Reglas:
+#   - Restricción 08-22: el lavavajillas solo arranca SI está en hora barata
+#   - Modo noche: si se arranca de noche (22-08) con "Iniciar mañana en hora barata" activo,
+#     se apaga y se programa para la hora más barata de MAÑANA entre 08-22.
+#   - Si ya está funcionando, NO se toca el enchufe (que termine el ciclo)
+#   - Si llega la hora barata y estaba apagado por la automatización, se enciende
+#   - Si arranca manualmente en hora barata, se deja correr
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Detectar inicio de ciclo
+# -----------------------------------------------------------------------------
+- id: 'lavavajillas_inicio_001'
+  alias: "Lavavajillas - Inicio de ciclo"
+  description: >
+    Detecta arranque por consumo > 5W sostenido 30s.
+    Si no es hora barata dentro de 08-22, busca próxima hora barata:
+    - Si la hora más barata está a ≤2h: deja correr (umbral cercano).
+    - Si hay hora barata hoy pero >2h: apaga y espera.
+    - Si no hay más horas baratas hoy: deja correr.
+    Si es hora barata, lo deja correr.
+    Fuera de 08-22: apaga y espera.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.sonoff_s60zbtpf_potencia
+    above: 5
+    for:
+      seconds: 30
+  conditions:
+  - condition: state
+    entity_id: input_select.lavavajillas_estado
+    state: 'inactivo'
+  actions:
+  - action: input_select.select_option
+    target:
+      entity_id: input_select.lavavajillas_estado
+    data:
+      option: lavando
+  - delay:
+      seconds: 5
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ now().hour >= 22 or now().hour < 8 }}"
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.sonoff_s60zbtpf
+      - action: input_boolean.turn_on
+        target:
+          entity_id:
+            - input_boolean.lavavajillas_apagada_por_automatizacion
+      - action: input_boolean.turn_on
+        target:
+          entity_id:
+            - input_boolean.lavavajillas_programada_para_manana
+      - action: notify.mobile_app_alejandros_iphone
+        data:
+          title: "🍽️ Lavavajillas"
+          message: "Se iniciará mañana a las {% set h = states('sensor.lavavajillas_hora_mas_barata_mañana') | int(-1) %}{{ 8 if h == -1 else h }}:00{% if h == -1 %} (fallback, sin datos de mañana){% endif %}."
+          tag: lavavajillas_inicio_mañana
+      - action: notify.mobile_app_miriam_iphone
+        data:
+          title: "🍽️ Lavavajillas"
+          message: "Se iniciará mañana a las {% set h = states('sensor.lavavajillas_hora_mas_barata_mañana') | int(-1) %}{{ 8 if h == -1 else h }}:00{% if h == -1 %} (fallback, sin datos de mañana){% endif %}."
+          tag: lavavajillas_inicio_mañana
+      - action: persistent_notification.create
+        data:
+          notification_id: lavavajillas_inicio_mañana_hora_barata
+          title: "🍽️ Lavavajillas"
+          message: "Se iniciará mañana a las {% set h = states('sensor.lavavajillas_hora_mas_barata_mañana') | int(-1) %}{{ 8 if h == -1 else h }}:00{% if h == -1 %} (fallback, sin datos de mañana){% endif %}."
+    - conditions:
+      - condition: template
+        value_template: "{{ now().hour >= 8 and now().hour < 22 }}"
+      sequence:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: binary_sensor.lavavajillas_en_hora_barata
+            state: 'on'
+          sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: switch.sonoff_s60zbtpf
+          - action: input_boolean.turn_off
+            target:
+              entity_id:
+                - input_boolean.lavavajillas_apagada_por_automatizacion
+          - action: notify.mobile_app_alejandros_iphone
+            data:
+              title: "🍽️ Lavavajillas"
+              message: "Arrancó en hora barata. Ciclo en curso 💪"
+              tag: lavavajillas_inicio_hora_barata
+          - action: notify.mobile_app_miriam_iphone
+            data:
+              title: "🍽️ Lavavajillas"
+              message: "Arrancó en hora barata. Ciclo en curso 💪"
+              tag: lavavajillas_inicio_hora_barata
+          - action: persistent_notification.create
+            data:
+              notification_id: lavavajillas_inicio_hora_barata
+              title: "🍽️ Lavavajillas"
+              message: "Arrancó en hora barata. Ciclo en curso 💪"
+        - conditions:
+            - condition: state
+              entity_id: binary_sensor.lavavajillas_en_hora_barata
+              state: 'off'
+          sequence:
+          - choose:
+            - conditions:
+              - condition: template
+                value_template: >
+                  {{ (states('sensor.lavavajillas_hora_mas_barata') | int(-1) - now().hour) <= 2
+                     and states('sensor.lavavajillas_hora_mas_barata') | int(-1) > now().hour }}
+              sequence:
+              - action: switch.turn_on
+                target:
+                  entity_id: switch.sonoff_s60zbtpf
+              - action: input_boolean.turn_off
+                target:
+                  entity_id:
+                    - input_boolean.lavavajillas_apagada_por_automatizacion
+              - action: notify.mobile_app_alejandros_iphone
+                data:
+                  title: "🍽️ Lavavajillas"
+                  message: "Arrancó y la hora más barata está a {{ (states('sensor.lavavajillas_hora_mas_barata') | int(-1) - now().hour) }}h. Dejo correr."
+                  tag: lavavajillas_inicio_hora_cercana
+              - action: notify.mobile_app_miriam_iphone
+                data:
+                  title: "🍽️ Lavavajillas"
+                  message: "Arrancó y la hora más barata está a {{ (states('sensor.lavavajillas_hora_mas_barata') | int(-1) - now().hour) }}h. Dejo correr."
+                  tag: lavavajillas_inicio_hora_cercana
+              - action: persistent_notification.create
+                data:
+                  notification_id: lavavajillas_inicio_hora_cercana
+                  title: "🍽️ Lavavajillas"
+                  message: "Arrancó y la hora más barata está a {{ (states('sensor.lavavajillas_hora_mas_barata') | int(-1) - now().hour) }}h. Dejo correr."
+            - conditions:
+              - condition: template
+                value_template: >
+                  {{ states('sensor.lavavajillas_hora_mas_barata') | int(-1) > now().hour }}
+              sequence:
+              - action: switch.turn_off
+                target:
+                  entity_id: switch.sonoff_s60zbtpf
+              - action: input_boolean.turn_on
+                target:
+                  entity_id:
+                    - input_boolean.lavavajillas_apagada_por_automatizacion
+              - action: notify.mobile_app_alejandros_iphone
+                data:
+                  title: "🍽️ Lavavajillas"
+                  message: "Arrancó pero no es hora barata. Enchufe apagado. Esperando próxima hora barata ({{ states('sensor.lavavajillas_hora_mas_barata') }}:00)."
+                  tag: lavavajillas_inicio_no_hora_barata
+              - action: notify.mobile_app_miriam_iphone
+                data:
+                  title: "🍽️ Lavavajillas"
+                  message: "Arrancó pero no es hora barata. Enchufe apagado. Esperando próxima hora barata ({{ states('sensor.lavavajillas_hora_mas_barata') }}:00)."
+                  tag: lavavajillas_inicio_no_hora_barata
+              - action: persistent_notification.create
+                data:
+                  notification_id: lavavajillas_inicio_no_hora_barata
+                  title: "🍽️ Lavavajillas"
+                  message: "Arrancó pero no es hora barata. Enchufe apagado. Esperando próxima hora barata ({{ states('sensor.lavavajillas_hora_mas_barata') }}:00)."
+            - conditions:
+              - condition: template
+                value_template: >
+                  {{ states('sensor.lavavajillas_hora_mas_barata') not in ['unknown', 'unavailable', 'none', '-1']
+                     and states('sensor.lavavajillas_hora_mas_barata') | int(-1) <= now().hour }}
+              sequence:
+              - action: switch.turn_on
+                target:
+                  entity_id: switch.sonoff_s60zbtpf
+              - action: input_boolean.turn_off
+                target:
+                  entity_id:
+                    - input_boolean.lavavajillas_apagada_por_automatizacion
+              - action: notify.mobile_app_alejandros_iphone
+                data:
+                  title: "🍽️ Lavavajillas"
+                  message: "No hay más horas baratas hoy. Arranco el lavavajillas."
+                  tag: lavavajillas_inicio_no_hora_barata
+              - action: notify.mobile_app_miriam_iphone
+                data:
+                  title: "🍽️ Lavavajillas"
+                  message: "No hay más horas baratas hoy. Arranco el lavavajillas."
+                  tag: lavavajillas_inicio_no_hora_barata
+              - action: persistent_notification.create
+                data:
+                  notification_id: lavavajillas_inicio_no_hora_barata
+                  title: "🍽️ Lavavajillas"
+                  message: "No hay más horas baratas hoy. Arranco el lavavajillas."
+            - conditions:
+              - condition: template
+                value_template: "true"
+              sequence:
+              - action: switch.turn_off
+                target:
+                  entity_id: switch.sonoff_s60zbtpf
+              - action: input_boolean.turn_on
+                target:
+                  entity_id:
+                    - input_boolean.lavavajillas_apagada_por_automatizacion
+              - action: input_boolean.turn_on
+                target:
+                  entity_id:
+                    - input_boolean.lavavajillas_programada_para_manana
+              - action: notify.mobile_app_alejandros_iphone
+                data:
+                  title: "🍽️ Lavavajillas"
+                  message: "Sin datos de precios de la luz. Enchufe apagado, esperando datos."
+                  tag: lavavajillas_inicio_sin_datos
+              - action: notify.mobile_app_miriam_iphone
+                data:
+                  title: "🍽️ Lavavajillas"
+                  message: "Sin datos de precios de la luz. Enchufe apagado, esperando datos."
+                  tag: lavavajillas_inicio_sin_datos
+              - action: persistent_notification.create
+                data:
+                  notification_id: lavavajillas_inicio_sin_datos
+                  title: "🍽️ Lavavajillas"
+                  message: "Sin datos de precios de la luz. Enchufe apagado, esperando datos."
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Encender cuando llega la hora más barata
+# -----------------------------------------------------------------------------
+- id: 'lavavajillas_hora_barata_001'
+  alias: "Lavavajillas - Encender en hora barata"
+  description: >
+    Cada hora en punto, si es la hora más barata restante entre 08-22
+    y el lavavajillas fue apagado por la automatización, enciende el enchufe.
+  triggers:
+  - trigger: template
+    value_template: >
+      {{ now().minute == 0
+         and now().hour == states('sensor.lavavajillas_hora_mas_barata') | int(-1)
+         and now().hour >= 8 and now().hour < 22 }}
+  conditions:
+  - condition: state
+    entity_id: input_select.lavavajillas_estado
+    state: 'lavando'
+  - condition: state
+    entity_id:
+      - input_boolean.lavavajillas_apagada_por_automatizacion
+    state: 'on'
+  - condition: state
+    entity_id:
+      - input_boolean.lavavajillas_programada_para_manana
+    state: 'off'
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.sonoff_s60zbtpf
+  - action: input_boolean.turn_off
+    target:
+      entity_id:
+        - input_boolean.lavavajillas_apagada_por_automatizacion
+  - action: notify.mobile_app_alejandros_iphone
+    data:
+      title: "\u26A1 Lavavajillas - Hora barata"
+      message: "Lleg\u00F3 la hora m\u00E1s barata. Enciendo el lavavajillas."
+      data:
+        tag: lavavajillas_hora_barata
+  - action: notify.mobile_app_miriam_iphone
+    data:
+      title: "\u26A1 Lavavajillas - Hora barata"
+      message: "Lleg\u00F3 la hora m\u00E1s barata. Enciendo el lavavajillas."
+      data:
+        tag: lavavajillas_hora_barata
+  - action: persistent_notification.create
+    data:
+      notification_id: lavavajillas_hora_barata
+      title: "\u26A1 Lavavajillas - Hora barata"
+      message: "Lleg\u00F3 la hora m\u00E1s barata. Enciendo el lavavajillas."
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Encender mañana en la hora más barata (modo noche diferido)
+# -----------------------------------------------------------------------------
+- id: 'lavavajillas_hora_barata_mañana_001'
+  alias: "Lavavajillas - Encender mañana en hora barata"
+  description: >
+    Cada hora en punto, si es la hora más barata de mañana entre 08-22,
+    el modo iniciar-mañana está activo y el lavavajillas fue apagado por la automatización,
+    enciende el enchufe.
+  triggers:
+  - trigger: template
+    value_template: >
+      {{ now().minute == 0
+         and now().hour >= 8 and now().hour < 22
+         and (
+           now().hour == states('sensor.lavavajillas_hora_mas_barata_mañana') | int(-1)
+           or (states('sensor.lavavajillas_hora_mas_barata_mañana') | int(-1) == -1 and now().hour == 8)
+         ) }}
+  conditions:
+  - condition: state
+    entity_id: input_select.lavavajillas_estado
+    state: 'lavando'
+  - condition: state
+    entity_id:
+      - input_boolean.lavavajillas_programada_para_manana
+    state: 'on'
+  - condition: state
+    entity_id:
+      - input_boolean.lavavajillas_apagada_por_automatizacion
+    state: 'on'
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.sonoff_s60zbtpf
+  - action: input_boolean.turn_off
+    target:
+      entity_id:
+        - input_boolean.lavavajillas_apagada_por_automatizacion
+  - action: input_boolean.turn_off
+    target:
+      entity_id:
+        - input_boolean.lavavajillas_programada_para_manana
+  - action: notify.mobile_app_alejandros_iphone
+    data:
+      title: "\u26A1 Lavavajillas - Hora barata mañana"
+      message: "Llegó la hora más barata de mañana. Enciendo el lavavajillas."
+      data:
+        tag: lavavajillas_hora_barata_mañana
+  - action: notify.mobile_app_miriam_iphone
+    data:
+      title: "\u26A1 Lavavajillas - Hora barata mañana"
+      message: "Llegó la hora más barata de mañana. Enciendo el lavavajillas."
+      data:
+        tag: lavavajillas_hora_barata_mañana
+  - action: persistent_notification.create
+    data:
+      notification_id: lavavajillas_hora_barata_mañana
+      title: "\u26A1 Lavavajillas - Hora barata mañana"
+      message: "Llegó la hora más barata de mañana. Enciendo el lavavajillas."
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Fin de ciclo
+# -----------------------------------------------------------------------------
+- id: 'lavavajillas_fin_ciclo_001'
+  alias: "Lavavajillas - Fin de ciclo"
+  description: >
+    Cuando el consumo baja a < 10W por 5 minutos y el lavavajillas estaba corriendo
+    (no apagado por la automatización), notifica al móvil para abrirlo.
+    Deja el enchufe encendido para el próximo uso.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.sonoff_s60zbtpf_potencia
+    below: 10
+    for:
+      minutes: 5
+  conditions:
+  - condition: state
+    entity_id: input_select.lavavajillas_estado
+    state: 'lavando'
+  - condition: state
+    entity_id:
+      - input_boolean.lavavajillas_apagada_por_automatizacion
+    state: 'off'
+  actions:
+  - action: notify.mobile_app_alejandros_iphone
+    data:
+      title: "🍽️ Lavavajillas - Ciclo terminado"
+      message: "El lavavajillas termin\u00F3. Ya pod\u00E9s abrirlo."
+      data:
+        tag: lavavajillas_fin
+        actions:
+        - action: LAVAVAJILLAS_ABIERTO
+          title: "Ya lo abr\u00ED"
+  - action: notify.mobile_app_miriam_iphone
+    data:
+      title: "🍽️ Lavavajillas - Ciclo terminado"
+      message: "El lavavajillas termin\u00F3. Ya pod\u00E9s abrirlo."
+      data:
+        tag: lavavajillas_fin
+  - action: persistent_notification.create
+    data:
+      notification_id: lavavajillas_fin_ciclo
+      title: "🍽️ Lavavajillas - Ciclo terminado"
+      message: "El lavavajillas termin\u00F3. Ya pod\u00E9s abrirlo."
+  - action: input_select.select_option
+    target:
+      entity_id: input_select.lavavajillas_estado
+    data:
+      option: terminado_pendiente_abrir
+  - action: switch.turn_on
+    target:
+      entity_id: switch.sonoff_s60zbtpf
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Manejar acción "Ya lo abrí" desde la notificación
+# -----------------------------------------------------------------------------
+- id: 'lavavajillas_notificacion_abrir_001'
+  alias: "Lavavajillas - Responder 'Ya lo abrí'"
+  description: "Cuando el usuario toca 'Ya lo abrí' en la notificación, marca el lavavajillas como abierto. Solo válido si el ciclo realmente terminó."
+  triggers:
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: LAVAVAJILLAS_ABIERTO
+  conditions:
+  - condition: state
+    entity_id: input_select.lavavajillas_estado
+    state: 'terminado_pendiente_abrir'
+  actions:
+  - action: input_select.select_option
+    target:
+      entity_id: input_select.lavavajillas_estado
+    data:
+      option: abierto
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Reset completo
+# -----------------------------------------------------------------------------
+- id: 'lavavajillas_reset_001'
+  alias: "Lavavajillas - Reset por abierto"
+  description: "Resetea el estado cuando el usuario marca 'Ya lo abrí'. Vuelve a inactivo para el próximo ciclo."
+  triggers:
+  - trigger: state
+    entity_id: input_select.lavavajillas_estado
+    to: 'abierto'
+  actions:
+  - action: input_boolean.turn_off
+    target:
+      entity_id:
+        - input_boolean.lavavajillas_apagada_por_automatizacion
+  - action: input_select.select_option
+    target:
+      entity_id: input_select.lavavajillas_estado
+    data:
+      option: inactivo
+  mode: single
+
+# -----------------------------------------------------------------------------
+# Recordatorio de abrir cada 5 minutos
+# -----------------------------------------------------------------------------
+- id: 'lavavajillas_recordatorio_001'
+  alias: "Lavavajillas - Recordatorio de abrir"
+  description: "Cada 5 minutos recuerda abrir el lavavajillas si el ciclo terminó y nadie marcó 'Ya lo abrí'."
+  triggers:
+  - trigger: time_pattern
+    minutes: /5
+  conditions:
+  - condition: state
+    entity_id: input_select.lavavajillas_estado
+    state: 'terminado_pendiente_abrir'
+  actions:
+  - action: notify.mobile_app_alejandros_iphone
+    data:
+      title: "\u23F0 Lavavajillas - Recordatorio"
+      message: "El lavavajillas termin\u00F3 hace rato. No te olvides de abrirlo."
+      data:
+        tag: lavavajillas_recordatorio
+        actions:
+        - action: LAVAVAJILLAS_ABIERTO
+          title: "Ya lo abr\u00ED"
+  - action: notify.mobile_app_miriam_iphone
+    data:
+      title: "\u23F0 Lavavajillas - Recordatorio"
+      message: "El lavavajillas termin\u00F3 hace rato. No te olvides de abrirlo."
+      data:
+        tag: lavavajillas_recordatorio
+  - action: persistent_notification.create
+    data:
+      notification_id: lavavajillas_recordatorio
+      title: "\u23F0 Lavavajillas - Recordatorio"
+      message: "El lavavajillas termin\u00F3 hace rato. No te olvides de abrirlo."
+  mode: single
+
+# =============================================================================
 # VENTILACIÓN: Notificaciones para abrir/cerrar ventanas
 # Compara temperatura interior vs exterior y notifica al usuario.
 # Máquina de estados (input_select.ventilation_state) evita notificaciones duplicadas.
